@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>mt-spring-starter-parent</artifactId>
-        <groupId>mt.spring</groupId>
+        <groupId>com.github.668mt.web</groupId>
         <version>1.0-RELEASE</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
