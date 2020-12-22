@@ -101,8 +101,9 @@ public class CommonConfig implements InitializingBean {
 		}
 		
 		log.info("当前服务basePackage:{}", commonProperties.getBasePackage());
-		if (commonProperties.getGenerateEntityPackages() != null)
+		if (commonProperties.getGenerateEntityPackages() != null) {
 			log.info("当前服务generateEntityPackages:{}", Arrays.toString(commonProperties.getGenerateEntityPackages()));
+		}
 		if (commonProperties.getDaoPackage() != null) {
 			String[] daoPackage = commonProperties.getDaoPackage();
 			log.info("当前服务daoPackage:{}", Arrays.toString(daoPackage));

@@ -19,6 +19,7 @@ import tk.mybatis.mapper.autoconfigure.MybatisProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 数据库和表格自动生成器
@@ -44,6 +45,7 @@ public class Generator {
 	private DataLockService dataLockService;
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	private AtomicBoolean loaded = new AtomicBoolean(false);
 	
 	@EventListener
 	public void listener(ContextRefreshedEvent contextRefreshedEvent) throws Exception {
@@ -52,6 +54,11 @@ public class Generator {
 		}
 		if (!commonProperties.getGeneratorEnable()) {
 			return;
+		}
+		if (loaded.get()) {
+			return;
+		} else {
+			loaded.set(true);
 		}
 		String[] entityPackages;
 		String jdbcUrl;
