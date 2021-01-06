@@ -6,9 +6,8 @@ import mt.common.entity.DataLock;
 import mt.common.mybatis.event.AfterInitEvent;
 import mt.common.mybatis.event.BeforeInitEvent;
 import mt.common.service.DataLockService;
-import mt.generator.mybatis.utils.MySQLEntityHelper;
-import mt.generator.mybatis.utils.SqlServerEntityHelper;
-import org.apache.commons.lang3.StringUtils;
+import mt.generator.mybatis.utils.GenerateHelper;
+import mt.generator.mybatis.utils.IParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -45,7 +44,9 @@ public class Generator {
 	private DataLockService dataLockService;
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-	private AtomicBoolean loaded = new AtomicBoolean(false);
+	@Autowired
+	private List<IParser> parsers;
+	private final AtomicBoolean loaded = new AtomicBoolean(false);
 	
 	@EventListener
 	public void listener(ContextRefreshedEvent contextRefreshedEvent) throws Exception {
@@ -82,15 +83,19 @@ public class Generator {
 		AfterInitEvent afterInitEvent = new AfterInitEvent(this);
 		
 		try {
-			if ("com.mysql.cj.jdbc.Driver".equals(driverClass.trim()) || StringUtils.equals("com.mysql.jdbc.Driver", driverClass.trim())) {
-				//mysql数据库
-				new MySQLEntityHelper(jdbcUrl, driverClass, user, password).init(entityPackages, afterInitEvent);
-			} else if (StringUtils.equals("com.microsoft.sqlserver.jdbc.SQLServerDriver", driverClass.trim())) {
-				//sqlserver数据库
-				new SqlServerEntityHelper(jdbcUrl, driverClass, user, password).init(entityPackages, afterInitEvent);
+			boolean generated = false;
+			for (IParser parser : parsers) {
+				if (parser.support(driverClass)) {
+					new GenerateHelper(jdbcUrl, driverClass, user, password, parser).init(entityPackages, afterInitEvent);
+					generated = true;
+					break;
+				}
+			}
+			if (!generated) {
+				log.warn("没有找到合适的表生成器：" + driverClass);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 			System.exit(0);
 		}
 		

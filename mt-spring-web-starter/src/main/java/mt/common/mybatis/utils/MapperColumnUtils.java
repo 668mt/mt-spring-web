@@ -36,15 +36,19 @@ public class MapperColumnUtils {
 	public static String parseColumn(String columnName, String entityClassName) {
 		try {
 			Class<?> entityClass = Class.forName(entityClassName);
-			Field field = ReflectUtils.findField(entityClass, columnName);
-			if (field != null) {
-				Column column = field.getAnnotation(Column.class);
-				if (column != null && StringUtils.isNotBlank(column.name())) {
-					return column.name();
-				}
-			}
+			return parseColumn(columnName, entityClass);
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static String parseColumn(String columnName, Class<?> entityClass) {
+		Field field = ReflectUtils.findField(entityClass, columnName);
+		if (field != null) {
+			Column column = field.getAnnotation(Column.class);
+			if (column != null && StringUtils.isNotBlank(column.name())) {
+				return column.name();
+			}
 		}
 		return parseColumn(columnName);
 	}

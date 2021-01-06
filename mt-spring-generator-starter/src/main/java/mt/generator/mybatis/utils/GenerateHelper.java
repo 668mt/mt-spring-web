@@ -1,5 +1,7 @@
 package mt.generator.mybatis.utils;
 
+import lombok.extern.slf4j.Slf4j;
+import mt.common.annotation.ForeignKey;
 import mt.common.annotation.GenerateOrder;
 import mt.common.config.CommonProperties;
 import mt.common.entity.DataLock;
@@ -7,13 +9,15 @@ import mt.common.entity.IdGenerate;
 import mt.common.mybatis.event.AfterInitEvent;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.utils.SpringUtils;
+import mt.generator.mybatis.annotation.Index;
+import mt.generator.mybatis.annotation.Indexs;
+import mt.generator.mybatis.annotation.UniqueIndex;
+import mt.generator.mybatis.annotation.UniqueIndexs;
 import mt.utils.ClassUtils;
 import mt.utils.MyUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.util.Assert;
 
 import javax.persistence.Column;
@@ -22,8 +26,8 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 实体工具类
@@ -34,76 +38,25 @@ import java.util.*;
  * @author Martin
  * @date 2017-10-22 下午3:37:37
  */
-public abstract class EntityHelper {
-	public final Log log = LogFactory.getLog(EntityHelper.class);
+@Slf4j
+public class GenerateHelper {
 	/**
 	 * 外键关系
 	 */
-	public static List<String> foreightKeys = new ArrayList<>();
-	protected String currentTableName;
+	public List<String> foreightKeys = new ArrayList<>();
 	
-	/**
-	 * 数据源
-	 *
-	 * @author Martin
-	 * @ClassName: DataSource
-	 * @Description:
-	 * @date 2017-10-23 下午12:56:26
-	 */
-	public enum DataSource {
-		MySQL, SqlServer, Oracle
+	public boolean createDatabase() {
+		String databaseName = iParser.parseDatabaseName(jdbcUrl);
+		String masterJdbcUrl = iParser.getMasterJdbcUrl(jdbcUrl);
+		Jdbc masterJdbc = new Jdbc(driverClass, masterJdbcUrl, user, password);
+		if (!iParser.isExistDatabase(databaseName, masterJdbc)) {
+			log.info("初始化自动创建数据库...");
+			masterJdbc.execute("create database " + databaseName);
+			log.info("创建数据库：" + databaseName);
+			return true;
+		}
+		return false;
 	}
-	
-	/**
-	 * 获取数据源
-	 *
-	 * @param driverClass
-	 * @param jdbcUrl
-	 * @param user
-	 * @param password
-	 * @return
-	 */
-	public Jdbc getJdbc(String driverClass, String jdbcUrl, String user, String password) {
-		return new Jdbc(driverClass, jdbcUrl, user, password);
-	}
-	
-	/**
-	 * 获取数据库名
-	 *
-	 * @return
-	 */
-	public abstract String getDatabaseName();
-	
-	public Jdbc getJdbc() {
-		return new Jdbc(driverClass, jdbcUrl, user, password);
-	}
-	
-	public Jdbc getJdbc(String jdbcUrl) {
-		return new Jdbc(driverClass, jdbcUrl, user, password);
-	}
-	
-	/**
-	 * 是否存在数据库
-	 *
-	 * @param databaseName
-	 * @return
-	 */
-	public abstract boolean isExistDatabase(String databaseName);
-	
-	/**
-	 * 是否存在表
-	 *
-	 * @param tableName
-	 * @return
-	 */
-	public abstract boolean isExistTable(String tableName);
-	
-	/**
-	 * 检查是否有数据库，没有就新建
-	 *
-	 * @return 是否创建
-	 */
-	public abstract boolean checkDatabase();
 	
 	/**
 	 * 初始化自动创建表
@@ -114,7 +67,7 @@ public abstract class EntityHelper {
 	public void init(String[] entityPackages, AfterInitEvent afterInitEvent) {
 		Assert.notNull(afterInitEvent, "afterInitEvent事件不能为空");
 		//检查数据库
-		afterInitEvent.setCreateDatabase(checkDatabase());
+		afterInitEvent.setCreateDatabase(createDatabase());
 		
 		Set<Class<?>> allEntitys = new HashSet<>();
 		if (entityPackages != null) {
@@ -129,17 +82,16 @@ public abstract class EntityHelper {
 		List<String> list = new ArrayList<>();
 		for (Class<?> entityClass : allEntitys) {
 			String tableName = getTableName(entityClass);
-			this.currentTableName = tableName;
-			if (!isExistTable(tableName)) {
+			if (!iParser.isExistTable(tableName, iParser.parseDatabaseName(jdbcUrl), jdbc)) {
 				//建表
-				getJdbc().execute(getCreateTableSql(entityClass));
+				jdbc.execute(getCreateTableSql(entityClass));
 				list.add(tableName);
 			}
 		}
 		List<String> foreightSuccess = new ArrayList<>();
 		for (String sql : foreightKeys) {
 			//建外键
-			getJdbc().execute(sql);
+			jdbc.execute(sql);
 			foreightSuccess.add(sql);
 		}
 		
@@ -168,10 +120,12 @@ public abstract class EntityHelper {
 	 * @return
 	 */
 	public String getTableName(Class<?> entityClass) {
-		if (entityClass.equals(IdGenerate.class))
+		if (entityClass.equals(IdGenerate.class)) {
 			return SpringUtils.getBean(CommonProperties.class).getIdGenerateTableName();
-		if (entityClass.equals(DataLock.class))
+		}
+		if (entityClass.equals(DataLock.class)) {
 			return SpringUtils.getBean(CommonProperties.class).getDataLockTableName();
+		}
 		Table table = entityClass.getAnnotation(Table.class);
 		String tableName = entityClass.getSimpleName();
 		if (table != null) {
@@ -220,71 +174,13 @@ public abstract class EntityHelper {
 	 * @return
 	 */
 	public String getColumnDefinition(Field field) {
-		String columnDefinition;
-		Class<?> type = field.getType();
 		Column column = field.getAnnotation(Column.class);
-		if (column != null && StringUtils.isNotBlank(column.columnDefinition())) {
-			String c = column.columnDefinition();
-			if (c.toLowerCase().equals("varchar(max)")) {
-				return "text";
-			} else if (c.toLowerCase().equals("image")) {
-				return "blob";
-			}
-			return c;
+		String defaultColumnDefinition = iParser.getColumnDefinition(column, field.getType());
+		String identitySql = iParser.getIdentitySql(field);
+		if (identitySql == null) {
+			identitySql = "";
 		}
-		if (type.isAssignableFrom(Integer.class)) {
-			columnDefinition = "int";
-		} else if (type.isAssignableFrom(Boolean.class)) {
-			columnDefinition = "int";
-		} else if (type.isAssignableFrom(Date.class)) {
-			columnDefinition = "datetime";
-		} else if (type.isAssignableFrom(Long.class)) {
-			columnDefinition = "bigint";
-		} else if (type.isAssignableFrom(BigDecimal.class)) {
-			int precision = 21;
-			int scale = 6;
-			if (column != null) {
-				if (column.precision() > 0) {
-					precision = column.precision();
-				}
-				if (column.scale() > 0) {
-					scale = column.scale();
-				}
-			}
-			columnDefinition = "numeric(" + precision + "," + scale + ")";
-		} else if (type.isAssignableFrom(String.class)) {
-			if (column != null) {
-				columnDefinition = "varchar(" + column.length() + ")";
-			} else {
-				columnDefinition = "varchar(100)";
-			}
-		} else if (type.isAssignableFrom(Enum.class)) {
-			columnDefinition = "varchar(100)";
-		} else {
-			columnDefinition = "varchar(500)";
-		}
-		return columnDefinition + " " + getIdentitySql(field);
-	}
-	
-	public String getIdentitySql(Field field) {
-		return "";
-	}
-	
-	/**
-	 * 获取主键sql语句
-	 *
-	 * @param fields
-	 * @return
-	 */
-	public String getPriamryKeySql(List<Field> fields) {
-		StringBuilder sql = new StringBuilder();
-		for (Field field : fields) {
-			if (field.getAnnotation(Id.class) != null) {
-				sql.append(getColumnName(field)).append(",");
-			}
-		}
-		sql = new StringBuilder("primary key(" + sql.substring(0, sql.lastIndexOf(",")) + ")");
-		return sql.toString();
+		return defaultColumnDefinition + " " + identitySql;
 	}
 	
 	/**
@@ -311,17 +207,66 @@ public abstract class EntityHelper {
 			}
 		}
 		//添加主外键信息
-		sb.append("\t").append(getPriamryKeySql(findAllFields)).append("\r\n");
+		List<String> ids = findAllFields.stream().filter(field -> field.getAnnotation(Id.class) != null).map(this::getColumnName).collect(Collectors.toList());
+		String primaryKeySql = iParser.getPrimaryKeySql(ids);
+		if (StringUtils.isNotBlank(primaryKeySql)) {
+			sb.append("\t").append(primaryKeySql).append(",\r\n");
+		}
+		List<UniqueIndex> uniqueIndexList = new ArrayList<>();
+		UniqueIndexs uniqueIndexs = entityClass.getAnnotation(UniqueIndexs.class);
+		if (uniqueIndexs != null) {
+			UniqueIndex[] indexs = uniqueIndexs.value();
+			uniqueIndexList.addAll(Arrays.asList(indexs));
+		}
+		UniqueIndex uniqueIndex = entityClass.getAnnotation(UniqueIndex.class);
+		if (uniqueIndex != null) {
+			uniqueIndexList.add(uniqueIndex);
+		}
+		uniqueIndexList.forEach(u -> {
+			List<String> columns = Arrays.stream(u.columns()).map(s -> MapperColumnUtils.parseColumn(s, entityClass)).collect(Collectors.toList());
+			String uniqueSql = iParser.getUniqueIndexSql(u.name(), columns);
+			if (StringUtils.isNotBlank(uniqueSql)) {
+				sb.append("\t").append(uniqueSql).append(",\r\n");
+			}
+		});
+		List<Index> indexList = new ArrayList<>();
+		Indexs indexs = entityClass.getAnnotation(Indexs.class);
+		if (indexs != null) {
+			indexList.addAll(Arrays.asList(indexs.value()));
+		}
+		Index index = entityClass.getAnnotation(Index.class);
+		if (index != null) {
+			indexList.add(index);
+		}
+		indexList.forEach(i -> {
+			List<String> columns = Arrays.stream(i.columns()).map(s -> MapperColumnUtils.parseColumn(s, entityClass)).collect(Collectors.toList());
+			String indexSql = iParser.getIndexSql(i.name(), columns);
+			if (StringUtils.isNotBlank(indexSql)) {
+				sb.append("\t").append(indexSql).append(",\r\n");
+			}
+		});
+		
 		//获取主外键信息
 		for (Field field : findAllFields) {
 			if (!Modifier.isFinal(field.getModifiers())) {
-				String foreightKeySql = getForeightKeySql(field, tableName);
-				if (StringUtils.isNotBlank(foreightKeySql)) {
-					foreightKeys.add(foreightKeySql);
+				ForeignKey foreignKey = field.getAnnotation(ForeignKey.class);
+				if (foreignKey != null) {
+					Class<?> aClass = foreignKey.tableEntity();
+					String targetTable = foreignKey.table();
+					if (StringUtils.isBlank(targetTable)) {
+						Assert.notNull(aClass, "@ForeignKey的tableEntity和table不能同时为空");
+						targetTable = getTableName(aClass);
+					}
+					String foreignKeySql = iParser.getForeignKeySql(tableName, targetTable, getColumnName(field), foreignKey);
+					foreightKeys.add(foreignKeySql);
 				}
 			}
 		}
-		return sb.toString() + ")";
+		String sql = sb.toString().trim();
+		if (sql.endsWith(",")) {
+			sql = sql.substring(0, sql.length() - 1);
+		}
+		return sql + "\r\n)";
 	}
 	
 	/**
@@ -339,56 +284,23 @@ public abstract class EntityHelper {
 		return entitys;
 	}
 	
-	private String jdbcUrl;
-	private String driverClass;
-	private String user;
-	private String password;
+	private final String jdbcUrl;
+	private final String driverClass;
+	private final String user;
+	private final String password;
+	private final IParser iParser;
+	private final Jdbc jdbc;
 	
-	public EntityHelper(String jdbcUrl, String driverClass, String user,
-						String password) {
-		super();
+	public GenerateHelper(String jdbcUrl, String driverClass, String user,
+						  String password, IParser iParser) {
 		this.jdbcUrl = jdbcUrl;
 		this.driverClass = driverClass;
 		this.user = user;
 		this.password = password;
+		Assert.state(iParser.support(driverClass), "iParser[" + iParser + "] not support " + driverClass);
+		this.iParser = iParser;
+		this.jdbc = new Jdbc(driverClass, jdbcUrl, user, password);
 	}
 	
-	public String getJdbcUrl() {
-		return jdbcUrl;
-	}
 	
-	public void setJdbcUrl(String jdbcUrl) {
-		this.jdbcUrl = jdbcUrl;
-	}
-	
-	public String getDriverClass() {
-		return driverClass;
-	}
-	
-	public void setDriverClass(String driverClass) {
-		this.driverClass = driverClass;
-	}
-	
-	public String getUser() {
-		return user;
-	}
-	
-	public void setUser(String user) {
-		this.user = user;
-	}
-	
-	public String getPassword() {
-		return password;
-	}
-	
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	
-	/**
-	 * 查询外键
-	 *
-	 * @return
-	 */
-	public abstract String getForeightKeySql(Field field, String tableName);
 }
