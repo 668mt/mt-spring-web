@@ -5,12 +5,14 @@ import mt.common.tkmapper.Filter;
 import mt.common.tkmapper.OrFilter;
 import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.entity.Example;
 import tk.mybatis.mapper.entity.Example.Criteria;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,7 +58,7 @@ public class MyBatisUtils {
 		if (list == null) {
 			List<Field> allFields = ReflectUtils.findAllFields(entityClass);
 			list = new ArrayList<>();
-			if (ObjectUtils.isNotEmpty(allFields)) {
+			if (CollectionUtils.isNotEmpty(allFields)) {
 				for (Field allField : allFields) {
 					list.add(allField.getName());
 				}
@@ -92,7 +94,7 @@ public class MyBatisUtils {
 	 */
 	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
 		Example example = new Example(entityClass);
-		if (ObjectUtils.isNotEmpty(filters)) {
+		if (CollectionUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
 				if (filterInterface instanceof OrFilter) {
 					OrFilter orFilter = (OrFilter) filterInterface;
@@ -118,7 +120,7 @@ public class MyBatisUtils {
 								break;
 							case in:
 								if (value instanceof Object[]) {
-									criteria.orIn(property, ObjectUtils.toList((Object[]) value));
+									criteria.orIn(property, Arrays.asList((Object[]) value));
 								} else if (value instanceof Iterable) {
 									criteria.orIn(property, (Iterable<?>) value);
 								} else {
@@ -149,7 +151,7 @@ public class MyBatisUtils {
 								break;
 							case notIn:
 								if (value instanceof Object[]) {
-									criteria.orNotIn(property, ObjectUtils.toList((Object[]) value));
+									criteria.orNotIn(property, Arrays.asList((Object[]) value));
 								} else if (value instanceof Iterable) {
 									criteria.orNotIn(property, (Iterable<?>) value);
 								} else {
@@ -194,7 +196,7 @@ public class MyBatisUtils {
 							break;
 						case in:
 							if (value instanceof Object[]) {
-								example.and().andIn(property, ObjectUtils.toList((Object[]) value));
+								example.and().andIn(property, Arrays.asList((Object[]) value));
 							} else if (value instanceof Iterable) {
 								example.and().andIn(property, (Iterable<?>) value);
 							} else {
@@ -225,7 +227,7 @@ public class MyBatisUtils {
 							break;
 						case notIn:
 							if (value instanceof Object[]) {
-								example.and().andNotIn(property, ObjectUtils.toList((Object[]) value));
+								example.and().andNotIn(property, Arrays.asList((Object[]) value));
 							} else if (value instanceof Iterable) {
 								example.and().andNotIn(property, (Iterable<?>) value);
 							} else {

@@ -14,6 +14,7 @@ import mt.utils.JsUtils;
 import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -49,7 +50,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	public List<mt.common.tkmapper.Filter> parseCondition(Object condition) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		List<String> condition2 = ReflectUtils.getValue(condition, "condition", List.class);
-		if (ObjectUtils.isNotEmpty(condition2)) {
+		if (CollectionUtils.isNotEmpty(condition2)) {
 			for (String sql : condition2) {
 				filters.add(new mt.common.tkmapper.Filter(sql, Operator.condition));
 			}
@@ -66,12 +67,12 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					throw new RuntimeException(e);
 				}
 				if (value instanceof List) {
-					if (ObjectUtils.isEmpty((List<?>) value)) {
+					if (CollectionUtils.isEmpty((List<?>) value)) {
 						continue;
 					}
 				}
 				if (value instanceof Object[]) {
-					if (ObjectUtils.isEmpty((Object[]) value)) {
+					if (ArrayUtils.isEmpty((Object[]) value)) {
 						continue;
 					}
 				}
@@ -199,7 +200,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean exists(String columnName, Object value) {
 		List<T> list = findList(columnName, value);
-		return ObjectUtils.isNotEmpty(list);
+		return CollectionUtils.isNotEmpty(list);
 	}
 	
 	@Override
@@ -246,7 +247,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Transactional(readOnly = true)
 	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters) {
 		List<T> findByFilters = findByFilters(filters);
-		if (ObjectUtils.isEmpty(findByFilters)) {
+		if (CollectionUtils.isEmpty(findByFilters)) {
 			return null;
 		}
 		if (findByFilters.size() > 1) {
@@ -336,11 +337,11 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean existsByFilters(List<mt.common.tkmapper.Filter> filters) {
 		List<T> byFilters = findByFilters(filters);
-		return ObjectUtils.isNotEmpty(byFilters);
+		return CollectionUtils.isNotEmpty(byFilters);
 	}
 	
 	@Override
 	public boolean existsByFilter(mt.common.tkmapper.Filter filter) {
-		return ObjectUtils.isNotEmpty(findByFilter(filter));
+		return CollectionUtils.isNotEmpty(findByFilter(filter));
 	}
 }

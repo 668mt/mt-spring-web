@@ -11,7 +11,9 @@ import mt.common.starter.message.messagehandler.DefaultMessageHandler;
 import mt.common.starter.message.messagehandler.MessageHandler;
 import mt.utils.*;
 import mt.utils.common.ObjectUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,10 +22,7 @@ import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @ClassName: MessageUtils
@@ -110,20 +109,20 @@ public class MessageUtils {
 		}
 		
 		List<String> includeList = null;
-		if (ObjectUtils.isNotEmpty(includeFields)) {
-			includeList = ObjectUtils.toList(includeFields);
+		if (ArrayUtils.isNotEmpty(includeFields)) {
+			includeList = Arrays.asList(includeFields);
 		}
 		//拉出mybatis缓存
 		JsonUtils.toJson(object);
 		//查找实体类所有字段
 		List<Field> fields = ReflectUtils.findAllFields(object.getClass());
-		if (ObjectUtils.isEmpty(fields)) {
+		if (CollectionUtils.isEmpty(fields)) {
 			return object;
 		}
 		
 		for (Field field : fields) {
 			try {
-				if (ObjectUtils.isNotEmpty(includeList) && !includeList.contains(field.getName())) {
+				if (CollectionUtils.isNotEmpty(includeList) && !includeList.contains(field.getName())) {
 					continue;
 				}
 				if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
@@ -137,9 +136,8 @@ public class MessageUtils {
 						continue;
 					}
 					Collection collection = (Collection) value;
-					Iterator iterator = collection.iterator();
-					while (iterator.hasNext()) {
-						messageRecursive(iterator.next());
+					for (Object o : collection) {
+						messageRecursive(o);
 					}
 				}
 				//处理其它类型
@@ -248,7 +246,7 @@ public class MessageUtils {
 			return param;
 		}
 		List<String> findList = RegexUtils.findList(param, "#(\\w+)", 1);
-		if (ObjectUtils.isEmpty(findList)) {
+		if (CollectionUtils.isEmpty(findList)) {
 			//没有变量设置
 			return param;
 		}
@@ -291,13 +289,13 @@ public class MessageUtils {
 	 * @return
 	 */
 	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, String... includeFields) {
-		if (pageInfo != null && ObjectUtils.isNotEmpty(pageInfo.getList())) {
+		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
 				messageRecursive(t, includeFields);
 			}
 		}
-		if (pageInfo != null && ObjectUtils.isNotEmpty(pageInfo.getList())) {
+		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
 				messageRecursive(t, includeFields);
@@ -307,7 +305,7 @@ public class MessageUtils {
 	}
 	
 	public <T> Collection<T> dealWithCollection(Collection<T> list, String... includeFields) {
-		if (ObjectUtils.isNotEmpty(list)) {
+		if (CollectionUtils.isNotEmpty(list)) {
 			for (T t : list) {
 				messageRecursive(t, includeFields);
 			}

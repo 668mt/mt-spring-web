@@ -1,6 +1,6 @@
 package mt.common.starter.message.messagehandler;
 
-import mt.utils.ConvertUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 
 /**
  * @Author Martin
@@ -10,14 +10,16 @@ public interface MessageHandler {
 	
 	@SuppressWarnings("unchecked")
 	default <T> T getParam(Object[] params, int index, Class<T> type) {
-		if (params == null)
+		if (params == null) {
 			return null;
+		}
 		if (index + 1 > params.length) {
 			return null;
 		}
 		Object param = params[index];
-		if (param == null)
+		if (param == null) {
 			return null;
+		}
 		return (T) ConvertUtils.convert(param, type);
 	}
 	

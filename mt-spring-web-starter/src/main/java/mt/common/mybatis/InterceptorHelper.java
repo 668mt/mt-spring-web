@@ -8,6 +8,7 @@ import mt.common.utils.SpringUtils;
 import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -157,7 +158,7 @@ public class InterceptorHelper {
 		
 		//获取主键字段
 		List<Field> idFields = ReflectUtils.findAllFields(parameter.getClass(), Id.class);
-		if (ObjectUtils.isEmpty(idFields)) {
+		if (CollectionUtils.isEmpty(idFields)) {
 			return new HashMap<>();
 		}
 		try {
@@ -172,13 +173,13 @@ public class InterceptorHelper {
 				primaryKeys.put(idField.getName(), idValue);
 			}
 			String tableName = getTableName(parameter);
-			String sql = "SELECT * FROM " + tableName + " WHERE 1=1";
+			StringBuilder sql = new StringBuilder("SELECT * FROM " + tableName + " WHERE 1=1");
 			List<Object> args = new ArrayList<>();
 			for (Map.Entry<String, Object> entry : primaryKeys.entrySet()) {
-				sql += " and " + entry.getKey() + " = ?";
+				sql.append(" and ").append(entry.getKey()).append(" = ?");
 				args.add(entry.getValue());
 			}
-			return jdbcTemplate.queryForMap(sql, args.toArray());
+			return jdbcTemplate.queryForMap(sql.toString(), args.toArray());
 		} catch (EmptyResultDataAccessException e2) {
 			return null;
 		} catch (Exception e) {
@@ -206,7 +207,7 @@ public class InterceptorHelper {
 	
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
 		List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
-		if (ObjectUtils.isEmpty(createdByFields)) {
+		if (CollectionUtils.isEmpty(createdByFields)) {
 			return;
 		}
 		//数据库对象

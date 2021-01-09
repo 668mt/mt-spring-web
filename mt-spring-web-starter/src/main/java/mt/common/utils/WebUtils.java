@@ -1,6 +1,6 @@
 package mt.common.utils;
 
-import mt.utils.ConvertUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
@@ -349,8 +349,7 @@ public final class WebUtils {
 			if (parameterMap != null) {
 				for (Entry<String, Object> entry : parameterMap.entrySet()) {
 					String name = entry.getKey();
-//					String value = ConvertUtils.convert(entry.getValue());
-					String value = ConvertUtils.convert(entry.getValue(),String.class);
+					String value = (String) ConvertUtils.convert(entry.getValue(), String.class);
 					if (StringUtils.isNotEmpty(name)) {
 						nameValuePairs.add(new BasicNameValuePair(name, value));
 					}
@@ -399,8 +398,7 @@ public final class WebUtils {
 			if (parameterMap != null) {
 				for (Entry<String, Object> entry : parameterMap.entrySet()) {
 					String name = entry.getKey();
-//					String value = ConvertUtils.convert(entry.getValue());
-					String value = ConvertUtils.convert(entry.getValue(),String.class);
+					String value = (String) ConvertUtils.convert(entry.getValue(), String.class);
 					if (StringUtils.isNotEmpty(name)) {
 						nameValuePairs.add(new BasicNameValuePair(name, value));
 					}

@@ -3,7 +3,7 @@ package mt.common.config;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.service.IdGenerateService;
 import mt.utils.BasePackageUtils;
-import mt.utils.common.ObjectUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,10 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @Author Martin
@@ -56,7 +59,7 @@ public class CommonConfig implements InitializingBean {
 			if (StringUtils.isBlank(commonProperties.getBasePackage())) {
 				commonProperties.setBasePackage(basePackage);
 			}
-			if (ObjectUtils.isEmpty(commonProperties.getGenerateEntityPackages())) {
+			if (ArrayUtils.isEmpty(commonProperties.getGenerateEntityPackages())) {
 				commonProperties.setGenerateEntityPackages(new String[]{basePackage + ".entity"});
 			}
 			break;
@@ -70,7 +73,7 @@ public class CommonConfig implements InitializingBean {
 			if (mapperScan != null) {
 				String[] daoPackages1 = mapperScan.value();
 				String[] daoPackages2 = mapperScan.basePackages();
-				if (ObjectUtils.isNotEmpty(daoPackages1)) {
+				if (ArrayUtils.isNotEmpty(daoPackages1)) {
 					daoPackageList.addAll(Arrays.asList(daoPackages1));
 				} else {
 					daoPackageList.addAll(Arrays.asList(daoPackages2));
@@ -85,7 +88,7 @@ public class CommonConfig implements InitializingBean {
 			if (mapperScan != null) {
 				String[] daoPackages1 = mapperScan.value();
 				String[] daoPackages2 = mapperScan.basePackages();
-				if (ObjectUtils.isNotEmpty(daoPackages1)) {
+				if (ArrayUtils.isNotEmpty(daoPackages1)) {
 					daoPackageList.addAll(Arrays.asList(daoPackages1));
 				} else {
 					daoPackageList.addAll(Arrays.asList(daoPackages2));
@@ -93,7 +96,7 @@ public class CommonConfig implements InitializingBean {
 			}
 		}
 		
-		if (ObjectUtils.isEmpty(commonProperties.getDaoPackage())) {
+		if (ArrayUtils.isEmpty(commonProperties.getDaoPackage())) {
 			commonProperties.setDaoPackage(daoPackageList.toArray(new String[0]));
 		}
 		
