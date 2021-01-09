@@ -23,7 +23,7 @@ public class IPUtil {
 	public static String getLocalIp() {
 		try {
 			Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-			InetAddress ip = null;
+			InetAddress ip;
 			while (allNetInterfaces.hasMoreElements()) {
 				NetworkInterface netInterface = allNetInterfaces.nextElement();
 				Enumeration<InetAddress> addresses = netInterface.getInetAddresses();

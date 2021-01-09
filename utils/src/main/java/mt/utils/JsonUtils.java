@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import mt.utils.common.Assert;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -337,9 +338,8 @@ public final class JsonUtils {
 			gen.writeRaw('"');//写入JSON中字符串的结束引号
 		}
 		
-		@SuppressWarnings("deprecation")
 		public static List<Object> toJavaList(String json) {
-			Assert.notNull(json);
+			Assert.notNull(json, "json can not be null");
 			return JsonUtils.toObject(json, new TypeReference<List<Object>>() {
 			});
 		}

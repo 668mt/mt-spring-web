@@ -3,7 +3,7 @@ package mt.common.mybatis.utils;
 import mt.common.mybatis.exception.NotSupportException;
 import mt.common.tkmapper.Filter;
 import mt.common.tkmapper.OrFilter;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.entity.Example;
@@ -56,7 +56,7 @@ public class MyBatisUtils {
 		if (list == null) {
 			List<Field> allFields = ReflectUtils.findAllFields(entityClass);
 			list = new ArrayList<>();
-			if (MyUtils.isNotEmpty(allFields)) {
+			if (ObjectUtils.isNotEmpty(allFields)) {
 				for (Field allField : allFields) {
 					list.add(allField.getName());
 				}
@@ -92,7 +92,7 @@ public class MyBatisUtils {
 	 */
 	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
 		Example example = new Example(entityClass);
-		if (MyUtils.isNotEmpty(filters)) {
+		if (ObjectUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
 				if (filterInterface instanceof OrFilter) {
 					OrFilter orFilter = (OrFilter) filterInterface;
@@ -118,7 +118,7 @@ public class MyBatisUtils {
 								break;
 							case in:
 								if (value instanceof Object[]) {
-									criteria.orIn(property, MyUtils.toList((Object[]) value));
+									criteria.orIn(property, ObjectUtils.toList((Object[]) value));
 								} else if (value instanceof Iterable) {
 									criteria.orIn(property, (Iterable<?>) value);
 								} else {
@@ -149,7 +149,7 @@ public class MyBatisUtils {
 								break;
 							case notIn:
 								if (value instanceof Object[]) {
-									criteria.orNotIn(property, MyUtils.toList((Object[]) value));
+									criteria.orNotIn(property, ObjectUtils.toList((Object[]) value));
 								} else if (value instanceof Iterable) {
 									criteria.orNotIn(property, (Iterable<?>) value);
 								} else {
@@ -194,7 +194,7 @@ public class MyBatisUtils {
 							break;
 						case in:
 							if (value instanceof Object[]) {
-								example.and().andIn(property, MyUtils.toList((Object[]) value));
+								example.and().andIn(property, ObjectUtils.toList((Object[]) value));
 							} else if (value instanceof Iterable) {
 								example.and().andIn(property, (Iterable<?>) value);
 							} else {
@@ -225,7 +225,7 @@ public class MyBatisUtils {
 							break;
 						case notIn:
 							if (value instanceof Object[]) {
-								example.and().andNotIn(property, MyUtils.toList((Object[]) value));
+								example.and().andNotIn(property, ObjectUtils.toList((Object[]) value));
 							} else if (value instanceof Iterable) {
 								example.and().andNotIn(property, (Iterable<?>) value);
 							} else {

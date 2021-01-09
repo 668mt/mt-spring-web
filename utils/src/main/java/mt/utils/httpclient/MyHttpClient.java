@@ -109,7 +109,9 @@ public class MyHttpClient {
 	}
 	
 	public void addParam(String key, String value) {
-		if (params == null) params = new HashMap<>();
+		if (params == null) {
+			params = new HashMap<>();
+		}
 		params.put(key, value);
 		setFormSubmit(true);
 	}

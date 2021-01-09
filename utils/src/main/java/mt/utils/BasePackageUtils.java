@@ -21,8 +21,9 @@ public class BasePackageUtils {
 		//定义一个枚举的集合 并循环来处理这个目录下的things
 		try{
 			URL url = Thread.currentThread().getContextClassLoader().getResource(packageDirName);
-			if(url == null)
+			if(url == null) {
 				return classes;
+			}
 			String protocol = url.getProtocol();
 			if("file".equals(protocol)){
 				String filePath = URLDecoder.decode(url.getFile(), "UTF-8");

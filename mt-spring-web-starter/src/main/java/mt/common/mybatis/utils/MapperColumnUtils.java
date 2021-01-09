@@ -1,7 +1,7 @@
 package mt.common.mybatis.utils;
 
 import mt.common.utils.SpringUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import mt.utils.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +25,7 @@ public class MapperColumnUtils {
 	 */
 	public static String camelhump(String property) {
 		List<String[]> list = RegexUtils.findList(property, "([a-z])([A-Z])", new Integer[]{0, 1, 2});
-		if (MyUtils.isNotEmpty(list)) {
+		if (ObjectUtils.isNotEmpty(list)) {
 			for (String[] group : list) {
 				property = property.replace(group[0], group[1] + "_" + Strings.toLowerCase(group[2]));
 			}

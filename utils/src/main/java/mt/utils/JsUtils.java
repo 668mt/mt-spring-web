@@ -1,6 +1,8 @@
 package mt.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import mt.utils.common.Assert;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -25,9 +27,8 @@ public class JsUtils {
 		return (T) ConvertUtils.convert(value, Object.class);
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static List<Object> toJavaList(String json) {
-		Assert.notNull(json);
+		Assert.notNull(json, "json can not be null");
 		return JsonUtils.toObject(json, new TypeReference<List<Object>>() {
 		});
 	}

@@ -1,5 +1,7 @@
 package mt.utils;
 
+import mt.utils.common.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -8,13 +10,13 @@ import java.util.regex.Pattern;
 public final class RegexUtils {
 	
 	public static Matcher getMatcher(String str, String regex, Integer flags) {
+		Pattern pattern;
 		if (flags == null) {
-			Pattern pattern = Pattern.compile(regex);
-			return pattern.matcher(str);
+			pattern = Pattern.compile(regex);
 		} else {
-			Pattern pattern = Pattern.compile(regex, flags);
-			return pattern.matcher(str);
+			pattern = Pattern.compile(regex, flags);
 		}
+		return pattern.matcher(str);
 	}
 	
 	/**
@@ -31,7 +33,7 @@ public final class RegexUtils {
 	
 	public static String findFirst(String str, String regex, Integer group, Integer flags) {
 		Matcher matcher = getMatcher(str, regex, flags);
-		while (matcher.find()) {
+		if (matcher.find()) {
 			if (group != null) {
 				return matcher.group(group);
 			} else {
@@ -138,7 +140,7 @@ public final class RegexUtils {
 	
 	public static String replaceAll(String str, String regex, Integer[] group, GroupDeal groupDeal) {
 		List<String[]> list = findList(str, regex, group);
-		if (MyUtils.isEmpty(list)) {
+		if (CollectionUtils.isEmpty(list)) {
 			return str;
 		}
 		for (String[] groups : list) {

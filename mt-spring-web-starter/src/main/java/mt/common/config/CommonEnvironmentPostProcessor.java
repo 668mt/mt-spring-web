@@ -1,7 +1,7 @@
 package mt.common.config;
 
 import mt.utils.BasePackageUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -20,7 +20,7 @@ public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor{
 		MutablePropertySources propertySources = environment.getPropertySources();
 		Map<String,Object> params = new HashMap<>();
 		
-		String basePackage = MyUtils.nullAsDefault(environment.getProperty("project.base-package",String.class),environment.getProperty("project.basePackage",String.class), BasePackageUtils.getBasePackage(application.getMainApplicationClass()));
+		String basePackage = ObjectUtils.nullAsDefault(environment.getProperty("project.base-package",String.class),environment.getProperty("project.basePackage",String.class), BasePackageUtils.getBasePackage(application.getMainApplicationClass()));
 		params.put("project.base-package", basePackage);
 		params.put("project.basePackage", basePackage);
 		propertySources.addFirst(new CommonPropertySource("commonPropertyResource",params));

@@ -1,4 +1,4 @@
-package mt.utils;
+package mt.utils.executor;
 
 import lombok.Getter;
 import lombok.Setter;

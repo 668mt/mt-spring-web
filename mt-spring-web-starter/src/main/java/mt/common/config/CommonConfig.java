@@ -3,7 +3,7 @@ package mt.common.config;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.service.IdGenerateService;
 import mt.utils.BasePackageUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +56,7 @@ public class CommonConfig implements InitializingBean {
 			if (StringUtils.isBlank(commonProperties.getBasePackage())) {
 				commonProperties.setBasePackage(basePackage);
 			}
-			if (MyUtils.isEmpty(commonProperties.getGenerateEntityPackages())) {
+			if (ObjectUtils.isEmpty(commonProperties.getGenerateEntityPackages())) {
 				commonProperties.setGenerateEntityPackages(new String[]{basePackage + ".entity"});
 			}
 			break;
@@ -70,7 +70,7 @@ public class CommonConfig implements InitializingBean {
 			if (mapperScan != null) {
 				String[] daoPackages1 = mapperScan.value();
 				String[] daoPackages2 = mapperScan.basePackages();
-				if (MyUtils.isNotEmpty(daoPackages1)) {
+				if (ObjectUtils.isNotEmpty(daoPackages1)) {
 					daoPackageList.addAll(Arrays.asList(daoPackages1));
 				} else {
 					daoPackageList.addAll(Arrays.asList(daoPackages2));
@@ -85,7 +85,7 @@ public class CommonConfig implements InitializingBean {
 			if (mapperScan != null) {
 				String[] daoPackages1 = mapperScan.value();
 				String[] daoPackages2 = mapperScan.basePackages();
-				if (MyUtils.isNotEmpty(daoPackages1)) {
+				if (ObjectUtils.isNotEmpty(daoPackages1)) {
 					daoPackageList.addAll(Arrays.asList(daoPackages1));
 				} else {
 					daoPackageList.addAll(Arrays.asList(daoPackages2));
@@ -93,7 +93,7 @@ public class CommonConfig implements InitializingBean {
 			}
 		}
 		
-		if (MyUtils.isEmpty(commonProperties.getDaoPackage())) {
+		if (ObjectUtils.isEmpty(commonProperties.getDaoPackage())) {
 			commonProperties.setDaoPackage(daoPackageList.toArray(new String[0]));
 		}
 		

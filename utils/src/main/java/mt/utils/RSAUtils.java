@@ -5,14 +5,12 @@
  */
 package mt.utils;
 
+import mt.utils.common.Assert;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
@@ -59,7 +57,7 @@ public final class RSAUtils {
 	 * @return 密钥对
 	 */
 	public static KeyPair generateKeyPair(int keySize) {
-		Assert.state(keySize > 0);
+		Assert.state(keySize > 0, "keySize must > 0");
 		
 		try {
 			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KEY_ALGORITHM, PROVIDER);
@@ -77,14 +75,12 @@ public final class RSAUtils {
 	 * @return 私钥
 	 */
 	public static PrivateKey generatePrivateKey(byte[] encodedKey) {
-		Assert.notNull(encodedKey);
+		Assert.notNull(encodedKey, "encodedKey must not null");
 		
 		try {
 			KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM, PROVIDER);
 			return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(encodedKey));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeySpecException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -96,7 +92,7 @@ public final class RSAUtils {
 	 * @return 私钥
 	 */
 	public static PrivateKey generatePrivateKey(String keyString) {
-		Assert.state(StringUtils.isNotBlank(keyString));
+		Assert.state(StringUtils.isNotBlank(keyString), "keyString must not blank");
 		
 		return generatePrivateKey(Base64.decodeBase64(keyString));
 	}
@@ -108,14 +104,12 @@ public final class RSAUtils {
 	 * @return 公钥
 	 */
 	public static PublicKey generatePublicKey(byte[] encodedKey) {
-		Assert.notNull(encodedKey);
+		Assert.notNull(encodedKey, "encodeKey must not null");
 		
 		try {
 			KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM, PROVIDER);
 			return keyFactory.generatePublic(new X509EncodedKeySpec(encodedKey));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeySpecException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -127,7 +121,7 @@ public final class RSAUtils {
 	 * @return 公钥
 	 */
 	public static PublicKey generatePublicKey(String keyString) {
-		Assert.state(StringUtils.isNotBlank(keyString));
+		Assert.state(StringUtils.isNotBlank(keyString), "keyStream must not null");
 		
 		return generatePublicKey(Base64.decodeBase64(keyString));
 	}
@@ -139,7 +133,7 @@ public final class RSAUtils {
 	 * @return 密钥字符串(BASE64编码)
 	 */
 	public static String getKeyString(Key key) {
-		Assert.notNull(key);
+		Assert.notNull(key, "key must not null");
 		return Base64.encodeBase64String(key.getEncoded());
 	}
 	
@@ -152,23 +146,15 @@ public final class RSAUtils {
 	 * @return 密钥
 	 */
 	public static Key getKey(String type, InputStream inputStream, String password) {
-		Assert.state(StringUtils.isNotBlank(type));
-		Assert.notNull(inputStream);
+		Assert.state(StringUtils.isNotBlank(type), "type must not blank");
+		Assert.notNull(inputStream, "inputStream must not null");
 		
 		try {
 			KeyStore keyStore = KeyStore.getInstance(type, PROVIDER);
 			keyStore.load(inputStream, password != null ? password.toCharArray() : null);
 			String alias = keyStore.aliases().hasMoreElements() ? keyStore.aliases().nextElement() : null;
 			return keyStore.getKey(alias, password != null ? password.toCharArray() : null);
-		} catch (KeyStoreException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (CertificateException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IOException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (UnrecoverableKeyException e) {
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | UnrecoverableKeyException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -181,8 +167,8 @@ public final class RSAUtils {
 	 * @return 证书
 	 */
 	public static Certificate getCertificate(String type, InputStream inputStream) {
-		Assert.state(StringUtils.isNotBlank(type));
-		Assert.notNull(inputStream);
+		Assert.state(StringUtils.isNotBlank(type), "type must not blank");
+		Assert.notNull(inputStream, "inputStream must not null");
 		
 		try {
 			CertificateFactory certificateFactory = CertificateFactory.getInstance(type, PROVIDER);
@@ -201,20 +187,16 @@ public final class RSAUtils {
 	 * @return 签名
 	 */
 	public static byte[] sign(String algorithm, PrivateKey privateKey, byte[] data) {
-		Assert.state(StringUtils.isNotBlank(algorithm));
-		Assert.notNull(privateKey);
-		Assert.notNull(data);
+		Assert.state(StringUtils.isNotBlank(algorithm), "algorithm must not blank");
+		Assert.notNull(privateKey, "privateKey must not null");
+		Assert.notNull(data, "data must not null");
 		
 		try {
 			Signature signature = Signature.getInstance(algorithm, PROVIDER);
 			signature.initSign(privateKey);
 			signature.update(data);
 			return signature.sign();
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (SignatureException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -229,21 +211,17 @@ public final class RSAUtils {
 	 * @return 是否验证通过
 	 */
 	public static boolean verify(String algorithm, PublicKey publicKey, byte[] sign, byte[] data) {
-		Assert.state(StringUtils.isNotBlank(algorithm));
-		Assert.notNull(publicKey);
-		Assert.notNull(sign);
-		Assert.notNull(data);
+		Assert.state(StringUtils.isNotBlank(algorithm), "algorithm must not blank");
+		Assert.notNull(publicKey, "publicKey must not null");
+		Assert.notNull(data, "data must not null");
+		Assert.notNull(sign, "sign must not null");
 		
 		try {
 			Signature signature = Signature.getInstance(algorithm, PROVIDER);
 			signature.initVerify(publicKey);
 			signature.update(data);
 			return signature.verify(sign);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (SignatureException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -258,21 +236,17 @@ public final class RSAUtils {
 	 * @return 是否验证通过
 	 */
 	public static boolean verify(String algorithm, Certificate certificate, byte[] sign, byte[] data) {
-		Assert.state(StringUtils.isNotBlank(algorithm));
-		Assert.notNull(certificate);
-		Assert.notNull(sign);
-		Assert.notNull(data);
+		Assert.state(StringUtils.isNotBlank(algorithm), "algorithm must not blank");
+		Assert.notNull(certificate, "certificate must not null");
+		Assert.notNull(data, "data must not null");
+		Assert.notNull(sign, "sign must not null");
 		
 		try {
 			Signature signature = Signature.getInstance(algorithm, PROVIDER);
 			signature.initVerify(certificate);
 			signature.update(data);
 			return signature.verify(sign);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (SignatureException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -285,22 +259,14 @@ public final class RSAUtils {
 	 * @return 密文
 	 */
 	public static byte[] encrypt(PublicKey publicKey, byte[] data) {
-		Assert.notNull(publicKey);
-		Assert.notNull(data);
+		Assert.notNull(publicKey, "publicKey must not null");
+		Assert.notNull(data, "data must not null");
 		
 		try {
 			Cipher cipher = Cipher.getInstance(TRANSFORMATION, PROVIDER);
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			return cipher.doFinal(data);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (NoSuchPaddingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IllegalBlockSizeException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (BadPaddingException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
@@ -313,22 +279,14 @@ public final class RSAUtils {
 	 * @return 明文
 	 */
 	public static byte[] decrypt(PrivateKey privateKey, byte[] data) {
-		Assert.notNull(privateKey);
-		Assert.notNull(data);
+		Assert.notNull(privateKey, "privateKey must not null");
+		Assert.notNull(data, "data must not null");
 		
 		try {
 			Cipher cipher = Cipher.getInstance(TRANSFORMATION, PROVIDER);
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			return cipher.doFinal(data);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (NoSuchPaddingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IllegalBlockSizeException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (BadPaddingException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}

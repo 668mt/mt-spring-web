@@ -5,7 +5,7 @@ import mt.common.annotation.GenerateClass;
 import mt.common.annotation.IdGenerator;
 import mt.common.service.IdGenerateService;
 import mt.common.utils.SpringUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -157,7 +157,7 @@ public class InterceptorHelper {
 		
 		//获取主键字段
 		List<Field> idFields = ReflectUtils.findAllFields(parameter.getClass(), Id.class);
-		if (MyUtils.isEmpty(idFields)) {
+		if (ObjectUtils.isEmpty(idFields)) {
 			return new HashMap<>();
 		}
 		try {
@@ -206,7 +206,7 @@ public class InterceptorHelper {
 	
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
 		List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
-		if (MyUtils.isEmpty(createdByFields)) {
+		if (ObjectUtils.isEmpty(createdByFields)) {
 			return;
 		}
 		//数据库对象

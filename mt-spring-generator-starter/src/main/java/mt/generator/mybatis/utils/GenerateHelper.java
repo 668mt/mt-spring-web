@@ -14,7 +14,7 @@ import mt.generator.mybatis.annotation.Indexs;
 import mt.generator.mybatis.annotation.UniqueIndex;
 import mt.generator.mybatis.annotation.UniqueIndexs;
 import mt.utils.ClassUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -99,8 +99,8 @@ public class GenerateHelper {
 		afterInitEvent.setNewTables(list);
 		//创建的主外键关系
 		afterInitEvent.setNewForeightKeys(foreightSuccess);
-		afterInitEvent.setCreateTable(MyUtils.isNotEmpty(list));
-		afterInitEvent.setCreateForeightKey(MyUtils.isNotEmpty(foreightSuccess));
+		afterInitEvent.setCreateTable(ObjectUtils.isNotEmpty(list));
+		afterInitEvent.setCreateForeightKey(ObjectUtils.isNotEmpty(foreightSuccess));
 		
 		
 		log.info("新建表数量：" + list.size());

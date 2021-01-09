@@ -1,4 +1,4 @@
-package mt.utils;
+package mt.utils.common;
 
 import org.apache.commons.lang3.StringUtils;
 

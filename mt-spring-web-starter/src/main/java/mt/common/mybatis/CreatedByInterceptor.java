@@ -2,7 +2,7 @@ package mt.common.mybatis;
 
 import mt.common.annotation.CreatedBy;
 import mt.common.currentUser.UserContext;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -43,7 +43,7 @@ public class CreatedByInterceptor implements Interceptor {
 		}
 		//查找创建日期注解
 		List<Field> createdByFields = ReflectUtils.findAllFields(parameters.getClass(), CreatedBy.class);
-		if (MyUtils.isEmpty(createdByFields)) {
+		if (ObjectUtils.isEmpty(createdByFields)) {
 			return invocation.proceed();
 		}
 		//数据库对象

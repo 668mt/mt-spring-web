@@ -1,14 +1,14 @@
 package mt.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import mt.utils.common.CollectionUtils;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 反射工具类
@@ -24,8 +24,9 @@ public class ReflectUtils {
 	private static final Map<String, List<Field>> caches = new HashMap<>();
 	
 	private void addCache(String name, List<Field> list) {
-		if (caches.size() >= 100)
+		if (caches.size() >= 100) {
 			caches.clear();
+		}
 		caches.put(name, list);
 	}
 	
@@ -52,26 +53,13 @@ public class ReflectUtils {
 		return list;
 	}
 	
-	/**
-	 * @param class1
-	 * @param annotationClass
-	 * @return
-	 */
-	public static Field findField(Class<?> class1, Class<? extends Annotation> annotationClass) {
-		List<Field> findFields = findFields(class1, annotationClass);
-		if (findFields.size() > 0) {
-			return findFields.get(0);
-		}
-		return null;
-	}
-	
 	public static <T> List<T> findAllValues(Object obj, Class<T> type) {
 		List<T> values = new ArrayList<>();
 		if (obj == null) {
 			return values;
 		}
 		List<Field> allFields = findAllFields(obj.getClass());
-		if (MyUtils.isEmpty(allFields)) {
+		if (CollectionUtils.isEmpty(allFields)) {
 			return values;
 		}
 		allFields.forEach(field -> {
@@ -97,7 +85,9 @@ public class ReflectUtils {
 	 * @return
 	 */
 	public static List<Field> findAllFields(Class<?> class1) {
-		if (class1 == null) return new ArrayList<>();
+		if (class1 == null) {
+			return new ArrayList<>();
+		}
 		String className = class1.getName();
 		List<Field> cacheResults = caches.get(className);
 		if (cacheResults != null) {
@@ -109,9 +99,8 @@ public class ReflectUtils {
 			classList.add(class1);
 			class1 = class1.getSuperclass(); //得到父类,然后赋给自己
 		}
-		if (MyUtils.isNotEmpty(classList)) {
-			for (int i = 0; i < classList.size(); i++) {
-				Class<?> class2 = classList.get(i);
+		if (CollectionUtils.isNotEmpty(classList)) {
+			for (Class<?> class2 : classList) {
 				fieldList.addAll(Arrays.asList(class2.getDeclaredFields()));
 			}
 		}
@@ -160,15 +149,9 @@ public class ReflectUtils {
 	 * @return 不包含该注解的所有字段
 	 */
 	public static List<Field> ignore(List<Field> listFields, final Class<? extends Annotation> ignoreAnnotationClass) {
-		List<Field> result = new ArrayList<Field>();
-		CollectionUtils.select(listFields, new Predicate() {
-			@Override
-			public boolean evaluate(Object obj) {
-				Field field = (Field) obj;
-				return AnnotatedElementUtils.findMergedAnnotation(field, ignoreAnnotationClass) == null;
-			}
-		}, result);
-		return result;
+		return listFields.stream()
+				.filter(field -> AnnotatedElementUtils.findMergedAnnotation(field, ignoreAnnotationClass) == null)
+				.collect(Collectors.toList());
 	}
 	
 	/**
@@ -179,12 +162,9 @@ public class ReflectUtils {
 	 * @return 包含该注解的所有字段
 	 */
 	public static List<Field> select(List<Field> listFields, final Class<? extends Annotation> annotationClass) {
-		List<Field> result = new ArrayList<>();
-		CollectionUtils.select(listFields, obj -> {
-			Field field = (Field) obj;
-			return AnnotatedElementUtils.findMergedAnnotation(field, annotationClass) == null;
-		}, result);
-		return result;
+		return listFields.stream()
+				.filter(field -> AnnotatedElementUtils.findMergedAnnotation(field, annotationClass) != null)
+				.collect(Collectors.toList());
 	}
 	
 	/**
@@ -219,25 +199,28 @@ public class ReflectUtils {
 		return null;
 	}
 	
-	/**
-	 * 从子类往父类查找字段，如果有多个，返回第一个
-	 *
-	 * @param class1
-	 * @param fieldName 字段名
-	 */
-	public static Field findField(Class<?> class1, final String fieldName) {
-		List<Field> findAllFields = findAllFields(class1);
-		List<Field> list = new ArrayList<>();
-		CollectionUtils.select(findAllFields, object -> {
-			Field field = (Field) object;
-			return field.getName().equals(fieldName);
-		}, list);
-		if (list.size() > 0) {
-			return list.get(0);
+	public static Field findField(Class<?> class1, String fieldName) {
+		Class<?> desClass = class1;
+		while (desClass != null) {
+			Field declaredField = null;
+			try {
+				declaredField = desClass.getDeclaredField(fieldName);
+			} catch (NoSuchFieldException ignored) {
+			}
+			if (declaredField != null) {
+				return declaredField;
+			} else {
+				Class<?> superclass = desClass.getSuperclass();
+				if (!superclass.equals(Object.class)) {
+					desClass = superclass;
+				} else {
+					desClass = null;
+				}
+			}
 		}
 		return null;
 	}
-	
+
 	/**
 	 * 获取值
 	 *
@@ -254,7 +237,7 @@ public class ReflectUtils {
 		while (name.contains(".")) {
 			int indexOf = name.indexOf(".");
 			String field = name.substring(0, indexOf);
-			name = name.substring(indexOf + 1, name.length());
+			name = name.substring(indexOf + 1);
 			obj = getValue(obj, field, Object.class);
 		}
 		Field field = findField(obj.getClass(), name);
@@ -271,8 +254,9 @@ public class ReflectUtils {
 	
 	public static void setValue(Object obj, String field, Object value) {
 		Field field1 = findField(obj.getClass(), field);
-		if (field1 == null)
+		if (field1 == null) {
 			return;
+		}
 		try {
 			field1.setAccessible(true);
 			field1.set(obj, value);
@@ -283,7 +267,7 @@ public class ReflectUtils {
 	
 	public static Field findFieldWithPath(Class<?> clazz, String path) {
 		List<String[]> list = RegexUtils.findList(path, "-([a-z])", new Integer[]{0, 1});
-		if (MyUtils.isNotEmpty(list)) {
+		if (CollectionUtils.isNotEmpty(list)) {
 			for (String[] s : list) {
 				path = path.replace(s[0], s[1].toUpperCase());
 			}
@@ -304,7 +288,7 @@ public class ReflectUtils {
 	
 	public static void setValueWithPath(Object obj, String path, Object value) {
 		List<String[]> list = RegexUtils.findList(path, "-([a-z])", new Integer[]{0, 1});
-		if (MyUtils.isNotEmpty(list)) {
+		if (CollectionUtils.isNotEmpty(list)) {
 			for (String[] s : list) {
 				path = path.replace(s[0], s[1].toUpperCase());
 			}
@@ -332,6 +316,7 @@ public class ReflectUtils {
 				}
 				if (i < names.length - 1) {
 					srcObj = findObj;
+					assert srcObj != null;
 					srcClass = srcObj.getClass();
 				}
 			} catch (Exception e) {
@@ -351,7 +336,7 @@ public class ReflectUtils {
 	
 	public static boolean hasFieldNameIgnoreCase(Class<?> class1, String fieldName) {
 		List<Field> allFields = findAllFields(class1);
-		if (MyUtils.isNotEmpty(allFields)) {
+		if (CollectionUtils.isNotEmpty(allFields)) {
 			for (Field field : allFields) {
 				if (field.getName().equalsIgnoreCase(fieldName)) {
 					return true;
@@ -363,7 +348,7 @@ public class ReflectUtils {
 	
 	public static boolean hasFieldName(Class<?> class1, String fieldName) {
 		List<Field> allFields = findAllFields(class1);
-		if (MyUtils.isNotEmpty(allFields)) {
+		if (CollectionUtils.isNotEmpty(allFields)) {
 			for (Field field : allFields) {
 				if (field.getName().equals(fieldName)) {
 					return true;

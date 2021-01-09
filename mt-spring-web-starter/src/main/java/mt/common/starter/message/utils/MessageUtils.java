@@ -10,6 +10,7 @@ import mt.common.starter.message.exception.FieldNotFoundException;
 import mt.common.starter.message.messagehandler.DefaultMessageHandler;
 import mt.common.starter.message.messagehandler.MessageHandler;
 import mt.utils.*;
+import mt.utils.common.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -109,20 +110,20 @@ public class MessageUtils {
 		}
 		
 		List<String> includeList = null;
-		if (MyUtils.isNotEmpty(includeFields)) {
-			includeList = MyUtils.toList(includeFields);
+		if (ObjectUtils.isNotEmpty(includeFields)) {
+			includeList = ObjectUtils.toList(includeFields);
 		}
 		//拉出mybatis缓存
 		JsonUtils.toJson(object);
 		//查找实体类所有字段
 		List<Field> fields = ReflectUtils.findAllFields(object.getClass());
-		if (MyUtils.isEmpty(fields)) {
+		if (ObjectUtils.isEmpty(fields)) {
 			return object;
 		}
 		
 		for (Field field : fields) {
 			try {
-				if (MyUtils.isNotEmpty(includeList) && !includeList.contains(field.getName())) {
+				if (ObjectUtils.isNotEmpty(includeList) && !includeList.contains(field.getName())) {
 					continue;
 				}
 				if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
@@ -247,7 +248,7 @@ public class MessageUtils {
 			return param;
 		}
 		List<String> findList = RegexUtils.findList(param, "#(\\w+)", 1);
-		if (MyUtils.isEmpty(findList)) {
+		if (ObjectUtils.isEmpty(findList)) {
 			//没有变量设置
 			return param;
 		}
@@ -290,13 +291,13 @@ public class MessageUtils {
 	 * @return
 	 */
 	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, String... includeFields) {
-		if (pageInfo != null && MyUtils.isNotEmpty(pageInfo.getList())) {
+		if (pageInfo != null && ObjectUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
 				messageRecursive(t, includeFields);
 			}
 		}
-		if (pageInfo != null && MyUtils.isNotEmpty(pageInfo.getList())) {
+		if (pageInfo != null && ObjectUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
 				messageRecursive(t, includeFields);
@@ -306,7 +307,7 @@ public class MessageUtils {
 	}
 	
 	public <T> Collection<T> dealWithCollection(Collection<T> list, String... includeFields) {
-		if (MyUtils.isNotEmpty(list)) {
+		if (ObjectUtils.isNotEmpty(list)) {
 			for (T t : list) {
 				messageRecursive(t, includeFields);
 			}

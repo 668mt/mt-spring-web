@@ -1,6 +1,6 @@
 package mt.common.converter;
 
-import mt.utils.DateUtils;
+import mt.utils.common.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;

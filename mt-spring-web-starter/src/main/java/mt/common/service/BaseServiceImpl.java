@@ -11,7 +11,7 @@ import mt.common.starter.message.utils.MessageUtils;
 import mt.common.tkmapper.Filter.Operator;
 import mt.common.utils.SpringUtils;
 import mt.utils.JsUtils;
-import mt.utils.MyUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -49,7 +49,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	public List<mt.common.tkmapper.Filter> parseCondition(Object condition) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		List<String> condition2 = ReflectUtils.getValue(condition, "condition", List.class);
-		if (MyUtils.isNotEmpty(condition2)) {
+		if (ObjectUtils.isNotEmpty(condition2)) {
 			for (String sql : condition2) {
 				filters.add(new mt.common.tkmapper.Filter(sql, Operator.condition));
 			}
@@ -66,12 +66,12 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					throw new RuntimeException(e);
 				}
 				if (value instanceof List) {
-					if (MyUtils.isEmpty((List<?>) value)) {
+					if (ObjectUtils.isEmpty((List<?>) value)) {
 						continue;
 					}
 				}
 				if (value instanceof Object[]) {
-					if (MyUtils.isEmpty((Object[]) value)) {
+					if (ObjectUtils.isEmpty((Object[]) value)) {
 						continue;
 					}
 				}
@@ -199,7 +199,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean exists(String columnName, Object value) {
 		List<T> list = findList(columnName, value);
-		return MyUtils.isNotEmpty(list);
+		return ObjectUtils.isNotEmpty(list);
 	}
 	
 	@Override
@@ -246,7 +246,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Transactional(readOnly = true)
 	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters) {
 		List<T> findByFilters = findByFilters(filters);
-		if (MyUtils.isEmpty(findByFilters)) {
+		if (ObjectUtils.isEmpty(findByFilters)) {
 			return null;
 		}
 		if (findByFilters.size() > 1) {
@@ -336,11 +336,11 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean existsByFilters(List<mt.common.tkmapper.Filter> filters) {
 		List<T> byFilters = findByFilters(filters);
-		return MyUtils.isNotEmpty(byFilters);
+		return ObjectUtils.isNotEmpty(byFilters);
 	}
 	
 	@Override
 	public boolean existsByFilter(mt.common.tkmapper.Filter filter) {
-		return MyUtils.isNotEmpty(findByFilter(filter));
+		return ObjectUtils.isNotEmpty(findByFilter(filter));
 	}
 }
