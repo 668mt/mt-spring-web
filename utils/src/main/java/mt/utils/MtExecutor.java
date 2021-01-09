@@ -1,11 +1,17 @@
 package mt.utils;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -18,7 +24,6 @@ import java.util.concurrent.*;
  * @date 2018-1-23 下午9:59:01
  */
 @Slf4j
-@Data
 public abstract class MtExecutor<T> {
 	
 	public interface Event<T> {
@@ -31,72 +36,51 @@ public abstract class MtExecutor<T> {
 		}
 	}
 	
+	public MtExecutor(int threads) {
+		this(null, threads, threads, 0, TimeUnit.SECONDS, Integer.MAX_VALUE, false);
+	}
+	
+	public MtExecutor(String name, int threads) {
+		this(name, threads, threads, 0, TimeUnit.SECONDS, Integer.MAX_VALUE, false);
+	}
+	
+	private MtExecutor() {
+	}
+	
+	public MtExecutor(String name,
+					  int corePoolSize,
+					  int maximumPoolSize,
+					  long keepAliveTime,
+					  TimeUnit unit,
+					  int maxQueueSize, boolean allowCoreThreadTimeOut) {
+		queue = new LinkedBlockingQueue<>(maxQueueSize);
+		if (name != null) {
+			threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, new LinkedBlockingQueue<>(maxQueueSize), r -> new Thread(r, name));
+		} else {
+			threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, new LinkedBlockingQueue<>(maxQueueSize));
+		}
+		threadPoolExecutor.allowCoreThreadTimeOut(allowCoreThreadTimeOut);
+	}
+	
+	@Getter
+	@Setter
 	private Event<T> event;
-	
-	public enum State {
-		running, stop
-	}
-	
-	private State state;
-	
-	public MtExecutor() {
-	}
-	
-	public MtExecutor(int maxLine) {
-		this.maxLine = maxLine;
-	}
-	
-	public MtExecutor(int maxLine, int maxAcceptQueueSize) {
-		this.maxLine = maxLine;
-		this.maxAcceptQueueSize = maxAcceptQueueSize;
-	}
-	
-	public MtExecutor(Collection<T> tasks) {
-		addQueues(tasks);
-	}
-	
-	public MtExecutor(Collection<T> tasks, int maxLine) {
-		addQueues(tasks);
-		this.maxLine = maxLine;
-	}
-	
+	@Getter
+	@Setter
+	private int taskTimeout = 0;
+	@Getter
+	@Setter
+	private TimeUnit taskTimeoutUnit = TimeUnit.MILLISECONDS;
+	private ThreadPoolExecutor threadPoolExecutor;
 	/**
-	 * 最大线程数
+	 * 队列中的任务
 	 */
-	private int maxLine = 5;
-	private long jobTimeout = 0L;
-	private TimeUnit jobTimeoutTimeUnit = TimeUnit.MILLISECONDS;
-	private ExecutorService executor;
-	
 	private BlockingQueue<T> queue;
-	private List<T> runningJobs = Collections.synchronizedList(new ArrayList<>());
 	/**
-	 * 间隔多久开启下一次任务
+	 * 执行中的任务
 	 */
-	private long delay = 200;
-	/**
-	 * 执行序号
-	 */
-	private int count = 0;
-	private boolean running;
-	private int maxAcceptQueueSize = Integer.MAX_VALUE;
-	/**
-	 * 运行中的任务数
-	 */
-	private int runningTaskAmount;
-	/**
-	 * 开始运行时间
-	 */
-	private long startTime;
-	private String name;
-	
-	synchronized void addTaskAmount() {
-		this.runningTaskAmount++;
-	}
-	
-	synchronized void downTaskAmount() {
-		this.runningTaskAmount--;
-	}
+	@Getter
+	private final List<T> runningJobs = Collections.synchronizedList(new ArrayList<>());
 	
 	/**
 	 * 执行任务
@@ -106,7 +90,7 @@ public abstract class MtExecutor<T> {
 	public abstract void doJob(T task);
 	
 	public boolean contains(T task) {
-		return queue.contains(task) || runningJobs.contains(task);
+		return queue.contains(task);
 	}
 	
 	/**
@@ -114,8 +98,14 @@ public abstract class MtExecutor<T> {
 	 *
 	 * @param task
 	 */
-	public void addQueue(T task) {
+	public void submit(T task) {
 		queue.add(task);
+		Task task1 = new Task(task);
+		if (taskTimeout > 0) {
+			threadPoolExecutor.submit(new TimeoutTask(task1, taskTimeout, taskTimeoutUnit));
+		} else {
+			threadPoolExecutor.submit(task1);
+		}
 	}
 	
 	/**
@@ -123,131 +113,46 @@ public abstract class MtExecutor<T> {
 	 *
 	 * @param tasks
 	 */
-	public void addQueues(Collection<T> tasks) {
-		queue.addAll(tasks);
-	}
-	
-	/**
-	 * 开启任务
-	 */
-	public void start() {
-		new Thread(this::startSync).start();
-	}
-	
-	private void init() {
-		queue = new LinkedBlockingQueue<>(maxAcceptQueueSize);
-		if (executor == null) {
-			if (name != null) {
-				executor = new ThreadPoolExecutor(maxLine, maxLine, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(maxAcceptQueueSize), r -> new Thread(r, name));
-			} else {
-				executor = new ThreadPoolExecutor(maxLine, maxLine, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(maxAcceptQueueSize));
-			}
+	public void submitAll(Collection<T> tasks) {
+		for (T task : tasks) {
+			submit(task);
 		}
 	}
 	
-	public void startSync() {
-		init();
-		if (state == State.running) {
-			return;
-		}
-		this.running = true;
-		startTime = System.currentTimeMillis();
+	class Task implements Runnable {
+		private final T task;
 		
-		while (queue.iterator().hasNext()) {
-			state = State.running;
-			execute();
-			try {
-				Thread.sleep(delay);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		public Task(T task) {
+			this.task = task;
 		}
-		done();
-	}
-	
-	public void stop() {
-		this.running = false;
-	}
-	
-	public void startAlways() {
-		running = true;
-		startTime = System.currentTimeMillis();
-		init();
-		new Thread(() -> {
-			if (state == State.running) {
-				return;
-			}
-			
-			while (running) {
-				state = State.running;
-				Iterator<T> iterator = queue.iterator();
-				if (iterator.hasNext()) {
-					execute();
+		
+		@Override
+		public void run() {
+			try {
+				runningJobs.add(task);
+				doJob(task);
+			} catch (RuntimeException e) {
+				if (event != null) {
+					event.onError(MtExecutor.this, e, task);
+				} else {
+					throw e;
 				}
-				try {
-					Thread.sleep(delay);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			} finally {
+				runningJobs.remove(task);
+				queue.remove(task);
+				if (queue.size() == 0 && event != null) {
+					event.onTaskFinished(MtExecutor.this);
 				}
 			}
-			done();
-		}).start();
-	}
-	
-	private void done() {
-		int lastAmount = 0;
-		while (runningTaskAmount != 0) {
-			if (lastAmount != runningTaskAmount) {
-				lastAmount = runningTaskAmount;
-				log.info("队列中还有 {} 个任务!!", runningTaskAmount);
-			}
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		state = State.stop;
-		executor.shutdownNow();
-		executor = null;
-		running = false;
-		if (event != null) {
-			event.onTaskFinished(this);
-		} else {
-			log.info("任务全部执行完毕！");
 		}
 	}
 	
-	/**
-	 * 从队列中获取一个任务
-	 *
-	 * @return
-	 */
-	public synchronized T getOne() {
-		Iterator<T> iterator = queue.iterator();
-		if (iterator.hasNext()) {
-			//平均执行一个耗时,单位ms
-			double d = (System.currentTimeMillis() - startTime) * 1.0 / count;
-			double rest = d * queue.size();
-			String restStr;
-			DecimalFormat df = new DecimalFormat("0.00");
-			if (rest < 60000) {
-				restStr = df.format(rest / 1000) + "秒";
-			} else if (rest < 3600000) {
-				restStr = df.format(rest / 1000 / 60) + "分钟";
-			} else {
-				restStr = df.format(rest / 1000 / 60 / 60) + "小时";
-			}
-			log.info("队列中任务数：{}，预计还需要{}执行完", queue.size(), restStr);
-			T next = iterator.next();
-			queue.remove(next);
-			log.info("执行第 " + (++count) + " 个任务...");
-			return next;
-		}
-		return null;
+	public void shutdown() {
+		threadPoolExecutor.shutdown();
 	}
 	
-	private void execute() {
-		executor.execute(new MtTimeoutExecutorTask<>(this));
+	public void shutdownNow() {
+		threadPoolExecutor.shutdownNow();
 	}
+	
 }

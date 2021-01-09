@@ -20,10 +20,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Author Martin
@@ -65,7 +62,7 @@ public class CommonConfig implements InitializingBean {
 			break;
 		}
 		
-		List<String> daoPackageList = new ArrayList<>();
+		Set<String> daoPackageList = new HashSet<>();
 		Map<String, Object> beansWithAnnotation1 = context.getBeansWithAnnotation(MapperScan.class);
 		for (Map.Entry<String, Object> stringObjectEntry : beansWithAnnotation1.entrySet()) {
 			Object value = stringObjectEntry.getValue();

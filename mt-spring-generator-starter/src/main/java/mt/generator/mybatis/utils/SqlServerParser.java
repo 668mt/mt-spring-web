@@ -4,7 +4,6 @@ import mt.utils.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.stereotype.Component;
 
 import javax.persistence.Column;
 import java.lang.reflect.Field;
@@ -14,7 +13,6 @@ import java.util.Map;
  * @Author Martin
  * @Date 2021/1/6
  */
-@Component
 public class SqlServerParser extends AbstractParser {
 	@Override
 	public boolean support(String driverClassName) {
