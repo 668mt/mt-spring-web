@@ -1,12 +1,10 @@
 package mt.common.mybatis.utils;
 
 import mt.common.utils.SpringUtils;
-import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import mt.utils.RegexUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.Strings;
 import tk.mybatis.mapper.code.Style;
 
 import javax.persistence.Column;
@@ -28,7 +26,7 @@ public class MapperColumnUtils {
 		List<String[]> list = RegexUtils.findList(property, "([a-z])([A-Z])", new Integer[]{0, 1, 2});
 		if (CollectionUtils.isNotEmpty(list)) {
 			for (String[] group : list) {
-				property = property.replace(group[0], group[1] + "_" + Strings.toLowerCase(group[2]));
+				property = property.replace(group[0], group[1] + "_" + group[2].toLowerCase());
 			}
 		}
 		return property;
@@ -71,16 +69,16 @@ public class MapperColumnUtils {
 				columnName = camelhump(columnName);
 				break;
 			case camelhumpAndLowercase:
-				columnName = Strings.toLowerCase(camelhump(columnName));
+				columnName = camelhump(columnName).toLowerCase();
 				break;
 			case camelhumpAndUppercase:
-				columnName = Strings.toUpperCase(camelhump(columnName));
+				columnName = camelhump(columnName).toUpperCase();
 				break;
 			case lowercase:
-				columnName = Strings.toLowerCase(columnName);
+				columnName = columnName.toLowerCase();
 				break;
 			case uppercase:
-				columnName = Strings.toUpperCase(columnName);
+				columnName = columnName.toUpperCase();
 				break;
 			case normal:
 			default:

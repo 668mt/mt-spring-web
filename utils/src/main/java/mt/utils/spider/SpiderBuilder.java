@@ -1,11 +1,18 @@
 package mt.utils.spider;
 
+import org.springframework.web.client.RestTemplate;
+
 /**
  * @Author Martin
  * @Date 2020/10/25
  */
 public class SpiderBuilder {
 	private final Spider spider = new Spider();
+	
+	public SpiderBuilder restTemplate(RestTemplate restTemplate) {
+		spider.setRestTemplate(restTemplate);
+		return this;
+	}
 	
 	public SpiderBuilder cookie(String cookie) {
 		spider.setCookie(cookie);

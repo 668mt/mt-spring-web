@@ -131,9 +131,6 @@ public abstract class MtExecutor<T> {
 	 * @param task
 	 */
 	public void submit(T task) {
-		if (contains(task)) {
-			return;
-		}
 		queue.add(task);
 		Task task1 = new Task(task);
 		if (taskTimeout > 0) {
@@ -141,6 +138,13 @@ public abstract class MtExecutor<T> {
 		} else {
 			threadPoolExecutor.submit(task1);
 		}
+	}
+	
+	public synchronized void submitIfNotExists(T task) {
+		if (contains(task)) {
+			return;
+		}
+		submit(task);
 	}
 	
 	public int getQueueSize() {
