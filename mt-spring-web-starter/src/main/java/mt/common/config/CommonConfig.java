@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @Author Martin
@@ -47,9 +48,13 @@ public class CommonConfig implements InitializingBean {
 	
 	@Autowired
 	private CommonProperties commonProperties;
+	private AtomicBoolean inited = new AtomicBoolean(false);
 	
 	@Override
 	public void afterPropertiesSet() {
+		if (inited.get()) {
+			return;
+		}
 		Map<String, Object> beansWithAnnotation = context.getBeansWithAnnotation(SpringBootApplication.class);
 		
 		Assert.notEmpty(beansWithAnnotation, "SpringBootApplication 启动类不存在");
@@ -122,5 +127,6 @@ public class CommonConfig implements InitializingBean {
 		if (redisConfig.getConfiguredLevel() == null) {
 			loggingSystem.setLogLevel("io.lettuce.core.protocol", LogLevel.valueOf(commonProperties.getLoggingRedisLevel().toUpperCase()));
 		}
+		inited.set(true);
 	}
 }
