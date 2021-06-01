@@ -210,9 +210,14 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public List<T> findByFilter(mt.common.tkmapper.Filter filter) {
+		return findByFilter(filter, false);
+	}
+	
+	@Override
+	public List<T> findByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(filter);
-		return findByFilters(filters);
+		return findByFilters(filters, forUpdate);
 	}
 	
 	@Override
@@ -240,13 +245,19 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	@Transactional(readOnly = true)
 	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters) {
-		return getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), filters));
+		return findByFilters(filters, false);
 	}
 	
 	@Override
+	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
+		return getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), filters, forUpdate));
+	}
+	
+	
+	@Override
 	@Transactional(readOnly = true)
-	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters) {
-		List<T> findByFilters = findByFilters(filters);
+	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
+		List<T> findByFilters = findByFilters(filters, forUpdate);
 		if (CollectionUtils.isEmpty(findByFilters)) {
 			return null;
 		}
@@ -257,11 +268,21 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
+	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters) {
+		return findOneByFilters(filters, false);
+	}
+	
+	@Override
 	@Transactional(readOnly = true)
-	public T findOneByFilter(mt.common.tkmapper.Filter filter) {
+	public T findOneByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(filter);
-		return findOneByFilters(filters);
+		return findOneByFilters(filters, forUpdate);
+	}
+	
+	@Override
+	public T findOneByFilter(mt.common.tkmapper.Filter filter) {
+		return findOneByFilter(filter, false);
 	}
 	
 	@Override

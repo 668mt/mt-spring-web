@@ -2,6 +2,7 @@ package mt.common.config;
 
 import mt.utils.BasePackageUtils;
 import mt.utils.common.ObjectUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -9,20 +10,31 @@ import org.springframework.core.env.MutablePropertySources;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @Author Martin
  * @Date 2019/8/27
  */
-public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor{
+public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor {
+	private final AtomicBoolean inited = new AtomicBoolean(false);
+	
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		if (inited.get()) {
+			return;
+		}
 		MutablePropertySources propertySources = environment.getPropertySources();
-		Map<String,Object> params = new HashMap<>();
+		Map<String, Object> params = new HashMap<>();
 		
-		String basePackage = ObjectUtils.nullAsDefault(environment.getProperty("project.base-package",String.class),environment.getProperty("project.basePackage",String.class), BasePackageUtils.getBasePackage(application.getMainApplicationClass()));
+		Class<?> mainApplicationClass = application.getMainApplicationClass();
+		if (mainApplicationClass == null) {
+			return;
+		}
+		String basePackage = ObjectUtils.nullAsDefault(environment.getProperty("project.base-package", String.class), environment.getProperty("project.basePackage", String.class), BasePackageUtils.getBasePackage(mainApplicationClass));
 		params.put("project.base-package", basePackage);
 		params.put("project.basePackage", basePackage);
-		propertySources.addFirst(new CommonPropertySource("commonPropertyResource",params));
+		propertySources.addFirst(new CommonPropertySource("commonPropertyResource", params));
+		inited.set(true);
 	}
 }

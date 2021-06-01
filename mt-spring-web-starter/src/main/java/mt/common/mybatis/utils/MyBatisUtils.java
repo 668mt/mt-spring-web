@@ -3,7 +3,6 @@ package mt.common.mybatis.utils;
 import mt.common.mybatis.exception.NotSupportException;
 import mt.common.tkmapper.Filter;
 import mt.common.tkmapper.OrFilter;
-import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.util.Assert;
@@ -19,11 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * mybatis工具类
-* @ClassName: MyBatisUtils
-* @Description: 
-* @author Martin
-* @date 2017-10-18 下午1:57:13
-*
+ *
+ * @author Martin
+ * @ClassName: MyBatisUtils
+ * @Description:
+ * @date 2017-10-18 下午1:57:13
  */
 public class MyBatisUtils {
 	
@@ -93,7 +92,12 @@ public class MyBatisUtils {
 	 * @return
 	 */
 	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
+		return createExample(entityClass, filters, false);
+	}
+	
+	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate) {
 		Example example = new Example(entityClass);
+		example.setForUpdate(forUpdate);
 		if (CollectionUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
 				if (filterInterface instanceof OrFilter) {

@@ -48,7 +48,7 @@ public class CommonConfig implements InitializingBean {
 	
 	@Autowired
 	private CommonProperties commonProperties;
-	private AtomicBoolean inited = new AtomicBoolean(false);
+	private final AtomicBoolean inited = new AtomicBoolean(false);
 	
 	@Override
 	public void afterPropertiesSet() {

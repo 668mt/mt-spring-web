@@ -16,7 +16,6 @@ public interface BaseService<T> {
 		List<T> getList();
 	}
 	
-	List<T> findByFilter(Filter filter);
 	
 	/**
 	 * 返回行数
@@ -73,6 +72,10 @@ public interface BaseService<T> {
 	 */
 	T findOne(String column, Object value);
 	
+	List<T> findByFilter(Filter filter);
+	
+	List<T> findByFilter(Filter filter, boolean forUpdate);
+	
 	/**
 	 * 查询列表
 	 *
@@ -82,6 +85,15 @@ public interface BaseService<T> {
 	List<T> findByFilters(List<Filter> filters);
 	
 	/**
+	 * 查询列表
+	 *
+	 * @param filters   过滤
+	 * @param forUpdate 是否加锁
+	 * @return 列表
+	 */
+	List<T> findByFilters(List<Filter> filters, boolean forUpdate);
+	
+	/**
 	 * 查询一个，多个抛出异常
 	 *
 	 * @param filters
@@ -89,7 +101,11 @@ public interface BaseService<T> {
 	 */
 	T findOneByFilters(List<Filter> filters);
 	
+	T findOneByFilters(List<Filter> filters, boolean forUpdate);
+	
 	T findOneByFilter(Filter filter);
+	
+	T findOneByFilter(Filter filter, boolean forUpdate);
 	
 	/**
 	 * 查询列表
