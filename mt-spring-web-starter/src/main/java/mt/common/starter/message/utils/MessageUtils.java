@@ -174,10 +174,12 @@ public class MessageUtils {
 				//计算出结果
 				MessageHandler messageHandler = getMessageHandler(message);
 				Object value = messageHandler.handle(params, message.mark());
-				if (value != null && field.getType().isAssignableFrom(value.getClass())) {
-					field.set(object, value);
-				} else {
-					log.warn("字段{}转码失败,fieldType:{}，valueClass:{}", field.getName(), field.getType(), value != null ? value.getClass() : null);
+				if (value != null) {
+					if (field.getType().isAssignableFrom(value.getClass())) {
+						field.set(object, value);
+					} else {
+						log.warn("字段{}转码失败,fieldType:{}，valueClass:{}", field.getName(), field.getType(), value.getClass());
+					}
 				}
 			} catch (Exception e) {
 				log.error(e.getMessage(), e);
