@@ -42,6 +42,7 @@ public interface BaseService<T> {
 	 * @return
 	 */
 	boolean exists(String columnName, Object value);
+	boolean notExists(String columnName, Object value);
 	
 	List<Filter> parseCondition(Object condition);
 	

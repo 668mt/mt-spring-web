@@ -2,6 +2,9 @@ package mt.common.service;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import javassist.ClassClassPath;
+import javassist.ClassPool;
+import javassist.CtClass;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
@@ -16,11 +19,28 @@ import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
+import tk.mybatis.mapper.entity.Config;
+import tk.mybatis.mapper.mapperhelper.MapperHelper;
+import tk.mybatis.spring.mapper.MapperFactoryBean;
+import tk.mybatis.spring.mapper.SpringBootBindUtil;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -35,6 +55,40 @@ import java.util.Map;
  * @author Martin
  */
 public abstract class BaseServiceImpl<T> implements BaseService<T> {
+	private mt.common.mybatis.mapper.BaseMapper<T> baseMapper;
+	@Autowired
+	private ApplicationContext applicationContext;
+	
+	@Override
+	public boolean notExists(String columnName, Object value) {
+		return !exists(columnName, value);
+	}
+	
+	/**
+	 * 获取数据库Dao
+	 *
+	 * @return
+	 */
+	public mt.common.mybatis.mapper.BaseMapper<T> getBaseMapper() {
+		if (baseMapper == null) {
+			synchronized (this) {
+				if (baseMapper == null) {
+					Assert.notNull(applicationContext, "applicationContext还未初始化完成");
+					Class<T> entityClass = getEntityClass();
+					Map<String, BaseMapper> beansOfType = applicationContext.getBeansOfType(BaseMapper.class);
+					BaseMapper baseMapper = beansOfType.values()
+							.stream()
+							.filter(baseMapper1 -> entityClass.equals(BaseMapperHelper.getBaseMapperGenericType(baseMapper1)))
+							.findFirst()
+							.orElse(null);
+					Assert.notNull(baseMapper, entityClass.getSimpleName() + "的BaseMapper还未初始化完成，请避免在init方法调用jdbc操作或复写getBaseMapper方法");
+					this.baseMapper = (mt.common.mybatis.mapper.BaseMapper<T>) baseMapper;
+				}
+			}
+		}
+		return baseMapper;
+	}
+	
 	@Override
 	public PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition) {
 		if (condition == null) {
@@ -166,13 +220,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 		}
 		return new PageInfo<>(getList.getList());
 	}
-	
-	/**
-	 * 获取数据库Dao
-	 *
-	 * @return
-	 */
-	public abstract mt.common.mybatis.mapper.BaseMapper<T> getBaseMapper();
 	
 	@Override
 	@Transactional(readOnly = true)

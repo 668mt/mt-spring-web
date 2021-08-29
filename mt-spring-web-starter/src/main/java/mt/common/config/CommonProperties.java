@@ -51,4 +51,9 @@ public class CommonProperties {
 		 */
 		private Boolean autoMessage = true;
 	}
+	
+	/**
+	 * 断言拦截的包名
+	 */
+	private String assertPackageName;
 }
