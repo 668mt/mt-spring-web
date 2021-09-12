@@ -1,6 +1,6 @@
 package mt.common.currentUser;
 
-import mt.common.annotation.CurrentUser;
+import mt.common.annotation.CurrentUserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -11,7 +11,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 /**
  * Security - 当前用户MethodArgumentResolver
  */
-public class CurrentUserMethodArgumentResolver implements HandlerMethodArgumentResolver {
+public class CurrentUserIdMethodArgumentResolver implements HandlerMethodArgumentResolver {
 	
 	@Autowired
 	private UserContext userContext;
@@ -24,7 +24,7 @@ public class CurrentUserMethodArgumentResolver implements HandlerMethodArgumentR
 	 */
 	@Override
 	public boolean supportsParameter(MethodParameter methodParameter) {
-		return methodParameter.hasParameterAnnotation(CurrentUser.class);
+		return methodParameter.hasParameterAnnotation(CurrentUserId.class);
 	}
 	
 	/**
@@ -39,7 +39,7 @@ public class CurrentUserMethodArgumentResolver implements HandlerMethodArgumentR
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object resolveArgument(MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
-		return userContext.getCurrentUser();
+		return userContext.getCurrentUserId();
 	}
 	
 }

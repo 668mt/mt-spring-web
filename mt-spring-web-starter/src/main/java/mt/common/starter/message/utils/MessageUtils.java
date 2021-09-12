@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
+import javax.script.ScriptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -134,51 +135,28 @@ public class MessageUtils {
 					continue;
 				}
 				field.setAccessible(true);
-				//内嵌集合
-				if (Collection.class.isAssignableFrom(field.getType())) {
-					Object value = field.get(object);
-					if (value == null) {
-						continue;
-					}
-					Collection collection = (Collection) value;
-					for (Object o : collection) {
-						messageRecursive(o);
-					}
-				}
-				//处理其它类型
-				if (isContinueMessage(field) && !Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
-					if (field.get(object) == null) {
-						continue;
-					}
-					messageRecursive(field.get(object));
-				}
 				//获取注解
 				Message message = AnnotatedElementUtils.findMergedAnnotation(field, Message.class);
-				if (message == null) {
-					continue;
-				}
-				//条件
-				String condition = message.condition();
-				if (StringUtils.isNotBlank(condition)) {
-					//替换变量
-					condition = replaceVariable(condition, object);
-					//解析js条件表达式
-					Boolean result = JsUtils.eval(condition, Boolean.class);
-					//不满足条件
-					if (result == null || !result) {
-						continue;
+				if (message != null) {
+					doWithMessage(message, field, object);
+				} else {
+					//内嵌集合
+					if (Collection.class.isAssignableFrom(field.getType())) {
+						Object value = field.get(object);
+						if (value == null) {
+							continue;
+						}
+						Collection collection = (Collection) value;
+						for (Object o : collection) {
+							messageRecursive(o);
+						}
 					}
-				}
-				//替换变量值
-				Object[] params = parseParams(field, message.params(), object);
-				//计算出结果
-				MessageHandler messageHandler = getMessageHandler(message);
-				Object value = messageHandler.handle(params, message.mark());
-				if (value != null) {
-					if (field.getType().isAssignableFrom(value.getClass())) {
-						field.set(object, value);
-					} else {
-						log.warn("字段{}转码失败,fieldType:{}，valueClass:{}", field.getName(), field.getType(), value.getClass());
+					//处理其它类型
+					if (isContinueMessage(field) && !Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
+						if (field.get(object) == null) {
+							continue;
+						}
+						messageRecursive(field.get(object));
 					}
 				}
 			} catch (Exception e) {
@@ -186,6 +164,33 @@ public class MessageUtils {
 			}
 		}
 		return object;
+	}
+	
+	private void doWithMessage(Message message, Field field, Object object) throws Exception {
+		//条件
+		String condition = message.condition();
+		if (StringUtils.isNotBlank(condition)) {
+			//替换变量
+			condition = replaceVariable(condition, object);
+			//解析js条件表达式
+			Boolean result = JsUtils.eval(condition, Boolean.class);
+			//不满足条件
+			if (result == null || !result) {
+				return;
+			}
+		}
+		//替换变量值
+		Object[] params = parseParams(field, message.params(), object);
+		//计算出结果
+		MessageHandler messageHandler = getMessageHandler(message);
+		Object value = messageHandler.handle(params, message.mark());
+		if (value != null) {
+			if (field.getType().isAssignableFrom(value.getClass())) {
+				field.set(object, value);
+			} else {
+				log.warn("字段{}转码失败,fieldType:{}，valueClass:{}", field.getName(), field.getType(), value.getClass());
+			}
+		}
 	}
 	
 	public Object[] parseParams(@NotNull Field field, @NotNull String[] params, @NotNull Object object) {

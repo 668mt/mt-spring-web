@@ -23,12 +23,24 @@ public class CurrentUserWebMvcConfiguration {
 	}
 	
 	@Bean
-	CurrentUserHandlerInterceptor currentUserHandlerInterceptor() {
+	public CurrentUserIdMethodArgumentResolver currentUserIdMethodArgumentResolver() {
+		return new CurrentUserIdMethodArgumentResolver();
+	}
+	
+	@Bean
+	public CurrentUserNameMethodArgumentResolver currentUserNameMethodArgumentResolver() {
+		return new CurrentUserNameMethodArgumentResolver();
+	}
+	
+	@Bean
+	public CurrentUserHandlerInterceptor currentUserHandlerInterceptor() {
 		return new CurrentUserHandlerInterceptor();
 	}
 	
 	@Bean
-	public WebMvcConfigurer currentUserWebMvcConfigurer() {
+	public WebMvcConfigurer currentUserWebMvcConfigurer(CurrentUserMethodArgumentResolver currentUserMethodArgumentResolver,
+														CurrentUserIdMethodArgumentResolver currentUserIdMethodArgumentResolver,
+														CurrentUserNameMethodArgumentResolver currentUserNameMethodArgumentResolver) {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addInterceptors(InterceptorRegistry registry) {
@@ -37,7 +49,9 @@ public class CurrentUserWebMvcConfiguration {
 			
 			@Override
 			public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-				resolvers.add(currentUserMethodArgumentResolver());
+				resolvers.add(currentUserIdMethodArgumentResolver);
+				resolvers.add(currentUserNameMethodArgumentResolver);
+				resolvers.add(currentUserMethodArgumentResolver);
 			}
 		};
 	}

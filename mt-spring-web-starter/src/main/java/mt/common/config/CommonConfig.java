@@ -71,6 +71,7 @@ public class CommonConfig implements InitializingBean {
 		}
 		
 		Set<String> daoPackageList = new HashSet<>();
+		daoPackageList.add("mt.common.dao");
 		Map<String, Object> beansWithAnnotation1 = context.getBeansWithAnnotation(MapperScan.class);
 		for (Map.Entry<String, Object> stringObjectEntry : beansWithAnnotation1.entrySet()) {
 			Object value = stringObjectEntry.getValue();
