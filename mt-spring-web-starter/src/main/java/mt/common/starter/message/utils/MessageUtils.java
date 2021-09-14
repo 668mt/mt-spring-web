@@ -183,7 +183,7 @@ public class MessageUtils {
 		Object[] params = parseParams(field, message.params(), object);
 		//计算出结果
 		MessageHandler messageHandler = getMessageHandler(message);
-		Object value = messageHandler.handle(params, message.mark());
+		Object value = messageHandler.handle(object, params, message.mark());
 		if (value != null) {
 			if (field.getType().isAssignableFrom(value.getClass())) {
 				field.set(object, value);

@@ -7,7 +7,7 @@ import java.util.Map;
  * @Author Martin
  * @Date 2020-04-30
  */
-public abstract class AbstractCacheMessageHandler<T> implements MessageHandler {
+public abstract class AbstractCacheMessageHandler<Entity, T> implements MessageHandler<Entity, T> {
 	protected Map<String, T> cache = new HashMap<>();
 	
 	public void clearCache() {
@@ -20,21 +20,21 @@ public abstract class AbstractCacheMessageHandler<T> implements MessageHandler {
 	}
 	
 	@Override
-	public Object handle(Object[] params, String mark) {
-		return getValueUseCacheOrNoCache(params, mark);
+	public T handle(Entity entity, Object[] params, String mark) {
+		return getValueUseCacheOrNoCache(entity, params, mark);
 	}
 	
-	public abstract String getCacheKey(Object[] params, String mark);
+	public abstract String getCacheKey(Entity entity, Object[] params, String mark);
 	
-	public abstract T getNoCacheValue(Object[] params, String mark);
+	public abstract T getNoCacheValue(Entity entity, Object[] params, String mark);
 	
-	public T getValueUseCacheOrNoCache(Object[] params, String mark) {
-		String cacheKey = getCacheKey(params, mark);
+	public T getValueUseCacheOrNoCache(Entity entity, Object[] params, String mark) {
+		String cacheKey = getCacheKey(entity, params, mark);
 		T o = cache.get(cacheKey);
 		if (o != null) {
 			return o;
 		} else {
-			o = getNoCacheValue(params, mark);
+			o = getNoCacheValue(entity, params, mark);
 			cache.put(cacheKey, o);
 			return o;
 		}

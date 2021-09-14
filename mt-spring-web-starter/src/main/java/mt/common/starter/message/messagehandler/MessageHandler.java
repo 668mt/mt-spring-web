@@ -6,7 +6,7 @@ import org.apache.commons.beanutils.ConvertUtils;
  * @Author Martin
  * @Date 2019/1/6
  */
-public interface MessageHandler {
+public interface MessageHandler<Entity, FieldType> {
 	
 	@SuppressWarnings("unchecked")
 	default <T> T getParam(Object[] params, int index, Class<T> type) {
@@ -30,5 +30,5 @@ public interface MessageHandler {
 		//初始化
 	}
 	
-	Object handle(Object[] params, String mark);
+	FieldType handle(Entity entity, Object[] params, String mark);
 }
