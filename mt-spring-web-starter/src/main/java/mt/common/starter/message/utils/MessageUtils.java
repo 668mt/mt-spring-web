@@ -1,6 +1,7 @@
 package mt.common.starter.message.utils;
 
 import com.github.pagehelper.PageInfo;
+import com.sun.corba.se.impl.orbutil.graph.Graph;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.annotation.Filter;
 import mt.common.config.CommonProperties;
@@ -25,10 +26,8 @@ import org.springframework.util.Assert;
 import javax.script.ScriptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName: MessageUtils
@@ -84,11 +83,19 @@ public class MessageUtils {
 	}
 	
 	public Object message(@Nullable Object object, @Nullable String... includeFields) {
+		return messageWithGroup(object, null, includeFields);
+	}
+	
+	public Object messageWithGroup(@Nullable Object object, @Nullable String[] group, @Nullable String... includeFields) {
 		//初始化所有messageHandler
 		for (Map.Entry<String, MessageHandler> messageHandlerEntry : messageHandlers.entrySet()) {
 			messageHandlerEntry.getValue().init();
 		}
-		return messageRecursive(object, includeFields);
+		Set<String> groupList = null;
+		if (group != null) {
+			groupList = Arrays.stream(group).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+		}
+		return messageRecursive(object, groupList, includeFields);
 	}
 	
 	/**
@@ -99,19 +106,19 @@ public class MessageUtils {
 	 * @return
 	 */
 	@SuppressWarnings({"unchecked"})
-	public Object messageRecursive(@Nullable Object object, @Nullable String... includeFields) {
+	public Object messageRecursive(@Nullable Object object, Set<String> group, @Nullable String... includeFields) {
 		if (object == null) {
 			return null;
 		}
 		if (object instanceof Collection) {
-			return dealWithCollection((Collection) object, includeFields);
+			return dealWithCollection((Collection) object, group, includeFields);
 		}
 		if (object instanceof PageInfo) {
-			return dealWithPageInfo((PageInfo) object, includeFields);
+			return dealWithPageInfo((PageInfo) object, group, includeFields);
 		}
 		if (object instanceof Map) {
 			Map map = (Map) object;
-			return dealWithMap(map, includeFields);
+			return dealWithMap(map, group, includeFields);
 		}
 		
 		List<String> includeList = null;
@@ -138,6 +145,9 @@ public class MessageUtils {
 				//获取注解
 				Message message = AnnotatedElementUtils.findMergedAnnotation(field, Message.class);
 				if (message != null) {
+					if (!inGroup(group, message)) {
+						continue;
+					}
 					doWithMessage(message, field, object);
 				} else {
 					//内嵌集合
@@ -148,7 +158,7 @@ public class MessageUtils {
 						}
 						Collection collection = (Collection) value;
 						for (Object o : collection) {
-							messageRecursive(o);
+							messageRecursive(o, group);
 						}
 					}
 					//处理其它类型
@@ -156,7 +166,7 @@ public class MessageUtils {
 						if (field.get(object) == null) {
 							continue;
 						}
-						messageRecursive(field.get(object));
+						messageRecursive(field.get(object), group);
 					}
 				}
 			} catch (Exception e) {
@@ -166,19 +176,35 @@ public class MessageUtils {
 		return object;
 	}
 	
-	private void doWithMessage(Message message, Field field, Object object) throws Exception {
-		//条件
-		String condition = message.condition();
-		if (StringUtils.isNotBlank(condition)) {
-			//替换变量
-			condition = replaceVariable(condition, object);
-			//解析js条件表达式
-			Boolean result = JsUtils.eval(condition, Boolean.class);
-			//不满足条件
-			if (result == null || !result) {
-				return;
+	private boolean inGroup(Set<String> group, Message message) {
+		if (CollectionUtils.isEmpty(group)) {
+			return true;
+		}
+		Set<String> currentGroup = Arrays.stream(message.group()).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+		if (CollectionUtils.isEmpty(currentGroup)) {
+			return true;
+		}
+		for (String s : group) {
+			if (currentGroup.contains(s)) {
+				return true;
 			}
 		}
+		return false;
+	}
+	
+	private void doWithMessage(Message message, Field field, Object object) throws Exception {
+//		//条件
+//		String condition = message.condition();
+//		if (StringUtils.isNotBlank(condition)) {
+//			//替换变量
+//			condition = replaceVariable(condition, object);
+//			//解析js条件表达式
+//			Boolean result = JsUtils.eval(condition, Boolean.class);
+//			//不满足条件
+//			if (result == null || !result) {
+//				return;
+//			}
+//		}
 		//替换变量值
 		Object[] params = parseParams(field, message.params(), object);
 		//计算出结果
@@ -300,34 +326,34 @@ public class MessageUtils {
 	 * @param pageInfo
 	 * @return
 	 */
-	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, String... includeFields) {
+	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, Set<String> group, String... includeFields) {
 		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
-				messageRecursive(t, includeFields);
+				messageRecursive(t, group, includeFields);
 			}
 		}
 		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
 			for (T t : list) {
-				messageRecursive(t, includeFields);
+				messageRecursive(t, group, includeFields);
 			}
 		}
 		return pageInfo;
 	}
 	
-	public <T> Collection<T> dealWithCollection(Collection<T> list, String... includeFields) {
+	public <T> Collection<T> dealWithCollection(Collection<T> list, Set<String> group, String... includeFields) {
 		if (CollectionUtils.isNotEmpty(list)) {
 			for (T t : list) {
-				messageRecursive(t, includeFields);
+				messageRecursive(t, group, includeFields);
 			}
 		}
 		return list;
 	}
 	
-	public Map dealWithMap(@NotNull Map map, String[] includeFields) {
+	public Map dealWithMap(@NotNull Map map, Set<String> group, String[] includeFields) {
 		for (Object entry : map.entrySet()) {
-			messageRecursive(((Map.Entry) entry).getValue(), includeFields);
+			messageRecursive(((Map.Entry) entry).getValue(), group, includeFields);
 		}
 		return map;
 	}

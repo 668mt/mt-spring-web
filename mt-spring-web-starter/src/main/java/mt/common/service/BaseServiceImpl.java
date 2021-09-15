@@ -190,7 +190,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	
 	@Override
-	public PageInfo<T> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T> getList) {
+	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList) {
 		Class<T> entityClass = getEntityClass();
 		//分页
 		if (pageNum != null && pageSize != null && pageNum > 0 && pageSize > 0) {

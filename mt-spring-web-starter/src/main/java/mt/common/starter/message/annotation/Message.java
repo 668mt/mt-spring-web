@@ -25,7 +25,7 @@ public @interface Message {
 	
 	String handlerBeanName() default "";
 	
-	String condition() default "";
-	
 	String mark() default "";
+	
+	String[] group() default "";
 }

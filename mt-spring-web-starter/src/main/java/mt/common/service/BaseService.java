@@ -12,8 +12,8 @@ import java.util.List;
  */
 public interface BaseService<T> {
 	
-	public interface GetList<T> {
-		List<T> getList();
+	public interface GetList<T2> {
+		List<T2> getList();
 	}
 	
 	
@@ -42,11 +42,12 @@ public interface BaseService<T> {
 	 * @return
 	 */
 	boolean exists(String columnName, Object value);
+	
 	boolean notExists(String columnName, Object value);
 	
 	List<Filter> parseCondition(Object condition);
 	
-	PageInfo<T> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T> getList);
+	<T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList);
 	
 	/**
 	 * 查询所有
