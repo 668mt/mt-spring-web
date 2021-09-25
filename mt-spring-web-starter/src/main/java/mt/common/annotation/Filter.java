@@ -3,6 +3,8 @@ package mt.common.annotation;
 
 import mt.common.converter.Converter;
 import mt.common.converter.DefaultConverter;
+import mt.common.tkmapper.CustomConditionFilterParser;
+import mt.common.tkmapper.DefaultCustomConditionFilterParser;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -57,5 +59,7 @@ public @interface Filter {
 	
 	String sql() default "";
 	
-	String condition() default "true";
+	Class<? extends CustomConditionFilterParser<?, ?>> customParserClass() default DefaultCustomConditionFilterParser.class;
+
+//	String condition() default "true";
 }

@@ -11,6 +11,8 @@ import mt.common.entity.BaseCondition;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.MyBatisUtils;
 import mt.common.starter.message.utils.MessageUtils;
+import mt.common.tkmapper.CustomConditionFilterParser;
+import mt.common.tkmapper.DefaultCustomConditionFilterParser;
 import mt.common.tkmapper.Filter.Operator;
 import mt.common.utils.SpringUtils;
 import mt.utils.JsUtils;
@@ -99,7 +101,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 		return doPage(pageNum, pageSize, orderBy, () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)));
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public List<mt.common.tkmapper.Filter> parseCondition(Object condition) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
@@ -139,16 +141,25 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					String prefix = annotation.prefix();
 					String suffix = annotation.suffix();
 					Class<? extends Converter<?>> converterClass = annotation.converter();
-					String conditionScript = annotation.condition();
-					conditionScript = MessageUtils.replaceVariable(conditionScript, condition, false);
-					try {
-						Boolean conditionResult = JsUtils.eval(conditionScript);
-						if (!conditionResult) {
-							continue;
+					Class<? extends CustomConditionFilterParser<?, ?>> customParserClass = annotation.customParserClass();
+					if (!DefaultCustomConditionFilterParser.class.equals(customParserClass)) {
+						CustomConditionFilterParser parser = SpringUtils.getBean(customParserClass);
+						List<mt.common.tkmapper.Filter> list = parser.parseFilters(condition, value);
+						if (CollectionUtils.isNotEmpty(list)) {
+							filters.addAll(list);
 						}
-					} catch (ScriptException e) {
-						throw new RuntimeException(e);
+						continue;
 					}
+//					String conditionScript = annotation.condition();
+//					conditionScript = MessageUtils.replaceVariable(conditionScript, condition, false);
+//					try {
+//						Boolean conditionResult = JsUtils.eval(conditionScript);
+//						if (!conditionResult) {
+//							continue;
+//						}
+//					} catch (ScriptException e) {
+//						throw new RuntimeException(e);
+//					}
 					
 					switch (operator) {
 						case condition:
