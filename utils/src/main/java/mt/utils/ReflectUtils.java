@@ -23,6 +23,10 @@ public class ReflectUtils {
 	
 	private static final Map<String, List<Field>> caches = new HashMap<>();
 	
+	public static void clearCache() {
+		caches.clear();
+	}
+	
 	private void addCache(String name, List<Field> list) {
 		if (caches.size() >= 100) {
 			caches.clear();
@@ -220,7 +224,7 @@ public class ReflectUtils {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * 获取值
 	 *

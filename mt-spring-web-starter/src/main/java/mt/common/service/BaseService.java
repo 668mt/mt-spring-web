@@ -32,7 +32,7 @@ public interface BaseService<T> {
 	 */
 	boolean existsId(Object record);
 	
-	int delete(String columnName, String value);
+	int delete(String columnName, Object value);
 	
 	/**
 	 * 是否存在

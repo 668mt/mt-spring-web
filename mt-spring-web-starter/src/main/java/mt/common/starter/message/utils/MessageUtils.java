@@ -1,7 +1,6 @@
 package mt.common.starter.message.utils;
 
 import com.github.pagehelper.PageInfo;
-import com.sun.corba.se.impl.orbutil.graph.Graph;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.annotation.Filter;
 import mt.common.config.CommonProperties;
@@ -10,7 +9,7 @@ import mt.common.starter.message.annotation.Message;
 import mt.common.starter.message.exception.FieldNotFoundException;
 import mt.common.starter.message.messagehandler.DefaultMessageHandler;
 import mt.common.starter.message.messagehandler.MessageHandler;
-import mt.utils.JsUtils;
+import mt.common.utils.SpringUtils;
 import mt.utils.JsonUtils;
 import mt.utils.ReflectUtils;
 import mt.utils.RegexUtils;
@@ -23,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
-import javax.script.ScriptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -45,6 +43,10 @@ public class MessageUtils {
 	public MessageUtils(CommonProperties commonProperties, Map<String, MessageHandler> messageHandlers) {
 		this.messageHandlers = messageHandlers;
 		this.commonProperties = commonProperties;
+	}
+	
+	public void refreshMessageHandlers() {
+		messageHandlers = SpringUtils.getBeansOfType(MessageHandler.class);
 	}
 	
 	/**

@@ -407,7 +407,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	@Transactional
-	public int delete(String columnName, String value) {
+	public int delete(String columnName, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(columnName, Operator.eq, value));
 		return deleteByFilters(filters);

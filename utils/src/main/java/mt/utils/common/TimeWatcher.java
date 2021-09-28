@@ -37,7 +37,7 @@ public class TimeWatcher {
 		long end = System.currentTimeMillis();
 		this.lastRecord = end;
 		long time = end - start;
-		log.info("执行结束[{}]，用时{}!", describe, TimeUtils.getReadableTime(time));
+		log.info("执行结束[{}]，用时{}!", describe, TimeUtils.getReadableTime(time, 3));
 		return time;
 	}
 }
