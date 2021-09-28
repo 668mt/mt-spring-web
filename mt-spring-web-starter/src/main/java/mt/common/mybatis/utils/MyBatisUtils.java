@@ -93,14 +93,14 @@ public class MyBatisUtils {
 	 * @return
 	 */
 	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
-		return createExample(entityClass, filters, null);
+		return createExample(entityClass, filters, false, null);
 	}
 	
-	public static Example createExample(Class<?> entityClass, List<Filter> filters, String resultMap) {
-		return createExample(entityClass, filters, resultMap, false);
+	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate) {
+		return createExample(entityClass, filters, forUpdate, null);
 	}
 	
-	public static Example createExample(Class<?> entityClass, List<Filter> filters, String resultMap, boolean forUpdate) {
+	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate, String resultMap) {
 		MtExample example = new MtExample(entityClass);
 		example.setResultMap(resultMap);
 		example.setForUpdate(forUpdate);

@@ -78,6 +78,8 @@ public interface BaseService<T> {
 	
 	List<T> findByFilter(Filter filter, boolean forUpdate);
 	
+	List<T> findByFilter(Filter filter, boolean forUpdate, String resultMap);
+	
 	/**
 	 * 查询列表
 	 *
@@ -95,6 +97,8 @@ public interface BaseService<T> {
 	 */
 	List<T> findByFilters(List<Filter> filters, boolean forUpdate);
 	
+	List<T> findByFilters(List<Filter> filters, boolean forUpdate, String resultMap);
+	
 	/**
 	 * 查询一个，多个抛出异常
 	 *
@@ -105,9 +109,13 @@ public interface BaseService<T> {
 	
 	T findOneByFilters(List<Filter> filters, boolean forUpdate);
 	
+	T findOneByFilters(List<Filter> filters, boolean forUpdate, String resultMap);
+	
 	T findOneByFilter(Filter filter);
 	
 	T findOneByFilter(Filter filter, boolean forUpdate);
+	
+	T findOneByFilter(Filter filter, boolean forUpdate, String resultMap);
 	
 	/**
 	 * 查询列表
