@@ -2,6 +2,9 @@ package mt.common.service;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import javassist.ClassClassPath;
+import javassist.ClassPool;
+import javassist.CtClass;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
@@ -12,20 +15,38 @@ import mt.common.tkmapper.CustomConditionFilterParser;
 import mt.common.tkmapper.DefaultCustomConditionFilterParser;
 import mt.common.tkmapper.Filter.Operator;
 import mt.common.utils.SpringUtils;
+import mt.utils.JsUtils;
+import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
+import tk.mybatis.mapper.entity.Config;
+import tk.mybatis.mapper.mapperhelper.MapperHelper;
+import tk.mybatis.spring.mapper.MapperFactoryBean;
+import tk.mybatis.spring.mapper.SpringBootBindUtil;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
+import javax.script.ScriptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -247,12 +268,14 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public List<T> findByFilter(mt.common.tkmapper.Filter filter) {
-		return findByFilter(filter, false, null);
+		return findByFilter(filter, false);
 	}
 	
 	@Override
 	public List<T> findByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
-		return findByFilter(filter, forUpdate, null);
+		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
+		filters.add(filter);
+		return findByFilters(filters, forUpdate);
 	}
 	
 	@Override
@@ -280,12 +303,12 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	@Transactional(readOnly = true)
 	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters) {
-		return findByFilters(filters, false, null);
+		return findByFilters(filters, false);
 	}
 	
 	@Override
 	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
-		return findByFilters(filters, forUpdate, null);
+		return getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), filters, forUpdate));
 	}
 	
 	
@@ -399,36 +422,5 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean existsByFilter(mt.common.tkmapper.Filter filter) {
 		return CollectionUtils.isNotEmpty(findByFilter(filter));
-	}
-	
-	@Override
-	public List<T> findByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate, String resultMap) {
-		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
-		filters.add(filter);
-		return findByFilters(filters, forUpdate, resultMap);
-	}
-	
-	@Override
-	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate, String resultMap) {
-		return getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), filters, forUpdate, resultMap));
-	}
-	
-	@Override
-	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate, String resultMap) {
-		List<T> findByFilters = findByFilters(filters, forUpdate, resultMap);
-		if (CollectionUtils.isEmpty(findByFilters)) {
-			return null;
-		}
-		if (findByFilters.size() > 1) {
-			throw new RuntimeException("findOneByFilters 查询出多个结果！");
-		}
-		return findByFilters.get(0);
-	}
-	
-	@Override
-	public T findOneByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate, String resultMap) {
-		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
-		filters.add(filter);
-		return findOneByFilters(filters, forUpdate, resultMap);
 	}
 }
