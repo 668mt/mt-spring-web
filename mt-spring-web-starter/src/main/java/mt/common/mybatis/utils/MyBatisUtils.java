@@ -1,6 +1,5 @@
 package mt.common.mybatis.utils;
 
-import mt.common.mybatis.entity.MtExample;
 import mt.common.mybatis.exception.NotSupportException;
 import mt.common.tkmapper.Filter;
 import mt.common.tkmapper.OrFilter;
@@ -93,16 +92,11 @@ public class MyBatisUtils {
 	 * @return
 	 */
 	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
-		return createExample(entityClass, filters, false, null);
+		return createExample(entityClass, filters, false);
 	}
 	
 	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate) {
-		return createExample(entityClass, filters, forUpdate, null);
-	}
-	
-	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate, String resultMap) {
-		MtExample example = new MtExample(entityClass);
-		example.setResultMap(resultMap);
+		Example example = new Example(entityClass);
 		example.setForUpdate(forUpdate);
 		if (CollectionUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
