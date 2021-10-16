@@ -3,6 +3,7 @@ package mt.common.service;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
+import mt.common.mybatis.mapper.BaseMapper;
 import mt.utils.common.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,8 +71,9 @@ public class BaseServiceBeanFactoryPostProcessor implements InitializingBean {
 			String mapperName = "mt.common.dao." + simpleName;
 			try {
 				ClassPool pool = ClassPool.getDefault();
-				CtClass ctClass = pool.makeInterface(mapperName, pool.getCtClass(mt.common.mybatis.mapper.BaseMapper.class.getName()));
-				ctClass.setGenericSignature("Ljava/lang/Object;L" + mt.common.mybatis.mapper.BaseMapper.class.getName().replace(".", "/") + "<L" + entityClass.getName().replace(".", "/") + ";>;");
+				pool.appendClassPath(new ClassClassPath(BaseMapper.class));
+				CtClass ctClass = pool.makeInterface(mapperName, pool.getCtClass(BaseMapper.class.getName()));
+				ctClass.setGenericSignature("Ljava/lang/Object;L" + BaseMapper.class.getName().replace(".", "/") + "<L" + entityClass.getName().replace(".", "/") + ";>;");
 				// 将类搜索路径插入到搜索路径之前
 				pool.appendClassPath(new ClassClassPath(ctClass.toClass()));
 			} catch (Exception e) {
