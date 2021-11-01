@@ -175,6 +175,7 @@ public abstract class MtExecutor<T> {
 	}
 	
 	private final AtomicLong index = new AtomicLong(0);
+	private long lastCost;
 	
 	class Task implements Runnable {
 		private final T task;
@@ -189,14 +190,16 @@ public abstract class MtExecutor<T> {
 				synchronized (MtExecutor.this) {
 					runningJobs.add(task);
 					queue.remove(task);
-					if (showTimeInfo && index.get() > 0) {
+					if (showTimeInfo && index.get() > 0 && lastCost > 0) {
 						long endTime = System.currentTimeMillis();
 						long cost = endTime - startTime;
-						//平均耗时
-						BigDecimal aver = BigDecimal.valueOf(cost).divide(BigDecimal.valueOf(index.get()), 3, RoundingMode.HALF_UP);
+//						//平均耗时
+//						BigDecimal aver = BigDecimal.valueOf(cost).divide(BigDecimal.valueOf(index.get()), 3, RoundingMode.HALF_UP);
+						BigDecimal aver = BigDecimal.valueOf(lastCost).divide(BigDecimal.valueOf(threadPoolExecutor.getCorePoolSize()), 3, RoundingMode.HALF_UP);
 						//1秒多少任务
 						double per = 0;
 						if (aver.compareTo(BigDecimal.ZERO) > 0) {
+//							per = BigDecimal.valueOf(1000).divide(aver, 2, RoundingMode.HALF_UP).doubleValue();
 							per = BigDecimal.valueOf(1000).divide(aver, 2, RoundingMode.HALF_UP).doubleValue();
 						}
 						long need = aver.multiply(BigDecimal.valueOf(queue.size())).setScale(3, RoundingMode.HALF_UP).longValue();
@@ -205,7 +208,10 @@ public abstract class MtExecutor<T> {
 						log.info("执行第 {} 个任务，队列中还有：{}", index.incrementAndGet(), queue.size());
 					}
 				}
+				long start = System.currentTimeMillis();
 				doJob(task);
+				lastCost = System.currentTimeMillis() - start;
+				
 				if (delayMills > 0) {
 					Thread.sleep(delayMills);
 				}
