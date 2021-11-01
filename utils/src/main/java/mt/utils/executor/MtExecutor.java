@@ -3,8 +3,11 @@ package mt.utils.executor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import mt.utils.common.TimeUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -104,6 +107,12 @@ public abstract class MtExecutor<T> {
 	@Setter
 	private TimeUnit taskTimeoutUnit = TimeUnit.MILLISECONDS;
 	private final ThreadPoolExecutor threadPoolExecutor;
+	@Getter
+	@Setter
+	private long startTime;
+	@Getter
+	@Setter
+	private boolean showTimeInfo = true;
 	/**
 	 * 队列中的任务
 	 */
@@ -131,6 +140,9 @@ public abstract class MtExecutor<T> {
 	 * @param task
 	 */
 	public void submit(T task) {
+		if (startTime <= 0) {
+			startTime = System.currentTimeMillis();
+		}
 		queue.add(task);
 		Task task1 = new Task(task);
 		if (taskTimeout > 0) {
@@ -177,7 +189,21 @@ public abstract class MtExecutor<T> {
 				synchronized (MtExecutor.this) {
 					runningJobs.add(task);
 					queue.remove(task);
-					log.info("执行第 {} 个任务，队列中还有：{}", index.incrementAndGet(), queue.size());
+					if (showTimeInfo && index.get() > 0) {
+						long endTime = System.currentTimeMillis();
+						long cost = endTime - startTime;
+						//平均耗时
+						BigDecimal aver = BigDecimal.valueOf(cost).divide(BigDecimal.valueOf(index.get()), 3, RoundingMode.HALF_UP);
+						//1秒多少任务
+						double per = 0;
+						if (aver.compareTo(BigDecimal.ZERO) > 0) {
+							per = BigDecimal.valueOf(1000).divide(aver, 2, RoundingMode.HALF_UP).doubleValue();
+						}
+						long need = aver.multiply(BigDecimal.valueOf(queue.size())).setScale(3, RoundingMode.HALF_UP).longValue();
+						log.info("执行第 {} 个任务，队列中还有：{}，任务已耗时{},还需{}全部完成，平均每秒{}个任务", index.incrementAndGet(), queue.size(), TimeUtils.getReadableTime(cost, 3), TimeUtils.getReadableTime(need, 3), per);
+					} else {
+						log.info("执行第 {} 个任务，队列中还有：{}", index.incrementAndGet(), queue.size());
+					}
 				}
 				doJob(task);
 				if (delayMills > 0) {
