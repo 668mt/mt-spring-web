@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import mt.utils.common.Assert;
-import mt.utils.executor.MtExecutor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -17,8 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @Author Martin
@@ -37,7 +35,7 @@ public class Spider {
 	private Integer connectTimeout;
 	private RestTemplate restTemplate;
 	private Model model;
-	private final Map<String, MtExecutor<SpiderTask>> executorServiceMap = new ConcurrentHashMap<>();
+	private final Map<String, ExecutorService> executorServiceMap = new ConcurrentHashMap<>();
 	private volatile boolean stop = false;
 	
 	public static SpiderBuilder create() {
@@ -46,8 +44,15 @@ public class Spider {
 	
 	public void stop() {
 		this.stop = true;
-		for (Map.Entry<String, MtExecutor<SpiderTask>> modelMtExecutorEntry : executorServiceMap.entrySet()) {
-			modelMtExecutorEntry.getValue().shutdownNow();
+		for (Map.Entry<String, ExecutorService> stringExecutorServiceEntry : executorServiceMap.entrySet()) {
+			stringExecutorServiceEntry.getValue().shutdownNow();
+		}
+	}
+	
+	public void stopSafely() {
+		this.stop = true;
+		for (Map.Entry<String, ExecutorService> stringExecutorServiceEntry : executorServiceMap.entrySet()) {
+			stringExecutorServiceEntry.getValue().shutdown();
 		}
 	}
 	
@@ -82,15 +87,17 @@ public class Spider {
 	private RestTemplate getRestTemplate() {
 		if (restTemplate == null) {
 			synchronized (this) {
-				SimpleClientHttpRequestFactory simpleClientHttpRequestFactory = new SimpleClientHttpRequestFactory();
-				if (readTimeout != null) {
-					simpleClientHttpRequestFactory.setReadTimeout(Math.toIntExact(readTimeout));
+				if (restTemplate == null) {
+					SimpleClientHttpRequestFactory simpleClientHttpRequestFactory = new SimpleClientHttpRequestFactory();
+					if (readTimeout != null) {
+						simpleClientHttpRequestFactory.setReadTimeout(Math.toIntExact(readTimeout));
+					}
+					if (connectTimeout != null) {
+						simpleClientHttpRequestFactory.setConnectTimeout(Math.toIntExact(connectTimeout));
+					}
+					restTemplate = new RestTemplate();
+					restTemplate.setRequestFactory(simpleClientHttpRequestFactory);
 				}
-				if (connectTimeout != null) {
-					simpleClientHttpRequestFactory.setConnectTimeout(Math.toIntExact(connectTimeout));
-				}
-				restTemplate = new RestTemplate();
-				restTemplate.setRequestFactory(simpleClientHttpRequestFactory);
 			}
 		}
 		return restTemplate;
@@ -106,14 +113,6 @@ public class Spider {
 	
 	public void doAsyncSpider(String url, Model model, JSONObject params) {
 		doAsyncSpider(url, model, params, new ArrayList<>());
-	}
-	
-	@Data
-	public static class SpiderTask {
-		private Object item;
-		private int itemIndex;
-		private JSONObject itemParams;
-		
 	}
 	
 	@SuppressWarnings({"rawtypes", "unchecked"})
@@ -172,6 +171,7 @@ public class Spider {
 		List items;
 		Document document;
 		try {
+			//获取html文本
 			html = spiderHandler.getForHtml(getRestTemplate(), url, cookie, userAgent, params);
 			Assert.state(StringUtils.isNotBlank(html), "抓取结果为空");
 			document = Jsoup.parse(html);
@@ -189,49 +189,24 @@ public class Spider {
 					log.trace("[{}]抓取到item{}", requestId, item.toString());
 				}
 				try {
+					//参数，可用于传递给下一层的model
 					JSONObject itemParams = new JSONObject();
 					itemParams.putAll(params);
 					spiderHandler.addItemParams(this, url, document, item, i, itemParams);
 					if (!spiderHandler.canCatch(this, item, itemParams)) {
+						//过滤掉不需要的内容
 						continue;
 					}
-					outs.add(item);
 					if (findlModel.isAsync()) {
-						final AsyncConfig asyncConfig = findlModel.getAsyncConfig();
-						String key = StringUtils.isNotBlank(asyncConfig.getName()) ? asyncConfig.getName() : "default";
-						MtExecutor<SpiderTask> executor = executorServiceMap.get(key);
-						if (executor == null) {
-							synchronized (this) {
-								executor = executorServiceMap.get(key);
-								if (executor == null) {
-									log.debug("[{}]创建线程池", requestId);
-									executor = new MtExecutor<SpiderTask>(asyncConfig.getName(), asyncConfig.getThreadLine()) {
-										@Override
-										public void doJob(SpiderTask task) {
-											spiderHandler.onItemParsed(Spider.this, task.getItem(), task.getItemIndex(), task.getItemParams());
-											if (findlModel.getNext() != null) {
-												doAsyncSpider(spiderHandler.parseNextModelUrl(Spider.this, task.getItem(), task.getItemParams()), findlModel.getNext(), task.getItemParams(), new ArrayList<>());
-											}
-										}
-									};
-									if (asyncConfig.getJobTimeoutSeconds() != null) {
-										executor.setTaskTimeout(asyncConfig.getJobTimeoutSeconds());
-										executor.setTaskTimeoutUnit(TimeUnit.SECONDS);
-									}
-									executor.setDelayMills(asyncConfig.getDelayMills());
-									executorServiceMap.put(key, executor);
-								}
-							}
-						}
-						SpiderTask spiderTask = new SpiderTask();
-						spiderTask.setItemIndex(i);
-						spiderTask.setItem(item);
-						spiderTask.setItemParams(itemParams);
-						executor.submit(spiderTask);
+						//异步任务
+						createAsyncWork(findlModel, spiderHandler, requestId, i, item, itemParams);
 					} else {
 						spiderHandler.onItemParsed(this, item, i, itemParams);
-						if (findlModel.getNext() != null) {
-							doAsyncSpider(spiderHandler.parseNextModelUrl(Spider.this, item, itemParams), findlModel.getNext(), itemParams, new ArrayList());
+						Model nextModel = findlModel.getNext();
+						if (nextModel != null) {
+							doAsyncSpider(spiderHandler.parseNextModelUrl(Spider.this, item, itemParams), nextModel, itemParams, outs);
+						} else {
+							outs.add(item);
 						}
 					}
 				} catch (Throwable e) {
@@ -265,7 +240,36 @@ public class Spider {
 				spiderHandler.onCatchFinished(this, params, outs);
 			}
 		}
+	}
+	
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private void createAsyncWork(Model findlModel, SpiderHandler spiderHandler, String requestId, int itemIndex, Object item, JSONObject itemParams) throws InterruptedException, ExecutionException, TimeoutException {
+		final AsyncConfig asyncConfig = findlModel.getAsyncConfig();
+		String key = StringUtils.isNotBlank(asyncConfig.getName()) ? asyncConfig.getName() : "default";
+		ExecutorService executor = executorServiceMap.get(key);
+		if (executor == null) {
+			synchronized (this) {
+				executor = executorServiceMap.get(key);
+				if (executor == null) {
+					log.debug("[{}]创建线程池", requestId);
+					executor = Executors.newFixedThreadPool(asyncConfig.getThreadLine());
+					executorServiceMap.put(key, executor);
+				}
+			}
+		}
 		
+		Future<?> future = executor.submit(() -> {
+			spiderHandler.onItemParsed(Spider.this, item, itemIndex, itemParams);
+			if (findlModel.getNext() != null) {
+				doAsyncSpider(spiderHandler.parseNextModelUrl(Spider.this, item, itemParams), findlModel.getNext(), itemParams, new ArrayList<>());
+			}
+		});
+		if (asyncConfig.getDelayMills() > 0) {
+			Thread.sleep(asyncConfig.getDelayMills());
+		}
+		if (asyncConfig.getJobTimeoutSeconds() != null) {
+			future.get(asyncConfig.getJobTimeoutSeconds(), TimeUnit.SECONDS);
+		}
 	}
 	
 }

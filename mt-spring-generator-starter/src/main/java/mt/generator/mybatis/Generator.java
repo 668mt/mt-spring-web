@@ -41,10 +41,6 @@ public class Generator {
 	@Autowired
 	private DataSourceProperties dataSourceProperties;
 	@Autowired
-	private DataLockService dataLockService;
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
-	@Autowired
 	private List<IParser> parsers;
 	private final AtomicBoolean loaded = new AtomicBoolean(false);
 	
@@ -97,19 +93,6 @@ public class Generator {
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			System.exit(0);
-		}
-		
-		List<String> locks = new ArrayList<>();
-		locks.add("idGenerate");
-		locks.add("locks");
-		locks.add("sn");
-		for (String id : locks) {
-			if (!dataLockService.existsId(id, jdbcTemplate)) {
-				DataLock dataLock = new DataLock();
-				dataLock.setId(id);
-				dataLock.setUseKey(id);
-				dataLockService.insert(dataLock, jdbcTemplate);
-			}
 		}
 		
 		//注册初始化完成事件

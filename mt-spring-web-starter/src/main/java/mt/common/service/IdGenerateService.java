@@ -56,15 +56,11 @@ public class IdGenerateService {
 	
 	public IdGenerate selectByPrimaryKey(String tableName, JdbcTemplate jdbcTemplate) throws Exception {
 		String sql = "SELECT tableName,nextValue FROM " + commonProperties.getIdGenerateTableName() + " WHERE tableName = ?";
-		return jdbcTemplate.query(sql, new Object[]{tableName}, new ResultSetExtractor<IdGenerate>() {
-			@Nullable
-			@Override
-			public IdGenerate extractData(ResultSet rs) throws SQLException, DataAccessException {
-				if (rs.next()) {
-					return new IdGenerate(rs.getString(1), rs.getLong(2));
-				}
-				return null;
+		return jdbcTemplate.query(sql, new Object[]{tableName}, rs -> {
+			if (rs.next()) {
+				return new IdGenerate(rs.getString(1), rs.getLong(2));
 			}
+			return null;
 		});
 	}
 	
@@ -72,7 +68,6 @@ public class IdGenerateService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 120)
 	public <T> T generate(@NotNull String tableName, @NotNull IdGenerator idGenerator, @Nullable GenerateClass generateClass, @NotNull Class<T> type, @NotNull JdbcTemplate jdbcTemplate) throws Exception {
 		dataLockService.lock("idGenerate", jdbcTemplate);
-//		IdGenerator.Generator generator = idGenerator.generator();
 		Generator generator = idGenerator.generator();
 		T id = null;
 		switch (generator) {

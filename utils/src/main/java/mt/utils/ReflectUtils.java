@@ -104,6 +104,7 @@ public class ReflectUtils {
 			class1 = class1.getSuperclass(); //得到父类,然后赋给自己
 		}
 		if (CollectionUtils.isNotEmpty(classList)) {
+			Collections.reverse(classList);
 			for (Class<?> class2 : classList) {
 				fieldList.addAll(Arrays.asList(class2.getDeclaredFields()));
 			}

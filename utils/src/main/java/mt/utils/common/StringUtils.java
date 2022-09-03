@@ -11,7 +11,7 @@ public class StringUtils {
 	 * 特殊字符正则表达式
 	 */
 	public static final String SPECIAL_CHAR_REGEX = "[\n\\s\"`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？ ]";
-	public static final String FILE_NAME_SPECIAL_CHAR_REGEX = "[\\/:*?\"<>|]";
+	public static final String FILE_NAME_SPECIAL_CHAR_REGEX = "[\\/:*?\"<>|\n]";
 	/**
 	 * 特殊字符
 	 */

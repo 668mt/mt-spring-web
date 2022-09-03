@@ -23,7 +23,6 @@ import java.util.UUID;
  * @Description:
  * @date 2017-12-5 下午4:21:11
  */
-@Service
 public class DataLockService {
 	
 	@Autowired

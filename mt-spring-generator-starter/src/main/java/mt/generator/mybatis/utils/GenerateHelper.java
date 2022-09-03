@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import mt.common.annotation.ForeignKey;
 import mt.common.annotation.GenerateOrder;
 import mt.common.config.CommonProperties;
+import mt.common.config.SystemEntity;
 import mt.common.entity.DataLock;
 import mt.common.entity.IdGenerate;
 import mt.common.mybatis.event.AfterInitEvent;
@@ -75,8 +76,7 @@ public class GenerateHelper {
 			}
 		}
 		allEntitys.addAll(getAllEntitys("mt.common.entity"));
-		allEntitys.add(IdGenerate.class);
-		allEntitys.add(DataLock.class);
+		allEntitys.addAll(SystemEntity.getEntities());
 		
 		List<String> list = new ArrayList<>();
 		for (Class<?> entityClass : allEntitys) {

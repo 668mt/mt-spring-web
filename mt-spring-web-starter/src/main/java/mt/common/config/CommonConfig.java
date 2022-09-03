@@ -12,10 +12,7 @@ import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.logging.LoggerConfiguration;
 import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
@@ -39,13 +36,6 @@ public class CommonConfig implements InitializingBean {
 	private LoggingSystem loggingSystem;
 	@Autowired
 	private ApplicationContext context;
-	
-	@Bean
-	@Primary
-	public IdGenerateService idGenerateService() {
-		return new IdGenerateService();
-	}
-	
 	@Autowired
 	private CommonProperties commonProperties;
 	private final AtomicBoolean inited = new AtomicBoolean(false);

@@ -32,7 +32,6 @@ public interface SpiderHandler<T> {
 	default void onParseException(Spider spider, String url, JSONObject params) {
 	}
 	
-	
 	/**
 	 * 1. 解析条目
 	 *

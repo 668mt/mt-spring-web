@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 import java.util.Properties;
 
@@ -16,6 +17,7 @@ import java.util.Properties;
  * @Date 2020/1/11
  */
 @Configuration
+@PropertySource("classpath:application-common.properties")
 public class MybatisConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(PageHelper.class)
