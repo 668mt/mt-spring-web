@@ -11,9 +11,8 @@ import mt.common.mybatis.event.AfterInitEvent;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.utils.SpringUtils;
 import mt.generator.mybatis.annotation.Index;
+import mt.generator.mybatis.annotation.IndexType;
 import mt.generator.mybatis.annotation.Indexs;
-import mt.generator.mybatis.annotation.UniqueIndex;
-import mt.generator.mybatis.annotation.UniqueIndexs;
 import mt.utils.ClassUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -211,23 +210,6 @@ public class GenerateHelper {
 		if (StringUtils.isNotBlank(primaryKeySql)) {
 			sb.append("\t").append(primaryKeySql).append(",\r\n");
 		}
-		List<UniqueIndex> uniqueIndexList = new ArrayList<>();
-		UniqueIndexs uniqueIndexs = entityClass.getAnnotation(UniqueIndexs.class);
-		if (uniqueIndexs != null) {
-			UniqueIndex[] indexs = uniqueIndexs.value();
-			uniqueIndexList.addAll(Arrays.asList(indexs));
-		}
-		UniqueIndex uniqueIndex = entityClass.getAnnotation(UniqueIndex.class);
-		if (uniqueIndex != null) {
-			uniqueIndexList.add(uniqueIndex);
-		}
-		uniqueIndexList.forEach(u -> {
-			List<String> columns = Arrays.stream(u.columns()).map(s -> MapperColumnUtils.parseColumn(s, entityClass)).collect(Collectors.toList());
-			String uniqueSql = iParser.getUniqueIndexSql(u.name(), columns);
-			if (StringUtils.isNotBlank(uniqueSql)) {
-				sb.append("\t").append(uniqueSql).append(",\r\n");
-			}
-		});
 		List<Index> indexList = new ArrayList<>();
 		Indexs indexs = entityClass.getAnnotation(Indexs.class);
 		if (indexs != null) {
@@ -239,7 +221,22 @@ public class GenerateHelper {
 		}
 		indexList.forEach(i -> {
 			List<String> columns = Arrays.stream(i.columns()).map(s -> MapperColumnUtils.parseColumn(s, entityClass)).collect(Collectors.toList());
-			String indexSql = iParser.getIndexSql(i.name(), columns);
+			IndexType type = i.type();
+			String indexSql = null;
+			switch (type) {
+				case normal:
+					indexSql = iParser.getIndexSql(i.name(), columns);
+					break;
+				case unique:
+					indexSql = iParser.getUniqueIndexSql(i.name(), columns);
+					break;
+				case fulltext:
+					indexSql = iParser.getFullTextIndexSql(i.name(), columns);
+					break;
+				case hash:
+					indexSql = iParser.getHashIndexSql(i.name(), columns);
+					break;
+			}
 			if (StringUtils.isNotBlank(indexSql)) {
 				sb.append("\t").append(indexSql).append(",\r\n");
 			}

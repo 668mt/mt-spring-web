@@ -1,8 +1,6 @@
 package mt.generator.mybatis.utils;
 
 import mt.common.annotation.ForeignKey;
-import mt.generator.mybatis.annotation.Index;
-import mt.generator.mybatis.annotation.UniqueIndex;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -97,25 +95,37 @@ public abstract class AbstractParser implements IParser {
 		return columnDefinition;
 	}
 	
-	@Override
-	public String getIndexSql(@Nullable String name, @NotNull List<String> columns) {
+	private String getIndexName(String name, List<String> columns) {
 		if (StringUtils.isBlank(name)) {
 			name = "INDEX_" + StringUtils.join(columns, "_");
 		}
 		if (name.length() > 64) {
 			name = name.substring(name.length() - 64);
 		}
-		return "KEY " + name + "(" + StringUtils.join(columns, ",") + ")";
+		return name;
+	}
+	
+	@Override
+	public String getIndexSql(@Nullable String name, @NotNull List<String> columns) {
+		String indexName = getIndexName(name, columns);
+		return "KEY " + indexName + "(" + StringUtils.join(columns, ",") + ")";
 	}
 	
 	@Override
 	public String getUniqueIndexSql(@Nullable String name, @NotNull List<String> columns) {
-		if (StringUtils.isBlank(name)) {
-			name = "INDEX_" + StringUtils.join(columns, "_");
-		}
-		if (name.length() > 64) {
-			name = name.substring(name.length() - 64);
-		}
-		return "UNIQUE KEY " + name + "(" + StringUtils.join(columns, ",") + ")";
+		String indexName = getIndexName(name, columns);
+		return "UNIQUE KEY " + indexName + "(" + StringUtils.join(columns, ",") + ")";
+	}
+	
+	@Override
+	public String getFullTextIndexSql(@Nullable String name, @NotNull List<String> columns) {
+		String indexName = getIndexName(name, columns);
+		return "FULLTEXT KEY " + indexName + " (" + StringUtils.join(columns, ",") + ")";
+	}
+	
+	@Override
+	public String getHashIndexSql(@Nullable String name, @NotNull List<String> columns) {
+		String indexName = getIndexName(name, columns);
+		return "KEY " + indexName + " (" + StringUtils.join(columns, ",") + ") using hash";
 	}
 }

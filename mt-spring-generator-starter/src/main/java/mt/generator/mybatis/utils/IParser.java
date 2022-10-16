@@ -1,8 +1,6 @@
 package mt.generator.mybatis.utils;
 
 import mt.common.annotation.ForeignKey;
-import mt.generator.mybatis.annotation.Index;
-import mt.generator.mybatis.annotation.UniqueIndex;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,4 +80,8 @@ public interface IParser {
 	String getIndexSql(@Nullable String name, @NotNull List<String> columns);
 	
 	String getUniqueIndexSql(@Nullable String name, @NotNull List<String> columns);
+	
+	String getFullTextIndexSql(@Nullable String name, @NotNull List<String> columns);
+	
+	String getHashIndexSql(@Nullable String name, @NotNull List<String> columns);
 }

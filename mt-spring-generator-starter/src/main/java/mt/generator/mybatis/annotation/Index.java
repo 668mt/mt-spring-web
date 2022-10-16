@@ -15,4 +15,6 @@ public @interface Index {
 	String name() default "";
 	
 	String[] columns();
+	
+	IndexType type() default IndexType.normal;
 }

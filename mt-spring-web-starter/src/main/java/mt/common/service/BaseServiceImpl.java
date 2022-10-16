@@ -2,9 +2,6 @@ package mt.common.service;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import javassist.ClassClassPath;
-import javassist.ClassPool;
-import javassist.CtClass;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
@@ -15,41 +12,24 @@ import mt.common.tkmapper.CustomConditionFilterParser;
 import mt.common.tkmapper.DefaultCustomConditionFilterParser;
 import mt.common.tkmapper.Filter.Operator;
 import mt.common.utils.SpringUtils;
-import mt.utils.JsUtils;
-import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
-import tk.mybatis.mapper.entity.Config;
-import tk.mybatis.mapper.mapperhelper.MapperHelper;
-import tk.mybatis.spring.mapper.MapperFactoryBean;
-import tk.mybatis.spring.mapper.SpringBootBindUtil;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
-import javax.script.ScriptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -351,30 +331,14 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	@Transactional
-	public int saveList(List<T> records) {
-		int update = 0;
-		for (T record : records) {
-			update += save(record);
-		}
-		return update;
-	}
-	
-	@Override
-	@Transactional
 	public int saveSelective(T record) {
 		return getBaseMapper().insert(record);
 	}
-	
-	;
 	
 	@Override
 	@Transactional
 	public int updateById(T record) {
 		return getBaseMapper().updateByPrimaryKey(record);
-	}
-	
-	public String[] getCacheName() {
-		return new String[]{};
 	}
 	
 	@Override
@@ -407,6 +371,12 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	@Transactional
+	public int deleteByFilter(mt.common.tkmapper.Filter filter) {
+		return deleteByFilters(Collections.singletonList(filter));
+	}
+	
+	@Override
+	@Transactional
 	public int delete(String columnName, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(columnName, Operator.eq, value));
@@ -422,5 +392,20 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public boolean existsByFilter(mt.common.tkmapper.Filter filter) {
 		return CollectionUtils.isNotEmpty(findByFilter(filter));
+	}
+	
+	@Override
+	public boolean notExistsId(Object record) {
+		return !existsId(record);
+	}
+	
+	@Override
+	public boolean notExistsByFilters(List<mt.common.tkmapper.Filter> filters) {
+		return !existsByFilters(filters);
+	}
+	
+	@Override
+	public boolean notExistsByFilter(mt.common.tkmapper.Filter filter) {
+		return !existsByFilter(filter);
 	}
 }

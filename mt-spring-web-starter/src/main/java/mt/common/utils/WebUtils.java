@@ -558,4 +558,28 @@ public final class WebUtils {
 		param = param == null ? "" : param;
 		return url.contains("?") ? (url.endsWith("&") ? url + param : url + "&" + param) : url + "?" + param;
 	}
+	
+	public static String getRemoteIpAddr() {
+		HttpServletRequest request = getRequest();
+		if (request == null) {
+			return null;
+		}
+		String ip = request.getHeader("x-forwarded-for");
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("WL-Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "X-Real-IP".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("X-Real-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getRemoteAddr();
+		}
+		if (StringUtils.isNotBlank(ip) && ip.contains(",")) {
+			return ip.split(",")[0];
+		}
+		return ip;
+	}
 }

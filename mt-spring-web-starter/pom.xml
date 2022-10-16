@@ -5,7 +5,7 @@
     <parent>
         <artifactId>mt-spring-starter-parent</artifactId>
         <groupId>com.github.668mt.web</groupId>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -18,15 +18,15 @@
             <artifactId>commons-lang</artifactId>
             <version>2.6</version>
         </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <version>2.9.2</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.springfox</groupId>-->
+<!--            <artifactId>springfox-swagger2</artifactId>-->
+<!--            <version>2.9.2</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>
-            <version>2.0.1</version>
+            <version>1.9.6</version>
         </dependency>
         <dependency>
             <groupId>com.github.668mt.web</groupId>

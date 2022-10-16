@@ -12,10 +12,9 @@ import java.util.List;
  */
 public interface BaseService<T> {
 	
-	public interface GetList<T2> {
+	interface GetList<T2> {
 		List<T2> getList();
 	}
-	
 	
 	/**
 	 * 返回行数
@@ -25,25 +24,7 @@ public interface BaseService<T> {
 	 */
 	int count(List<Filter> filters);
 	
-	/**
-	 * 是否存在主键
-	 *
-	 * @return
-	 */
-	boolean existsId(Object record);
-	
 	int delete(String columnName, Object value);
-	
-	/**
-	 * 是否存在
-	 *
-	 * @param columnName
-	 * @param value
-	 * @return
-	 */
-	boolean exists(String columnName, Object value);
-	
-	boolean notExists(String columnName, Object value);
 	
 	List<Filter> parseCondition(Object condition);
 	
@@ -126,8 +107,6 @@ public interface BaseService<T> {
 	 */
 	int save(T record);
 	
-	int saveList(List<T> records);
-	
 	/**
 	 * 保存,null值不会被保存，会使用数据库默认值
 	 *
@@ -169,7 +148,34 @@ public interface BaseService<T> {
 	 */
 	int deleteByFilters(List<Filter> filters);
 	
+	int deleteByFilter(Filter filter);
+	
+	/**
+	 * 是否存在主键
+	 *
+	 * @return
+	 */
+	boolean existsId(Object record);
+	
+	/**
+	 * 是否存在
+	 *
+	 * @param columnName
+	 * @param value
+	 * @return
+	 */
+	boolean exists(String columnName, Object value);
+	
 	boolean existsByFilters(List<Filter> filters);
 	
 	boolean existsByFilter(Filter filter);
+	
+	boolean notExistsId(Object record);
+	
+	boolean notExists(String columnName, Object value);
+	
+	boolean notExistsByFilters(List<Filter> filters);
+	
+	boolean notExistsByFilter(Filter filter);
+	
 }
