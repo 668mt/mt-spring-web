@@ -1,12 +1,15 @@
 package mt.common.starter.message.utils;
 
 import com.github.pagehelper.PageInfo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.annotation.Filter;
 import mt.common.config.CommonProperties;
 import mt.common.converter.Converter;
+import mt.common.starter.message.annotation.BatchMessage;
 import mt.common.starter.message.annotation.Message;
 import mt.common.starter.message.exception.FieldNotFoundException;
+import mt.common.starter.message.messagehandler.BatchMessageHandler;
 import mt.common.starter.message.messagehandler.DefaultMessageHandler;
 import mt.common.starter.message.messagehandler.MessageHandler;
 import mt.common.utils.SpringUtils;
@@ -66,14 +69,8 @@ public class MessageUtils {
 		return type.equals(Object.class);
 	}
 	
-	private MessageHandler getMessageHandler(@NotNull Message message) {
-		String handleBeanName = message.handlerBeanName();
-		//使用Bean的名字进行查找
-		if (StringUtils.isNotBlank(handleBeanName)) {
-			return messageHandlers.get(handleBeanName);
-		}
-		Class<? extends MessageHandler> clazz = message.value().equals(DefaultMessageHandler.class) ? message.handlerClass() : message.value();
-		Assert.notNull(clazz, "handleBeanName和handlerClass不能同时为空");
+	private MessageHandler getMessageHandler(@NotNull Class<? extends MessageHandler> clazz) {
+		Assert.notNull(clazz, "handlerClass不能为空");
 		//使用类名查找
 		for (Map.Entry<String, MessageHandler> entry : messageHandlers.entrySet()) {
 			MessageHandler messageHandler = entry.getValue();
@@ -82,6 +79,17 @@ public class MessageUtils {
 			}
 		}
 		throw new IllegalStateException("找不到messageHandler：" + clazz.getSimpleName());
+	}
+	
+	private MessageHandler getMessageHandler(@NotNull Message message) {
+		String handleBeanName = message.handlerBeanName();
+		//使用Bean的名字进行查找
+		if (StringUtils.isNotBlank(handleBeanName)) {
+			return messageHandlers.get(handleBeanName);
+		}
+		Class<? extends MessageHandler> clazz = message.value().equals(DefaultMessageHandler.class) ? message.handlerClass() : message.value();
+		Assert.notNull(clazz, "handleBeanName和handlerClass不能同时为空");
+		return getMessageHandler(clazz);
 	}
 	
 	public Object message(@Nullable Object object, @Nullable String... includeFields) {
@@ -331,21 +339,66 @@ public class MessageUtils {
 	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, Set<String> group, String... includeFields) {
 		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
 			List<T> list = pageInfo.getList();
-			for (T t : list) {
-				messageRecursive(t, group, includeFields);
-			}
-		}
-		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
-			List<T> list = pageInfo.getList();
-			for (T t : list) {
-				messageRecursive(t, group, includeFields);
-			}
+			dealWithCollection(list, group, includeFields);
 		}
 		return pageInfo;
 	}
 	
+	@SneakyThrows
+	public <T> Collection<T> dealBatchMessage(Collection<T> list, Set<String> group, String... includeFields) {
+		if (CollectionUtils.isEmpty(list)) {
+			return list;
+		}
+		T first = list.iterator().next();
+		Class<?> itemClass = first.getClass();
+		List<Field> fields = ReflectUtils.findAllFields(itemClass, BatchMessage.class);
+		if (CollectionUtils.isNotEmpty(fields)) {
+			for (Field dstField : fields) {
+				BatchMessage batchMessage = dstField.getAnnotation(BatchMessage.class);
+				String column = batchMessage.column();
+				Field srcField = ReflectUtils.findField(itemClass, column);
+				Assert.notNull(srcField, "找不到字段" + column);
+				srcField.setAccessible(true);
+				Set<Object> values = list.stream().map(t -> {
+					try {
+						return srcField.get(t);
+					} catch (IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
+				}).filter(Objects::nonNull).collect(Collectors.toSet());
+				
+				Class<? extends BatchMessageHandler<?, ?>> aClass = batchMessage.handlerClass();
+				MessageHandler messageHandler = getMessageHandler(aClass);
+				Assert.state(messageHandler instanceof BatchMessageHandler, "请使用BatchMessageHandler");
+				BatchMessageHandler batchMessageHandler = (BatchMessageHandler) messageHandler;
+				Map map = batchMessageHandler.handle(values, batchMessage.params());
+				if (map == null) {
+					continue;
+				}
+				dstField.setAccessible(true);
+				List<Object> effectValues = new ArrayList<>();
+				for (T t : list) {
+					Object key = srcField.get(t);
+					if (key == null) {
+						continue;
+					}
+					Object value = map.get(key);
+					if (value == null) {
+						continue;
+					}
+					effectValues.add(value);
+					dstField.set(t, value);
+				}
+				dealBatchMessage(effectValues, group, includeFields);
+			}
+		}
+		return list;
+	}
+	
+	@SneakyThrows
 	public <T> Collection<T> dealWithCollection(Collection<T> list, Set<String> group, String... includeFields) {
 		if (CollectionUtils.isNotEmpty(list)) {
+			dealBatchMessage(list, group, includeFields);
 			for (T t : list) {
 				messageRecursive(t, group, includeFields);
 			}

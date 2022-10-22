@@ -13,6 +13,7 @@
         <module>mt-spring-generator-starter</module>
         <module>mt-spring-web-starter</module>
         <module>utils</module>
+        <module>mt-tools</module>
     </modules>
 
     <parent>
