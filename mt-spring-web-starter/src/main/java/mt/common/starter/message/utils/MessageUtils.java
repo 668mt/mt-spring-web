@@ -7,11 +7,10 @@ import mt.common.annotation.Filter;
 import mt.common.config.CommonProperties;
 import mt.common.converter.Converter;
 import mt.common.starter.message.annotation.BatchMessage;
+import mt.common.starter.message.annotation.BatchMultipleMessage;
 import mt.common.starter.message.annotation.Message;
 import mt.common.starter.message.exception.FieldNotFoundException;
-import mt.common.starter.message.messagehandler.BatchMessageHandler;
-import mt.common.starter.message.messagehandler.DefaultMessageHandler;
-import mt.common.starter.message.messagehandler.MessageHandler;
+import mt.common.starter.message.messagehandler.*;
 import mt.common.utils.SpringUtils;
 import mt.utils.JsonUtils;
 import mt.utils.ReflectUtils;
@@ -371,7 +370,7 @@ public class MessageUtils {
 				MessageHandler messageHandler = getMessageHandler(aClass);
 				Assert.state(messageHandler instanceof BatchMessageHandler, "请使用BatchMessageHandler");
 				BatchMessageHandler batchMessageHandler = (BatchMessageHandler) messageHandler;
-				Map map = batchMessageHandler.handle(values, batchMessage.params());
+				Map map = batchMessageHandler.handle(list, values, batchMessage.params());
 				if (map == null) {
 					continue;
 				}
@@ -382,6 +381,62 @@ public class MessageUtils {
 					if (key == null) {
 						continue;
 					}
+					Object value = map.get(key);
+					if (value == null) {
+						continue;
+					}
+					effectValues.add(value);
+					dstField.set(t, value);
+				}
+				dealBatchMessage(effectValues, group, includeFields);
+			}
+		}
+		List<Field> multipleMessageFields = ReflectUtils.findAllFields(itemClass, BatchMultipleMessage.class);
+		if (CollectionUtils.isNotEmpty(multipleMessageFields)) {
+			for (Field dstField : multipleMessageFields) {
+				BatchMultipleMessage batchMultipleMessage = dstField.getAnnotation(BatchMultipleMessage.class);
+				String[] columns = batchMultipleMessage.columns();
+				Field[] srcFields = new Field[columns.length];
+				for (int i = 0; i < columns.length; i++) {
+					String column = columns[i];
+					Field srcField = ReflectUtils.findField(itemClass, column);
+					Assert.notNull(srcField, "找不到字段" + column);
+					srcField.setAccessible(true);
+					srcFields[i] = srcField;
+				}
+				
+				Set<MultipleFieldValue> values = list.stream().map(t -> {
+					try {
+						MultipleFieldValue multipleFieldValue = new MultipleFieldValue();
+						Object[] columnValues = new Object[columns.length];
+						for (int i = 0; i < columns.length; i++) {
+							columnValues[i] = srcFields[i].get(t);
+						}
+						multipleFieldValue.setValues(columnValues);
+						return multipleFieldValue;
+					} catch (IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
+				}).collect(Collectors.toSet());
+				
+				Class<? extends BatchMultipleMessageHandler<?>> aClass = batchMultipleMessage.handlerClass();
+				MessageHandler messageHandler = getMessageHandler(aClass);
+				Assert.state(messageHandler instanceof BatchMessageHandler, "请使用BatchMultipleMessageHandler");
+				BatchMultipleMessageHandler batchMessageHandler = (BatchMultipleMessageHandler) messageHandler;
+				Map map = batchMessageHandler.handle(list, values, batchMultipleMessage.params());
+				if (map == null) {
+					continue;
+				}
+				dstField.setAccessible(true);
+				List<Object> effectValues = new ArrayList<>();
+				for (T t : list) {
+					MultipleFieldValue key = new MultipleFieldValue();
+					Object[] columnValues = new Object[columns.length];
+					for (int i = 0; i < srcFields.length; i++) {
+						columnValues[i] = srcFields[i].get(t);
+					}
+					key.setValues(columnValues);
+					
 					Object value = map.get(key);
 					if (value == null) {
 						continue;

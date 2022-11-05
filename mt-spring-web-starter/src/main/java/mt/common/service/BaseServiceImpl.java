@@ -112,24 +112,25 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 						continue;
 					}
 				}
+				Filter annotation = AnnotatedElementUtils.getMergedAnnotation(field, Filter.class);
+				Assert.notNull(annotation, "filter注解不能为空");
+				Class<? extends CustomConditionFilterParser<?, ?>> customParserClass = annotation.customParserClass();
+				if (!DefaultCustomConditionFilterParser.class.equals(customParserClass)) {
+					CustomConditionFilterParser parser = SpringUtils.getBean(customParserClass);
+					List<mt.common.tkmapper.Filter> list = parser.parseFilters(condition, value);
+					if (CollectionUtils.isNotEmpty(list)) {
+						filters.addAll(list);
+					}
+					continue;
+				}
+				
 				if (value != null && !"".equals((value + "").trim())) {
 					//获取注解
-					Filter annotation = AnnotatedElementUtils.getMergedAnnotation(field, Filter.class);
-					Assert.notNull(annotation, "filter注解不能为空");
 					String column = StringUtils.isNotBlank(annotation.column()) ? annotation.column() : MapperColumnUtils.parseColumn(field.getName());
 					Operator operator = annotation.operator();
 					String prefix = annotation.prefix();
 					String suffix = annotation.suffix();
 					Class<? extends Converter<?>> converterClass = annotation.converter();
-					Class<? extends CustomConditionFilterParser<?, ?>> customParserClass = annotation.customParserClass();
-					if (!DefaultCustomConditionFilterParser.class.equals(customParserClass)) {
-						CustomConditionFilterParser parser = SpringUtils.getBean(customParserClass);
-						List<mt.common.tkmapper.Filter> list = parser.parseFilters(condition, value);
-						if (CollectionUtils.isNotEmpty(list)) {
-							filters.addAll(list);
-						}
-						continue;
-					}
 //					String conditionScript = annotation.condition();
 //					conditionScript = MessageUtils.replaceVariable(conditionScript, condition, false);
 //					try {

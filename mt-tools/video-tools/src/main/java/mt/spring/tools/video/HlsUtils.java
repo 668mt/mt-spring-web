@@ -1,14 +1,13 @@
 package mt.spring.tools.video;
 
 import lombok.extern.slf4j.Slf4j;
+import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import org.jetbrains.annotations.Nullable;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
-
-import static mt.spring.tools.video.FfmpegUtils.doFfmpegJob;
 
 /**
  * @Author Martin
@@ -74,7 +73,7 @@ public class HlsUtils {
 		if (!parentFile.exists()) {
 			parentFile.mkdirs();
 		}
-		doFfmpegJob(ffmpeg -> {
+		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-y");
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(source.getAbsolutePath());
@@ -103,7 +102,7 @@ public class HlsUtils {
 			segmentSeconds = 30;
 		}
 		Integer finalSegmentSeconds = segmentSeconds;
-		doFfmpegJob(ffmpeg -> {
+		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(source.getAbsolutePath());
 			ffmpeg.addArgument("-c");

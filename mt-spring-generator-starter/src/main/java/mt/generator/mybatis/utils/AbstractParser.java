@@ -90,7 +90,7 @@ public abstract class AbstractParser implements IParser {
 		} else if (type.isAssignableFrom(Enum.class)) {
 			columnDefinition = "varchar(100)";
 		} else {
-			columnDefinition = "varchar(500)";
+			columnDefinition = "varchar(100)";
 		}
 		return columnDefinition;
 	}
@@ -120,7 +120,7 @@ public abstract class AbstractParser implements IParser {
 	@Override
 	public String getFullTextIndexSql(@Nullable String name, @NotNull List<String> columns) {
 		String indexName = getIndexName(name, columns);
-		return "FULLTEXT KEY " + indexName + " (" + StringUtils.join(columns, ",") + ")";
+		return "FULLTEXT KEY " + indexName + " (" + StringUtils.join(columns, ",") + ") WITH PARSER ngram";
 	}
 	
 	@Override

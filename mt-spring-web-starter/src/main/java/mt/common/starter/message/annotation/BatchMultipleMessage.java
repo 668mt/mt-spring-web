@@ -1,6 +1,6 @@
 package mt.common.starter.message.annotation;
 
-import mt.common.starter.message.messagehandler.BatchMessageHandler;
+import mt.common.starter.message.messagehandler.BatchMultipleMessageHandler;
 
 import java.lang.annotation.*;
 
@@ -12,10 +12,10 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD})
 @Inherited
 @Documented
-public @interface BatchMessage {
-	String column();
+public @interface BatchMultipleMessage {
+	String[] columns();
 	
-	Class<? extends BatchMessageHandler<?, ?>> handlerClass();
+	Class<? extends BatchMultipleMessageHandler<?>> handlerClass();
 	
 	String[] params() default "";
 }

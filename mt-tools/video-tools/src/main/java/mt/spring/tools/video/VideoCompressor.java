@@ -3,7 +3,16 @@ package mt.spring.tools.video;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import mt.utils.common.TimeUtils;
-import ws.schild.jave.*;
+import ws.schild.jave.Encoder;
+import ws.schild.jave.EncoderException;
+import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.encode.AudioAttributes;
+import ws.schild.jave.encode.EncodingAttributes;
+import ws.schild.jave.encode.VideoAttributes;
+import ws.schild.jave.info.AudioInfo;
+import ws.schild.jave.info.MultimediaInfo;
+import ws.schild.jave.info.VideoInfo;
+import ws.schild.jave.info.VideoSize;
 
 import java.io.File;
 
@@ -39,7 +48,7 @@ public class VideoCompressor {
 	}
 	
 	public boolean needCompress() {
-		ws.schild.jave.VideoInfo video = info.getVideo();
+		VideoInfo video = info.getVideo();
 		float frameRate = video.getFrameRate();
 		int bitRate = video.getBitRate();
 		int width = video.getSize().getWidth();
@@ -95,7 +104,7 @@ public class VideoCompressor {
 		}
 		
 		EncodingAttributes attr = new EncodingAttributes();
-		attr.setFormat(format);
+		attr.setOutputFormat(format);
 		attr.setAudioAttributes(audio);
 		attr.setVideoAttributes(videoAttributes);
 		attr.setEncodingThreads(Runtime.getRuntime().availableProcessors() / 2);

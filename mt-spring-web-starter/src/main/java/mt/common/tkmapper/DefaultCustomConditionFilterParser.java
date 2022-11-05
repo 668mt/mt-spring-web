@@ -1,5 +1,8 @@
 package mt.common.tkmapper;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 /**
@@ -8,7 +11,7 @@ import java.util.List;
  */
 public class DefaultCustomConditionFilterParser implements CustomConditionFilterParser<Object, Object> {
 	@Override
-	public List<Filter> parseFilters(Object condition, Object fieldValue) {
+	public List<Filter> parseFilters(@NotNull Object condition, @Nullable Object fieldValue) {
 		return null;
 	}
 }

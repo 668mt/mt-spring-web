@@ -1,13 +1,17 @@
 package mt.spring.tools.video;
 
 import lombok.extern.slf4j.Slf4j;
+import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import mt.utils.common.Assert;
 import org.jetbrains.annotations.NotNull;
-import ws.schild.jave.*;
+import ws.schild.jave.EncoderException;
+import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.ScreenExtractor;
+import ws.schild.jave.info.MultimediaInfo;
+import ws.schild.jave.info.VideoInfo;
+import ws.schild.jave.info.VideoSize;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -15,7 +19,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * @Author Martin
@@ -23,57 +26,6 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class FfmpegUtils {
-	private static FFMPEGLocator locator = new DefaultFFMPEGLocator();
-	
-	private static final Pattern SUCCESS_PATTERN = Pattern.compile("^\\s*video\\:\\S+\\s+audio\\:\\S+\\s+subtitle\\:\\S+\\s+global headers\\:\\S+.*$", Pattern.CASE_INSENSITIVE);
-	
-	public interface FfmpegWorker {
-		void addArguments(FFMPEGExecutor ffmpeg);
-	}
-	
-	/**
-	 * 设置ffmpeg locator
-	 *
-	 * @param locator locator
-	 */
-	public static void setFfmpegLocator(FFMPEGLocator locator) {
-		FfmpegUtils.locator = locator;
-	}
-	
-	/**
-	 * 执行ffmpeg命令
-	 *
-	 * @param ffmpegWorker 添加命令
-	 */
-	public static void doFfmpegJob(FfmpegWorker ffmpegWorker) {
-		FFMPEGExecutor ffmpeg = locator.createExecutor();
-		ffmpegWorker.addArguments(ffmpeg);
-		try {
-			ffmpeg.execute();
-			try (RBufferedReader reader = new RBufferedReader(new InputStreamReader(ffmpeg.getErrorStream()))) {
-				String line;
-				ConversionOutputAnalyzer outputAnalyzer = new ConversionOutputAnalyzer(0, null);
-				while ((line = reader.readLine()) != null) {
-					outputAnalyzer.analyzeNewLine(line);
-				}
-				if (outputAnalyzer.getLastWarning() != null) {
-					String lastWarning = outputAnalyzer.getLastWarning();
-					if (!SUCCESS_PATTERN.matcher(lastWarning).matches()) {
-						throw new RuntimeException("No match for: " + SUCCESS_PATTERN + " in " + lastWarning);
-					}
-				}
-			}
-			int exitCode = ffmpeg.getProcessExitCode();
-			if (exitCode != 0) {
-				log.error("Process exit code: {}", exitCode);
-				throw new RuntimeException("Exit code of ffmpeg encoding run is " + exitCode);
-			}
-		} catch (IOException | EncoderException e) {
-			throw new RuntimeException(e);
-		} finally {
-			ffmpeg.destroy();
-		}
-	}
 	
 	/**
 	 * 获取视频信息
@@ -89,7 +41,7 @@ public class FfmpegUtils {
 		try {
 			Future<mt.spring.tools.video.entity.VideoInfo> future = singleThreadExecutor.submit(() -> {
 				MultimediaInfo info = object.getInfo();
-				ws.schild.jave.VideoInfo video = info.getVideo();
+				VideoInfo video = info.getVideo();
 				Assert.notNull(video, "video parsed error");
 				mt.spring.tools.video.entity.VideoInfo videoInfo = new mt.spring.tools.video.entity.VideoInfo();
 				long duration = info.getDuration();
@@ -276,6 +228,46 @@ public class FfmpegUtils {
 	}
 	
 	/**
+	 * 连续截图20分钟
+	 *
+	 * @param srcFile 源文件
+	 * @param dstPath 目标目录
+	 */
+	public static void screenshotsTwentyMinutes(@NotNull File srcFile, @NotNull File dstPath) {
+		screenshots(srcFile, dstPath, 0.01667, "00:00", "20:00", 400);
+	}
+	
+	/**
+	 * 连续截图
+	 * ffmpeg -ss 00:00 -i 5.mp4 -f image2 -r 0.01667 -t 20:00 -filter:v scale=400:-1 thumb/%3d.jpg
+	 *
+	 * @param srcFile    源文件
+	 * @param dstPath    目标目录
+	 * @param rate       每秒播放的帧  1 = 间隔秒数 * rate，例如5秒截图一次，那就是rate = 0.2
+	 * @param startTime  开始时间，格式xx:xx，例如00:00
+	 * @param duringRime 持续时间，格式xx:xx，例如20:00
+	 * @param width      宽度
+	 */
+	public static void screenshots(@NotNull File srcFile, @NotNull File dstPath, double rate, @NotNull String startTime, @NotNull String duringRime, int width) {
+		dstPath.mkdirs();
+		FfmpegJob.execute(ffmpeg -> {
+			ffmpeg.addArgument("-ss");
+			ffmpeg.addArgument(startTime);
+			ffmpeg.addArgument("-i");
+			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument("-f");
+			ffmpeg.addArgument("image2");
+			ffmpeg.addArgument("-r");
+			ffmpeg.addArgument(rate + "");
+			ffmpeg.addArgument("-t");
+			ffmpeg.addArgument(duringRime);
+			ffmpeg.addArgument("-filter:v");
+			ffmpeg.addArgument("scale=" + width + ":-1");
+			ffmpeg.addArgument(dstPath.getAbsolutePath() + "/%3d.jpg");
+		});
+	}
+	
+	/**
 	 * 压缩图片
 	 *
 	 * @param srcFile 源文件
@@ -297,7 +289,7 @@ public class FfmpegUtils {
 	 * @param to      到，例：00:00:20
 	 */
 	public static void cutVideo(@NotNull File srcFile, @NotNull File desFile, @NotNull String from, @NotNull String to) {
-		doFfmpegJob(ffmpeg -> {
+		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
 			ffmpeg.addArgument("-ss");
@@ -335,7 +327,8 @@ public class FfmpegUtils {
 	/**
 	 * 生成预览视频
 	 * 命令：ffmpeg -i 1.mp4 -vf "select='lte(mod(t, 122),1)',scale=400:-2,setpts=N/FRAME_RATE/TB" -an -y preview.mp4
-	 *F
+	 * F
+	 *
 	 * @param srcFile  源文件
 	 * @param dstFile  目标文件，例如：preview.mp4
 	 * @param segments 分段，每段1秒
@@ -349,7 +342,7 @@ public class FfmpegUtils {
 		long during = videoInfo.getDuring();
 		long second = during / 1000 / segments;
 		if (second > segments) {
-			doFfmpegJob(ffmpeg -> {
+			FfmpegJob.execute(ffmpeg -> {
 				ffmpeg.addArgument("-i");
 				ffmpeg.addArgument(srcFile.getAbsolutePath());
 				ffmpeg.addArgument("-vf");
@@ -363,4 +356,5 @@ public class FfmpegUtils {
 		log.info("视频长度小于分片长度，不能生成预览视频,segments={}", segments);
 		return false;
 	}
+	
 }
