@@ -73,18 +73,33 @@ public class HlsUtils {
 		if (!parentFile.exists()) {
 			parentFile.mkdirs();
 		}
-		FfmpegJob.execute(ffmpeg -> {
-			ffmpeg.addArgument("-y");
-			ffmpeg.addArgument("-i");
-			ffmpeg.addArgument(source.getAbsolutePath());
-			ffmpeg.addArgument("-vcodec");
-			ffmpeg.addArgument("copy");
-			ffmpeg.addArgument("-acodec");
-			ffmpeg.addArgument("copy");
-			ffmpeg.addArgument("-vbsf");
-			ffmpeg.addArgument("h264_mp4toannexb");
-			ffmpeg.addArgument(target.getAbsolutePath());
-		});
+		try {
+			FfmpegJob.execute(ffmpeg -> {
+				ffmpeg.addArgument("-y");
+				ffmpeg.addArgument("-i");
+				ffmpeg.addArgument(source.getAbsolutePath());
+				ffmpeg.addArgument("-vcodec");
+				ffmpeg.addArgument("copy");
+				ffmpeg.addArgument("-acodec");
+				ffmpeg.addArgument("copy");
+				ffmpeg.addArgument("-vbsf");
+				ffmpeg.addArgument("h264_mp4toannexb");
+				ffmpeg.addArgument(target.getAbsolutePath());
+			});
+		} catch (Exception e) {
+			FfmpegJob.execute(ffmpeg -> {
+				ffmpeg.addArgument("-y");
+				ffmpeg.addArgument("-i");
+				ffmpeg.addArgument(source.getAbsolutePath());
+				ffmpeg.addArgument("-vcodec");
+				ffmpeg.addArgument("h264");
+				ffmpeg.addArgument("-acodec");
+				ffmpeg.addArgument("copy");
+				ffmpeg.addArgument("-vbsf");
+				ffmpeg.addArgument("h264_mp4toannexb");
+				ffmpeg.addArgument(target.getAbsolutePath());
+			});
+		}
 	}
 	
 	/**

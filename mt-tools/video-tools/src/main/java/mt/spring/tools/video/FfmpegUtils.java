@@ -357,4 +357,18 @@ public class FfmpegUtils {
 		return false;
 	}
 	
+	/**
+	 * 转换格式
+	 * ffmpeg -i 1.wmv -y 1.mp4
+	 * @param srcFile 源文件
+	 * @param dstFile 目标文件
+	 */
+	public static void convert(File srcFile, File dstFile) {
+		FfmpegJob.execute(ffmpeg -> {
+			ffmpeg.addArgument("-i");
+			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument("-y");
+			ffmpeg.addArgument(dstFile.getAbsolutePath());
+		});
+	}
 }

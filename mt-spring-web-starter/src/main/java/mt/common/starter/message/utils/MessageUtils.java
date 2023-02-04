@@ -17,7 +17,6 @@ import mt.utils.ReflectUtils;
 import mt.utils.RegexUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,11 +35,12 @@ import java.util.stream.Collectors;
  * @date 2017-11-30 上午10:13:47
  */
 @Slf4j
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class MessageUtils {
 	
 	private Map<String, MessageHandler> messageHandlers;
 	
-	private CommonProperties commonProperties;
+	private final CommonProperties commonProperties;
 	
 	public MessageUtils(CommonProperties commonProperties, Map<String, MessageHandler> messageHandlers) {
 		this.messageHandlers = messageHandlers;
@@ -104,7 +104,14 @@ public class MessageUtils {
 		if (group != null) {
 			groupList = Arrays.stream(group).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 		}
-		return messageRecursive(object, groupList, includeFields);
+		if (object instanceof Collection || object instanceof PageInfo || object instanceof Map) {
+			return messageRecursive(object, groupList, includeFields);
+		} else {
+			List<Object> list = new ArrayList<>();
+			list.add(object);
+			dealWithCollection(list, groupList, includeFields);
+			return list.get(0);
+		}
 	}
 	
 	/**
@@ -114,7 +121,6 @@ public class MessageUtils {
 	 * @param includeFields
 	 * @return
 	 */
-	@SuppressWarnings({"unchecked"})
 	public Object messageRecursive(@Nullable Object object, Set<String> group, @Nullable String... includeFields) {
 		if (object == null) {
 			return null;
@@ -131,7 +137,7 @@ public class MessageUtils {
 		}
 		
 		List<String> includeList = null;
-		if (ArrayUtils.isNotEmpty(includeFields)) {
+		if (includeFields != null && includeFields.length > 0) {
 			includeList = Arrays.asList(includeFields);
 		}
 		//拉出mybatis缓存
@@ -166,9 +172,7 @@ public class MessageUtils {
 							continue;
 						}
 						Collection collection = (Collection) value;
-						for (Object o : collection) {
-							messageRecursive(o, group);
-						}
+						dealBatchMessage(collection, group, includeFields);
 					}
 					//处理其它类型
 					if (isContinueMessage(field) && !Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
@@ -446,6 +450,9 @@ public class MessageUtils {
 				}
 				dealBatchMessage(effectValues, group, includeFields);
 			}
+		}
+		for (T t : list) {
+			messageRecursive(t, group, includeFields);
 		}
 		return list;
 	}
