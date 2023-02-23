@@ -29,8 +29,6 @@
         <spring-cloud.version>Hoxton.RELEASE</spring-cloud.version>
         <mt-spring-web-starter.version>1.0.3</mt-spring-web-starter.version>
         <nacos-spring-cloud.version>2.2.5.RELEASE</nacos-spring-cloud.version>
-        <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
-        </sonatypeOssDistMgmtSnapshotsUrl>
     </properties>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-web</name>
@@ -323,14 +321,10 @@
         </pluginRepository>
     </pluginRepositories>
     <distributionManagement>
-        <!--        <repository>-->
-        <!--            <id>github</id>-->
-        <!--            <url>https://maven.pkg.github.com/668mt/mos</url>-->
-        <!--        </repository>-->
         <snapshotRepository>
             <id>sonatype-nexus-snapshots</id>
             <name>Sonatype Nexus Snapshots</name>
-            <url>${sonatypeOssDistMgmtSnapshotsUrl}</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>sonatype-nexus-staging</id>
