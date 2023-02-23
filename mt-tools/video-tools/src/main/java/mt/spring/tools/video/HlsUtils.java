@@ -78,6 +78,8 @@ public class HlsUtils {
 				ffmpeg.addArgument("-y");
 				ffmpeg.addArgument("-i");
 				ffmpeg.addArgument(source.getAbsolutePath());
+				ffmpeg.addArgument("-vf");
+				ffmpeg.addArgument("scale=iw:-2");
 				ffmpeg.addArgument("-vcodec");
 				ffmpeg.addArgument("copy");
 				ffmpeg.addArgument("-acodec");
@@ -91,6 +93,8 @@ public class HlsUtils {
 				ffmpeg.addArgument("-y");
 				ffmpeg.addArgument("-i");
 				ffmpeg.addArgument(source.getAbsolutePath());
+				ffmpeg.addArgument("-vf");
+				ffmpeg.addArgument("scale=iw:-2");
 				ffmpeg.addArgument("-vcodec");
 				ffmpeg.addArgument("h264");
 				ffmpeg.addArgument("-acodec");

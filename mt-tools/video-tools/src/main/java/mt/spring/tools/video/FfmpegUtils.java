@@ -367,6 +367,8 @@ public class FfmpegUtils {
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument("-vf");
+			ffmpeg.addArgument("scale=iw:-2");
 			ffmpeg.addArgument("-y");
 			ffmpeg.addArgument(dstFile.getAbsolutePath());
 		});
