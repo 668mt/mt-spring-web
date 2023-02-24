@@ -28,6 +28,28 @@
         <java.version>1.8</java.version>
     </properties>
 
+    <url>https://github.com/668mt/mt-spring-web</url>
+    <name>utils</name>
+    <description>工具集</description>
+    <scm>
+        <tag>master</tag>
+        <url>https://github.com/668mt/mt-spring-web.git</url>
+    </scm>
+    <developers>
+        <developer>
+            <name>martin</name>
+            <email>765936728@qq.com</email>
+            <organization/>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

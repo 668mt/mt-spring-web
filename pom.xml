@@ -32,6 +32,7 @@
     </properties>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-web</name>
+    <description>spring web封装，集成mybatis通用mapper</description>
 
     <scm>
         <tag>master</tag>
@@ -44,6 +45,13 @@
             <organization/>
         </developer>
     </developers>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencies>
         <!-- spring boot2.0配置改变提示 -->
