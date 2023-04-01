@@ -1,6 +1,6 @@
 package mt.common.mybatis;
 
-import mt.common.annotation.LastModifiedDate;
+import mt.common.annotation.UpdatedDate;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.Intercepts;
@@ -23,7 +23,7 @@ import java.util.Date;
 		@Signature(method = "update", type = Executor.class, args = {MappedStatement.class, Object.class})
 })
 @Component
-public class LastModifiedDateInterceptor extends BaseInterceptor {
+public class UpdatedDateInterceptor extends BaseInterceptor {
 	
 	@Override
 	public Object intercept(Invocation invocation) throws Throwable {
@@ -32,7 +32,7 @@ public class LastModifiedDateInterceptor extends BaseInterceptor {
 			return invocation.proceed();
 		}
 		
-		setFieldsValue(parameters, LastModifiedDate.class, true, new InterceptorHelper.AbstractValueGenerator<Date>() {
+		setFieldsValue(parameters, UpdatedDate.class, true, new InterceptorHelper.AbstractValueGenerator<Date>() {
 			@Override
 			public Date getValue(Field field) {
 				return new Date();

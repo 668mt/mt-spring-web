@@ -3,7 +3,7 @@ package mt.common.config;
 import com.github.pagehelper.PageHelper;
 import mt.common.currentUser.UserContext;
 import mt.common.mybatis.CreatedByInterceptor;
-import mt.common.mybatis.LastModifiedByInterceptor;
+import mt.common.mybatis.UpdatedByInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -37,8 +37,8 @@ public class MybatisConfiguration {
 	
 	@Bean
 	@ConditionalOnBean(UserContext.class)
-	public LastModifiedByInterceptor lastModifiedByInterceptor(UserContext userContext) {
-		return new LastModifiedByInterceptor(userContext);
+	public UpdatedByInterceptor lastModifiedByInterceptor(UserContext userContext) {
+		return new UpdatedByInterceptor(userContext);
 	}
 	
 	@Bean

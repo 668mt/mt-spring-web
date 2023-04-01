@@ -6,13 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 创建人
-* @Description:
-* @author Martin
-*
+ * 修改人姓名
+ *
+ * @author Martin
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = ElementType.FIELD)
-public @interface CreatedBy {
+public @interface UpdatedByUserName {
 
 }

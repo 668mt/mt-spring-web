@@ -5,7 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import mt.common.annotation.CreatedDate;
 import mt.common.annotation.GenerateOrder;
-import mt.common.annotation.LastModifiedDate;
+import mt.common.annotation.UpdatedDate;
 import mt.common.annotation.Version;
 
 import java.io.Serializable;
@@ -32,7 +32,7 @@ public class BaseFields implements Serializable {
 	@ApiModelProperty(hidden = true)
 	private Long version;
 	
-	@LastModifiedDate
+	@UpdatedDate
 	@GenerateOrder(5)
 	@ApiModelProperty(hidden = true)
 	private Date lastModifiedDate;

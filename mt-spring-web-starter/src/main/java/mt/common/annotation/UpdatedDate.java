@@ -7,14 +7,12 @@ import java.lang.annotation.Target;
 
 /**
  * 修改日期注解
-* @ClassName: CreatedDate
-* @Description: 
-* @author Martin
-* @date 2017-9-28 下午6:10:38
-*
+ *
+ * @author Martin
+ * @date 2017-9-28 下午6:10:38
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = ElementType.FIELD)
-public @interface LastModifiedDate {
+public @interface UpdatedDate {
 
 }

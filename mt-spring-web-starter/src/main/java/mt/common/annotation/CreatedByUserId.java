@@ -6,13 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 创建日期注解
+ * 创建人id
  *
  * @author Martin
- * @date 2017-9-28 下午6:10:38
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = ElementType.FIELD)
-public @interface CreatedDate {
+public @interface CreatedByUserId {
 
 }

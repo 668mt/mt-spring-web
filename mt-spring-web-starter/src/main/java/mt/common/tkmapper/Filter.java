@@ -1,6 +1,7 @@
 package mt.common.tkmapper;
 
 import lombok.Data;
+import mt.common.mybatis.utils.MapperColumnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -185,7 +186,8 @@ public class Filter {
 		Object value2 = filter.getValue2();
 		Object value = "#{" + paramName + "}";
 		alias = alias == null ? "" : alias + ".";
-		String sql = alias + filter.getProperty();
+		String column = MapperColumnUtils.parseColumn(filter.getProperty());
+		String sql = alias + column;
 		switch (filter.getOperator()) {
 			case eq:
 				return sql += " = " + value + " ";
@@ -193,9 +195,9 @@ public class Filter {
 				return sql += " = " + value + " ";
 			case condition:
 				if (filter.getValue() != null) {
-					return filter.getProperty() + " " + value;
+					return column + " " + value;
 				} else {
-					return filter.getProperty();
+					return column;
 				}
 			case between:
 				return sql += " between #{" + paramName + "_1} and #{" + paramName + "_2} ";

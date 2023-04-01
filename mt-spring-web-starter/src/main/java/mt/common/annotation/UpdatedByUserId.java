@@ -6,13 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 最后修改人
-* @Description:
-* @author Martin
-*
+ * 修改人id
+ *
+ * @author Martin
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = ElementType.FIELD)
-public @interface LastModifiedBy {
+public @interface UpdatedByUserId {
 
 }

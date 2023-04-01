@@ -14,6 +14,7 @@ import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
 
