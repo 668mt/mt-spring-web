@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mt.common.fragment.RedisTaskFragment;
 import mt.common.fragment.TaskFragment;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -27,6 +29,8 @@ public class WebRedisConfiguration {
 	
 	@Value("${spring.application.name:default}")
 	private String applicationName;
+	@Autowired
+	private ServerProperties serverProperties;
 	
 	@Bean
 	public RedisCacheProperties redisCacheProperties() {
@@ -60,6 +64,7 @@ public class WebRedisConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(TaskFragment.class)
 	public RedisTaskFragment redisTaskFragment(RedisTemplate<String, Object> redisTemplate) {
-		return new RedisTaskFragment(applicationName, redisTemplate);
+		Integer port = serverProperties.getPort();
+		return new RedisTaskFragment(applicationName, redisTemplate, RedisTaskFragment.getHostIp(null) + ":" + port);
 	}
 }

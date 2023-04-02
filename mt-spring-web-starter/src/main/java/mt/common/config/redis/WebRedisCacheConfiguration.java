@@ -60,14 +60,14 @@ public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 				prefix = prefix + "-" + profiles;
 			}
 		}
-		RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)).prefixKeysWith(prefix + ":").serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer)).serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
+		RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)).prefixKeysWith(prefix + ":").serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer)).serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
 //				.disableCachingNullValues()
 				;
 		
 		// 对每个缓存空间应用不同的配置
-		Map<String, RedisCacheConfiguration> configMap = redisCacheSupport.getConfigurations();
+		Map<String, RedisCacheConfiguration> configMap = redisCacheSupport.getConfigurations(defaultConfig);
 		
-		return RedisCacheManager.builder(factory).cacheDefaults(config).initialCacheNames(configMap.keySet())// 注意这两句的调用顺序，一定要先调用该方法设置初始化的缓存名，再初始化相关的配置
+		return RedisCacheManager.builder(factory).cacheDefaults(defaultConfig).initialCacheNames(configMap.keySet())// 注意这两句的调用顺序，一定要先调用该方法设置初始化的缓存名，再初始化相关的配置
 				.withInitialCacheConfigurations(configMap).build();
 	}
 	

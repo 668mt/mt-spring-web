@@ -14,5 +14,5 @@ public interface RedisCacheSupport {
 	 *
 	 * @return key为缓存名称，value为缓存配置
 	 */
-	Map<String, RedisCacheConfiguration> getConfigurations();
+	Map<String, RedisCacheConfiguration> getConfigurations(RedisCacheConfiguration defaultConfiguration);
 }
