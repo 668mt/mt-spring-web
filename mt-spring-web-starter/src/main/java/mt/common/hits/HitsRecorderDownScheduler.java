@@ -1,6 +1,7 @@
 package mt.common.hits;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  * @Date 2023/4/2
  */
 @Data
+@Slf4j
 public class HitsRecorderDownScheduler {
 	private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 	private final List<HitsRecorder<?, ?>> hitsRecorders;
@@ -39,9 +41,11 @@ public class HitsRecorderDownScheduler {
 	 * 下发
 	 */
 	public void hitsDown() {
+		log.debug("hitsDown start");
 		for (HitsRecorder<?, ?> hitsRecorder : hitsRecorders) {
 			hitsRecorder.hitsDown();
 		}
+		log.debug("hitsDown end");
 	}
 	
 	/**
