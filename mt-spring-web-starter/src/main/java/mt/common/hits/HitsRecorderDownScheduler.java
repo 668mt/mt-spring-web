@@ -43,7 +43,11 @@ public class HitsRecorderDownScheduler {
 	public void hitsDown() {
 		log.debug("hitsDown start");
 		for (HitsRecorder<?, ?> hitsRecorder : hitsRecorders) {
-			hitsRecorder.hitsDown();
+			try {
+				hitsRecorder.hitsDown();
+			} catch (Exception e) {
+				log.error("hitsDown发生错误,class:{},message：{}", hitsRecorder.getClass(), e.getMessage(), e);
+			}
 		}
 		log.debug("hitsDown end");
 	}

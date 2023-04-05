@@ -1,0 +1,42 @@
+package mt.common.progress;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @Author Martin
+ * @Date 2023/4/5
+ */
+public class LocalProgress implements Progress {
+	private final Map<String, Double> progressMap = new HashMap<>(16);
+	
+	@Override
+	public void update(@NotNull String key, double percent) {
+		progressMap.put(key, percent);
+	}
+	
+	@Override
+	public void add(@NotNull String key, double percent) {
+		synchronized (this) {
+			Double curr = progressMap.get(key);
+			if (curr == null) {
+				curr = 0d;
+			}
+			percent += curr;
+			progressMap.put(key, percent);
+		}
+	}
+	
+	@Override
+	public void remove(@NotNull String key) {
+		progressMap.remove(key);
+	}
+	
+	@Override
+	public double getPercent(@NotNull String key) {
+		Double percent = progressMap.get(key);
+		return percent == null ? 0 : percent;
+	}
+}

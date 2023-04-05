@@ -1,17 +1,17 @@
 package mt.common.hits;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @Author Martin
  * @Date 2023/4/2
  */
 public class LocalHitsRecorder<SCOPE, KEY> implements HitsRecorder<SCOPE, KEY> {
-	private final Map<SCOPE, Map<KEY, Long>> localScopedHitsMap = new HashMap<>();
+	private Map<SCOPE, ConcurrentHashMap<KEY, AtomicLong>> localScopedHitsMap = new ConcurrentHashMap<>(16);
 	private final HitsDownHandler<SCOPE, KEY> hitsDownHandler;
 	
 	public LocalHitsRecorder(@NotNull HitsDownHandler<SCOPE, KEY> hitsDownHandler) {
@@ -19,25 +19,24 @@ public class LocalHitsRecorder<SCOPE, KEY> implements HitsRecorder<SCOPE, KEY> {
 	}
 	
 	@Override
-	public void recordHits(@Nullable SCOPE scope, @NotNull KEY key, long hits) {
-		Map<KEY, Long> localHitsMap = localScopedHitsMap.computeIfAbsent(scope, k -> new HashMap<>());
-		Long cachedHits = localHitsMap.get(key);
-		if (cachedHits == null) {
-			cachedHits = 0L;
-		}
-		cachedHits += hits;
-		localHitsMap.put(key, cachedHits);
+	public void recordHits(@NotNull SCOPE scope, @NotNull KEY key, long hits) {
+		localScopedHitsMap.computeIfAbsent(scope, k -> new ConcurrentHashMap<>(16))
+			.computeIfAbsent(key, k -> new AtomicLong(0))
+			.getAndAdd(hits);
 	}
 	
 	@Override
 	public void hitsDown() {
-		for (Map.Entry<SCOPE, Map<KEY, Long>> stringMapEntry : localScopedHitsMap.entrySet()) {
-			SCOPE scope = stringMapEntry.getKey();
-			Map<KEY, Long> localHitsMap = stringMapEntry.getValue();
-			if (localHitsMap.size() > 0) {
-				hitsDownHandler.doHitsDown(scope, localHitsMap);
-				localHitsMap.clear();
+		for (Map.Entry<SCOPE, ConcurrentHashMap<KEY, AtomicLong>> entry : localScopedHitsMap.entrySet()) {
+			SCOPE scope = entry.getKey();
+			Map<KEY, Long> clickMap = new ConcurrentHashMap<>();
+			ConcurrentHashMap<KEY, AtomicLong> scopedClicks = entry.getValue();
+			for (Map.Entry<KEY, AtomicLong> keyLongAdderEntry : scopedClicks.entrySet()) {
+				long hits = keyLongAdderEntry.getValue().getAndSet(0);
+				// 获取最后一次的点击量
+				clickMap.put(keyLongAdderEntry.getKey(), hits);
 			}
+			hitsDownHandler.doHitsDown(scope, clickMap);
 		}
 	}
 }

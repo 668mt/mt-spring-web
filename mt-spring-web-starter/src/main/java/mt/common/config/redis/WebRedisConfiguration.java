@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import mt.common.fragment.RedisTaskFragment;
 import mt.common.fragment.TaskFragment;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
