@@ -181,12 +181,19 @@ public class Filter {
 		return sql;
 	}
 	
-	public static String toMyBatisSql(@NotNull String paramName, @NotNull Filter filter, @Nullable String alias) {
+	public String toMyBatisSql(@NotNull String paramName, @Nullable String alias) {
+		Filter filter = this;
 		Assert.notNull(filter, "参数不能为空");
-		Object value2 = filter.getValue2();
 		Object value = "#{" + paramName + "}";
 		alias = alias == null ? "" : alias + ".";
-		String column = MapperColumnUtils.parseColumn(filter.getProperty());
+		String column;
+		String filterProperty = filter.getProperty();
+		Assert.notNull(filterProperty, "filter property不能为空");
+		if (filter.getOperator() == Operator.condition) {
+			column = filterProperty;
+		} else {
+			column = MapperColumnUtils.parseColumn(filterProperty);
+		}
 		String sql = alias + column;
 		switch (filter.getOperator()) {
 			case eq:
@@ -235,9 +242,41 @@ public class Filter {
 		for (int i = 0; i < filters.size(); i++) {
 			Filter filter = filters.get(i);
 			sb.append(" and ");
-			sb.append(toMyBatisSql(parameterMapName + "." + "p" + (i + 1) + "", filter, alias));
+			sb.append(filter.toMyBatisSql(parameterMapName + "." + "p" + (i + 1), alias));
 		}
 		return sb.toString();
+	}
+	
+	public void addToParameterMap(@NotNull Map<String, Object> parameterMap, @NotNull String parameterName) {
+		switch (operator) {
+			case in:
+			case notIn:
+				if (value instanceof Collection) {
+					Collection collection = (Collection) value;
+					Iterator iterator = collection.iterator();
+					int index = 1;
+					while (iterator.hasNext()) {
+						parameterMap.put(parameterName + "_" + index, iterator.next());
+						index++;
+					}
+				} else if (value instanceof Object[]) {
+					Object[] array = (Object[]) value;
+					int index = 1;
+					for (Object o : array) {
+						parameterMap.put(parameterName + "_" + index, o);
+						index++;
+					}
+				}
+				break;
+			case between:
+			case notBetween:
+				parameterMap.put(parameterName + "_" + 1, value);
+				parameterMap.put(parameterName + "_" + 2, value2);
+				break;
+			default:
+				parameterMap.put(parameterName, value);
+				break;
+		}
 	}
 	
 	/**
@@ -250,37 +289,8 @@ public class Filter {
 		Map<String, Object> parameterMap = new LinkedHashMap<>();
 		for (int i = 0; i < filters.size(); i++) {
 			Filter filter = filters.get(i);
-			Object value = filter.getValue();
 			String parameterName = "p" + (i + 1);
-			switch (filter.getOperator()) {
-				case in:
-				case notIn:
-					if (value instanceof Collection) {
-						Collection collection = (Collection) value;
-						Iterator iterator = collection.iterator();
-						int index = 1;
-						while (iterator.hasNext()) {
-							parameterMap.put(parameterName + "_" + index, iterator.next());
-							index++;
-						}
-					} else if (value instanceof Object[]) {
-						Object[] array = (Object[]) value;
-						int index = 1;
-						for (Object o : array) {
-							parameterMap.put(parameterName + "_" + index, o);
-							index++;
-						}
-					}
-					break;
-				case between:
-				case notBetween:
-					parameterMap.put(parameterName + "_" + 1, filter.getValue());
-					parameterMap.put(parameterName + "_" + 2, filter.getValue2());
-					break;
-				default:
-					parameterMap.put(parameterName, value);
-					break;
-			}
+			filter.addToParameterMap(parameterMap, parameterName);
 		}
 		return parameterMap;
 	}
