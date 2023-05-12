@@ -95,8 +95,12 @@ public class RedisTaskFragment implements TaskFragment {
 	}
 	
 	private void register() {
-		redisTemplate.opsForZSet().add(getKey(), currentInstanceId, 100);
-		redisTemplate.opsForValue().set(getInstanceKey(currentInstanceId), System.currentTimeMillis(), 30, TimeUnit.SECONDS);
+		try {
+			redisTemplate.opsForZSet().add(getKey(), currentInstanceId, 100);
+			redisTemplate.opsForValue().set(getInstanceKey(currentInstanceId), System.currentTimeMillis(), 30, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			log.error("register failed:{}", e.getMessage(), e);
+		}
 	}
 	
 	private boolean isItemExpired(String instanceId) {
@@ -135,7 +139,9 @@ public class RedisTaskFragment implements TaskFragment {
 		fragmentInfo.setTotal(count());
 		Long index = index();
 		if (index == null) {
-			throw new IllegalStateException("current instant not register yet, current is:" + list());
+			String msg = "current instant not register yet, current is:" + list();
+			log.error(msg);
+			throw new IllegalStateException(msg);
 		}
 		fragmentInfo.setIndex(index);
 		return fragmentInfo;

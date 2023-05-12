@@ -2,6 +2,7 @@ package mt.spring.tools.video;
 
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
@@ -25,7 +26,7 @@ public class HlsUtils {
 	 * @param segmentMB         每段ts文件大小
 	 * @param minSegmentSeconds 分段最小视频长度
 	 */
-	public static void convertToHlsBySize(File source, File target, int segmentMB, @Nullable Integer minSegmentSeconds) {
+	public static void convertToHlsBySize(File source, File target, int segmentMB, @Nullable Integer minSegmentSeconds, @Nullable String vCodec) {
 		if (minSegmentSeconds == null) {
 			minSegmentSeconds = 15;
 		}
@@ -40,7 +41,7 @@ public class HlsUtils {
 			if (segmentSeconds < minSegmentSeconds) {
 				segmentSeconds = minSegmentSeconds;
 			}
-			convertToHlsBySeconds(source, target, segmentSeconds);
+			convertToHlsBySeconds(source, target, segmentSeconds, vCodec);
 		} catch (EncoderException e) {
 			throw new RuntimeException(e);
 		}
@@ -52,10 +53,11 @@ public class HlsUtils {
 	 * @param source         源文件
 	 * @param target         目标文件 例：index.m3u8
 	 * @param segmentSeconds 每段视频长度
+	 * @param vCodec         视频编码
 	 */
-	public static void convertToHlsBySeconds(File source, File target, int segmentSeconds) {
+	public static void convertToHlsBySeconds(File source, File target, int segmentSeconds, @Nullable String vCodec) {
 		File tsFile = new File(target.getParentFile(), target.getName() + ".ts");
-		convertTs(source, tsFile);
+		convertTs(source, tsFile, vCodec);
 		splitTs(tsFile, target, segmentSeconds);
 		tsFile.delete();
 	}
@@ -66,8 +68,9 @@ public class HlsUtils {
 	 *
 	 * @param source 源文件，例如：IMG_8308.MOV
 	 * @param target 目标文件，例如：test.ts
+	 * @param vCodec 视频编码
 	 */
-	public static void convertTs(File source, File target) {
+	public static void convertTs(File source, File target, @Nullable String vCodec) {
 		log.info("转换为ts文件：{}", source);
 		File parentFile = target.getParentFile();
 		if (!parentFile.exists()) {
@@ -81,7 +84,11 @@ public class HlsUtils {
 				ffmpeg.addArgument("-vf");
 				ffmpeg.addArgument("scale=iw:-2");
 				ffmpeg.addArgument("-vcodec");
-				ffmpeg.addArgument("copy");
+				if (StringUtils.isNotBlank(vCodec)) {
+					ffmpeg.addArgument(vCodec);
+				} else {
+					ffmpeg.addArgument("copy");
+				}
 				ffmpeg.addArgument("-acodec");
 				ffmpeg.addArgument("copy");
 				ffmpeg.addArgument("-vbsf");

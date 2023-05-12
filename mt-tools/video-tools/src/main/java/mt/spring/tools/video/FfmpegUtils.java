@@ -3,7 +3,9 @@ package mt.spring.tools.video;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import mt.utils.common.Assert;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
 import ws.schild.jave.ScreenExtractor;
@@ -288,7 +290,11 @@ public class FfmpegUtils {
 	 * @param from    从，例：00:00:00
 	 * @param to      到，例：00:00:20
 	 */
-	public static void cutVideo(@NotNull File srcFile, @NotNull File desFile, @NotNull String from, @NotNull String to) {
+	public static void cutVideo(@NotNull File srcFile, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec) {
+		if(StringUtils.isBlank(vCodec)){
+			vCodec = "copy";
+		}
+		String finalVCodec = vCodec;
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
@@ -300,7 +306,7 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("-f");
 			ffmpeg.addArgument("mp4");
 			ffmpeg.addArgument("-vcodec");
-			ffmpeg.addArgument("copy");
+			ffmpeg.addArgument(finalVCodec);
 			ffmpeg.addArgument("-acodec");
 			ffmpeg.addArgument("copy");
 			ffmpeg.addArgument("-q:v");
@@ -320,8 +326,8 @@ public class FfmpegUtils {
 	 * @return 是否生成
 	 * @throws Exception 异常
 	 */
-	public static boolean generatePreviewVideo(File srcFile, File dstFile, int segments, int width) throws Exception {
-		return generatePreviewVideo(srcFile, dstFile, segments, width, -2);
+	public static boolean generatePreviewVideo(@NotNull File srcFile,@NotNull File dstFile, int segments, int width, @Nullable String vCodec) throws Exception {
+		return generatePreviewVideo(srcFile, dstFile, segments, width, -2,vCodec);
 	}
 	
 	/**
@@ -337,7 +343,7 @@ public class FfmpegUtils {
 	 * @return 是否生成
 	 * @throws Exception 异常
 	 */
-	public static boolean generatePreviewVideo(File srcFile, File dstFile, int segments, int width, int height) throws Exception {
+	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile, int segments, int width, int height, @Nullable String vCodec) throws Exception {
 		mt.spring.tools.video.entity.VideoInfo videoInfo = getVideoInfo(srcFile, 1, TimeUnit.MINUTES);
 		long during = videoInfo.getDuring();
 		long second = during / 1000 / segments;
@@ -345,6 +351,10 @@ public class FfmpegUtils {
 			FfmpegJob.execute(ffmpeg -> {
 				ffmpeg.addArgument("-i");
 				ffmpeg.addArgument(srcFile.getAbsolutePath());
+				if (StringUtils.isNotBlank(vCodec)) {
+					ffmpeg.addArgument("-vcodec");
+					ffmpeg.addArgument(vCodec);
+				}
 				ffmpeg.addArgument("-vf");
 				ffmpeg.addArgument("\"select='lte(mod(t, " + second + "),1)',scale=" + width + ":" + height + ",setpts=N/FRAME_RATE/TB\"");
 				ffmpeg.addArgument("-an");
@@ -360,13 +370,18 @@ public class FfmpegUtils {
 	/**
 	 * 转换格式
 	 * ffmpeg -i 1.wmv -y 1.mp4
+	 *
 	 * @param srcFile 源文件
 	 * @param dstFile 目标文件
 	 */
-	public static void convert(File srcFile, File dstFile) {
+	public static void convert(@NotNull File srcFile, @NotNull File dstFile, @Nullable String vCodec) {
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			if (StringUtils.isNotBlank(vCodec)) {
+				ffmpeg.addArgument("-vcodec");
+				ffmpeg.addArgument(vCodec);
+			}
 			ffmpeg.addArgument("-vf");
 			ffmpeg.addArgument("scale=iw:-2");
 			ffmpeg.addArgument("-y");
