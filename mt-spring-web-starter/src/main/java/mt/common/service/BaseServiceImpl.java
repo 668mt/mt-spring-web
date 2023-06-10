@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
 
@@ -214,7 +213,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public List<T> findAll() {
 		return getBaseMapper().selectAll();
 	}
@@ -260,13 +258,11 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public T findById(Object record) {
 		return getBaseMapper().selectByPrimaryKey(record);
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public T findOne(String column, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(column, Operator.eq, value));
@@ -274,7 +270,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public List<T> findList(String column, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(column, Operator.eq, value));
@@ -282,7 +277,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters) {
 		return findByFilters(filters, false);
 	}
@@ -294,7 +288,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	
 	@Override
-	@Transactional(readOnly = true)
 	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
 		List<T> findByFilters = findByFilters(filters, forUpdate);
 		if (CollectionUtils.isEmpty(findByFilters)) {
@@ -312,7 +305,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional(readOnly = true)
 	public T findOneByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(filter);
@@ -325,37 +317,31 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional
 	public int save(T record) {
 		return getBaseMapper().insert(record);
 	}
 	
 	@Override
-	@Transactional
 	public int saveSelective(T record) {
 		return getBaseMapper().insert(record);
 	}
 	
 	@Override
-	@Transactional
 	public int updateById(T record) {
 		return getBaseMapper().updateByPrimaryKey(record);
 	}
 	
 	@Override
-	@Transactional
 	public int updateByIdSelective(T record) {
 		return getBaseMapper().updateByPrimaryKeySelective(record);
 	}
 	
 	@Override
-	@Transactional
 	public int deleteById(Object record) {
 		return getBaseMapper().deleteByPrimaryKey(record);
 	}
 	
 	@Override
-	@Transactional
 	public int deleteByIds(Object[] records) {
 		int update = 0;
 		for (Object id : records) {
@@ -365,19 +351,16 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@Override
-	@Transactional
 	public int deleteByFilters(List<mt.common.tkmapper.Filter> filters) {
 		return getBaseMapper().deleteByExample(MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
 	@Override
-	@Transactional
 	public int deleteByFilter(mt.common.tkmapper.Filter filter) {
 		return deleteByFilters(Collections.singletonList(filter));
 	}
 	
 	@Override
-	@Transactional
 	public int delete(String columnName, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(columnName, Operator.eq, value));

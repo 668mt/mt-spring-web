@@ -291,7 +291,7 @@ public class FfmpegUtils {
 	 * @param to      到，例：00:00:20
 	 */
 	public static void cutVideo(@NotNull File srcFile, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec) {
-		if(StringUtils.isBlank(vCodec)){
+		if (StringUtils.isBlank(vCodec)) {
 			vCodec = "copy";
 		}
 		String finalVCodec = vCodec;
@@ -326,8 +326,8 @@ public class FfmpegUtils {
 	 * @return 是否生成
 	 * @throws Exception 异常
 	 */
-	public static boolean generatePreviewVideo(@NotNull File srcFile,@NotNull File dstFile, int segments, int width, @Nullable String vCodec) throws Exception {
-		return generatePreviewVideo(srcFile, dstFile, segments, width, -2,vCodec);
+	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile, int segments, int width, @Nullable String vCodec) throws Exception {
+		return generatePreviewVideo(srcFile, dstFile, segments, width, -2, vCodec);
 	}
 	
 	/**
