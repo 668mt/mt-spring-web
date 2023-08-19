@@ -58,10 +58,10 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					Class<T> entityClass = getEntityClass();
 					Map<String, BaseMapper> beansOfType = applicationContext.getBeansOfType(BaseMapper.class);
 					BaseMapper baseMapper = beansOfType.values()
-							.stream()
-							.filter(baseMapper1 -> entityClass.equals(BaseMapperHelper.getBaseMapperGenericType(baseMapper1)))
-							.findFirst()
-							.orElse(null);
+						.stream()
+						.filter(baseMapper1 -> entityClass.equals(BaseMapperHelper.getBaseMapperGenericType(baseMapper1)))
+						.findFirst()
+						.orElse(null);
 					Assert.notNull(baseMapper, entityClass.getSimpleName() + "的BaseMapper还未初始化完成，请避免在init方法调用jdbc操作或复写getBaseMapper方法");
 					this.baseMapper = (mt.common.mybatis.mapper.BaseMapper<T>) baseMapper;
 				}
@@ -334,6 +334,26 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@Override
 	public int updateByIdSelective(T record) {
 		return getBaseMapper().updateByPrimaryKeySelective(record);
+	}
+	
+	@Override
+	public int updateByFilter(T record, mt.common.tkmapper.Filter filter) {
+		return updateByFilters(record, Collections.singletonList(filter));
+	}
+	
+	@Override
+	public int updateByFilterSelective(T record, mt.common.tkmapper.Filter filter) {
+		return updateByFiltersSelective(record, Collections.singletonList(filter));
+	}
+	
+	@Override
+	public int updateByFilters(T record, List<mt.common.tkmapper.Filter> filters) {
+		return getBaseMapper().updateByExample(record, MyBatisUtils.createExample(getEntityClass(), filters));
+	}
+	
+	@Override
+	public int updateByFiltersSelective(T record, List<mt.common.tkmapper.Filter> filters) {
+		return getBaseMapper().updateByExampleSelective(record, MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
 	@Override

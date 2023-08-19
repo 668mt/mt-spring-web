@@ -131,6 +131,14 @@ public interface BaseService<T> {
 	 */
 	int updateByIdSelective(T record);
 	
+	int updateByFilters(T record, List<Filter> filters);
+	
+	int updateByFilter(T record, Filter filter);
+	
+	int updateByFiltersSelective(T record, List<Filter> filters);
+	
+	int updateByFilterSelective(T record, Filter filter);
+	
 	/**
 	 * 通过主键删除
 	 *

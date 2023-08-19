@@ -28,7 +28,7 @@ import static mt.spring.tools.base.io.IOUtils.MB;
  */
 @Slf4j
 @Data
-public class FastFileDownloader {
+public class FastFileDownloader implements FileDownloader {
 	private FastFileDownloaderHttpSupport httpExecutor;
 	/**
 	 * 最小的分片大小，单位byte，默认5MB
@@ -65,39 +65,8 @@ public class FastFileDownloader {
 		this.httpExecutor = httpExecutor;
 	}
 	
-	/**
-	 * 小文件，使用单线程下载
-	 *
-	 * @param url
-	 * @param desFile
-	 * @throws IOException
-	 */
-	public void downloadNotUseThreadPool(String url, File desFile) throws IOException {
-		File tempFile = getTempFile(desFile);
-		try (InputStream inputStream = httpExecutor.getInputStream(url, null);
-			 FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-			org.apache.commons.io.IOUtils.copyLarge(inputStream, outputStream);
-			outputStream.close();
-			if (desFile.exists()) {
-				desFile.delete();
-			}
-			//移动文件
-			FileUtils.moveFile(tempFile, desFile);
-		} finally {
-			if (tempFile.exists()) {
-				FileUtils.deleteQuietly(tempFile);
-			}
-		}
-	}
-	
-	/**
-	 * 大文件，启用多线程下载文件
-	 *
-	 * @param url
-	 * @param desFile
-	 * @throws IOException
-	 */
-	public void downloadLargeFile(@NotNull String url, @NotNull File desFile) throws IOException {
+	@Override
+	public void downloadFile(@NotNull String url, @NotNull File desFile) throws IOException {
 		String name = desFile.getName();
 		long length = httpExecutor.getFileLength(url);
 		log.info("下载文件：dstFile:{},url:{}", desFile.getAbsolutePath(), url);
@@ -118,8 +87,8 @@ public class FastFileDownloader {
 			log.debug("文件[{}]分片数：{}，分片大小：{}", name, splitResult.getChunks(), SizeUtils.getReadableSize(splitResult.getPartSize()));
 			RecordFile finalRecordFile = recordFile;
 			List<? extends Future<?>> futures = splitResult.getSplitParts().stream()
-					.map(part -> getThreadPoolExecutor().submit(new DownloadTask(finalRecordFile, url, name, part, tempFile)))
-					.collect(Collectors.toList());
+				.map(part -> getThreadPoolExecutor().submit(new DownloadTask(finalRecordFile, url, name, part, tempFile)))
+				.collect(Collectors.toList());
 			for (Future<?> future : futures) {
 				try {
 					future.get();
@@ -159,6 +128,7 @@ public class FastFileDownloader {
 	 *
 	 * @param desFile
 	 */
+	@Override
 	public void deleteTempFiles(@NotNull File desFile) {
 		PropertiesRecordFile propertiesRecordFile = getRecordFile(desFile);
 		propertiesRecordFile.clear();

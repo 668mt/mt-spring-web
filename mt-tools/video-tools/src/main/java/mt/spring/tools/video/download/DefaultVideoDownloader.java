@@ -3,6 +3,7 @@ package mt.spring.tools.video.download;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.base.file.FastFileDownloader;
+import mt.spring.tools.base.file.FileDownloader;
 import mt.spring.tools.base.file.HttpClientFastFileDownloaderHttpSupport;
 import mt.spring.tools.base.http.ServiceClient;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
@@ -42,11 +43,26 @@ public class DefaultVideoDownloader implements VideoDownloader {
 	private int retry = 0;
 	private long retryDelay = 500;
 	private final ServiceClient serviceClient;
-	private final FastFileDownloader fastFileDownloader;
+	private volatile FileDownloader fileDownloader;
 	
 	public DefaultVideoDownloader(ServiceClient serviceClient) {
 		this.serviceClient = serviceClient;
-		this.fastFileDownloader = new FastFileDownloader(new HttpClientFastFileDownloaderHttpSupport(serviceClient));
+	}
+	
+	public DefaultVideoDownloader(ServiceClient serviceClient, FileDownloader fileDownloader) {
+		this.serviceClient = serviceClient;
+		this.fileDownloader = fileDownloader;
+	}
+	
+	public FileDownloader getFileDownloader() {
+		if (fileDownloader == null) {
+			synchronized (this) {
+				if (fileDownloader == null) {
+					fileDownloader = new FastFileDownloader(threads, new HttpClientFastFileDownloaderHttpSupport(serviceClient));
+				}
+			}
+		}
+		return fileDownloader;
 	}
 	
 	@Override
@@ -55,7 +71,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		File tempFile = new File(desFile.getParentFile(), desFile.getName() + ".tmp");
 		try {
 			updateMessage(downloaderMessageListener, "下载视频中...");
-			fastFileDownloader.downloadLargeFile(mp4Url, tempFile);
+			getFileDownloader().downloadFile(mp4Url, tempFile);
 			if (convertMp4) {
 				updateMessage(downloaderMessageListener, "转换视频格式中...");
 				convertToMp4(tempFile, desFile);
@@ -67,7 +83,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		} catch (RuntimeException e) {
 			if (cleanTempDirectoryWhenError) {
 				FileUtils.deleteQuietly(tempFile);
-				fastFileDownloader.deleteTempFiles(tempFile);
+				getFileDownloader().deleteTempFiles(tempFile);
 			}
 			throw e;
 		}
@@ -97,9 +113,9 @@ public class DefaultVideoDownloader implements VideoDownloader {
 			return requestM3u8Info(siteUrl + m3u8Url.get());
 		} else {
 			List<String> tsUrls = Arrays.stream(result.split("\n"))
-					.filter(s -> !s.startsWith("#"))
-					.map(s -> getTsUrl(url, s))
-					.collect(Collectors.toList());
+				.filter(s -> !s.startsWith("#"))
+				.map(s -> getTsUrl(url, s))
+				.collect(Collectors.toList());
 			M3u8Info m3u8Info = new M3u8Info();
 			m3u8Info.setTsUrls(tsUrls);
 			m3u8Info.setContent(result);
@@ -158,7 +174,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 						return;
 					}
 					RetryUtils.doWithRetry(() -> {
-						fastFileDownloader.downloadNotUseThreadPool(s, desTsFile);
+						getFileDownloader().downloadFile(s, desTsFile);
 						return null;
 					}, retry, retryDelay, Throwable.class);
 					updateMessage(downloaderMessageListener, "下载ts文件中：" + (total + 1) + "/" + (atomicInteger.incrementAndGet()));
