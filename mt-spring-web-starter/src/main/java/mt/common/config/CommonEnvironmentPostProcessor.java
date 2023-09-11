@@ -2,7 +2,7 @@ package mt.common.config;
 
 import mt.utils.BasePackageUtils;
 import mt.utils.common.ObjectUtils;
-import org.springframework.beans.factory.InitializingBean;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -32,8 +32,10 @@ public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor 
 			return;
 		}
 		String basePackage = ObjectUtils.nullAsDefault(environment.getProperty("project.base-package", String.class), environment.getProperty("project.basePackage", String.class), BasePackageUtils.getBasePackage(mainApplicationClass));
-		params.put("project.base-package", basePackage);
-		params.put("project.basePackage", basePackage);
+		if (StringUtils.isNotBlank(basePackage)) {
+			params.put("project.base-package", basePackage);
+			params.put("project.basePackage", basePackage);
+		}
 		propertySources.addFirst(new CommonPropertySource("commonPropertyResource", params));
 		inited.set(true);
 	}

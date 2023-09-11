@@ -38,7 +38,7 @@ public class OrFilter extends Filter {
 	
 	@Override
 	public void addToParameterMap(@NotNull Map<String, Object> parameterMap, @NotNull String parameterName) {
-		int index = 0;
+		int index = 1;
 		for (Filter filter : filters) {
 			filter.addToParameterMap(parameterMap, parameterName + "_" + index);
 			index++;

@@ -175,7 +175,9 @@ public class Filter {
 			}
 			sql += StringUtils.join(list, ",");
 		} else {
-			sql += value;
+			List<Object> list = new ArrayList<>();
+			list.add(value);
+			return inValueSql(paramName, list);
 		}
 		sql += ") ";
 		return sql;
@@ -266,6 +268,8 @@ public class Filter {
 						parameterMap.put(parameterName + "_" + index, o);
 						index++;
 					}
+				} else {
+					parameterMap.put(parameterName + "_" + 1, value);
 				}
 				break;
 			case between:

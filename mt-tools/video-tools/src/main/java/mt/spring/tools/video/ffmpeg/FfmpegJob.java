@@ -9,6 +9,7 @@ import ws.schild.jave.process.ffmpeg.DefaultFFMPEGLocator;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 /**
@@ -52,6 +53,16 @@ public class FfmpegJob {
 			throw new RuntimeException(e);
 		} finally {
 			ffmpeg.destroy();
+		}
+	}
+	
+	public static void executeWithTimeout(FfmpegWorker ffmpegWorker, long time, TimeUnit timeUnit) throws ExecutionException, InterruptedException, TimeoutException {
+		ExecutorService executorService = Executors.newSingleThreadExecutor();
+		try {
+			Future<?> submit = executorService.submit(() -> execute(ffmpegWorker));
+			submit.get(time, timeUnit);
+		} finally {
+			executorService.shutdownNow();
 		}
 	}
 }

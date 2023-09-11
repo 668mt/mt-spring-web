@@ -65,6 +65,9 @@ public final class SpringUtils implements ApplicationContextAware, DisposableBea
 	}
 	
 	public static <T> T getProperty(String key, Class<T> type) {
+		if (getApplicationContext() == null) {
+			return null;
+		}
 		T property = getApplicationContext().getEnvironment().getProperty(key, type);
 		return property;
 	}

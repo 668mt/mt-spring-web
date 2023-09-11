@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 public class RedisProgress implements Progress {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final String keyPrefix;
-	private boolean isInit;
 	
 	public RedisProgress(@NotNull RedisTemplate<String, Object> redisTemplate, @NotNull String keyPrefix) {
 		this.redisTemplate = redisTemplate;
@@ -30,7 +29,6 @@ public class RedisProgress implements Progress {
 	@Override
 	public void init(@NotNull String key) {
 		update(key, 0);
-		this.isInit = true;
 	}
 	
 	@Override
@@ -40,9 +38,6 @@ public class RedisProgress implements Progress {
 	
 	@Override
 	public void add(@NotNull String key, double percent) {
-		if (!isInit) {
-			init(key);
-		}
 		redisTemplate.opsForValue().increment(getKey(key), percent);
 	}
 	

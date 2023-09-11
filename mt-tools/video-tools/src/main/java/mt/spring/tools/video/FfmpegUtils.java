@@ -8,10 +8,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
-import ws.schild.jave.ScreenExtractor;
 import ws.schild.jave.info.MultimediaInfo;
 import ws.schild.jave.info.VideoInfo;
-import ws.schild.jave.info.VideoSize;
+import ws.schild.jave.utils.Utils;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -112,10 +111,9 @@ public class FfmpegUtils {
 	 *
 	 * @param file 文件
 	 * @return 视频长度
-	 * @throws MalformedURLException 异常
-	 * @throws EncoderException      异常
+	 * @throws EncoderException 异常
 	 */
-	public static String getVideoLength(File file) throws MalformedURLException, EncoderException {
+	public static String getVideoLength(File file) throws EncoderException {
 		MultimediaObject object = new MultimediaObject(file);
 		MultimediaInfo info = object.getInfo();
 		long duration = info.getDuration();
@@ -161,73 +159,99 @@ public class FfmpegUtils {
 	 * @param seconds 第几秒
 	 * @throws Exception 异常
 	 */
-	public static void screenShot(File srcFile, File desFile, int width, int seconds) throws Exception {
-		screenShot(new MultimediaObject(srcFile), desFile, width, seconds, 60, TimeUnit.SECONDS);
+	public static void screenShot(File srcFile, File desFile, int width, int seconds, long timeout, TimeUnit timeUnit) throws Exception {
+		screenShot(srcFile.getAbsolutePath(), desFile, width, seconds, timeout, timeUnit);
 	}
 	
 	/**
 	 * 截图
 	 *
-	 * @param url     视频地址
-	 * @param desFile 目标文件
-	 * @param width   宽度
-	 * @param seconds 第几秒
+	 * @param pathOrUrl 视频地址或本地路径
+	 * @param desFile   目标文件
+	 * @param width     宽度，小于0表示不缩放
+	 * @param seconds   第几秒
+	 * @param timeout   超时，小于0表示不超时
+	 * @param timeUnit  超时单位
 	 * @throws Exception 异常
 	 */
-	public static void screenShot(URL url, File desFile, int width, int seconds) throws Exception {
-		screenShot(new MultimediaObject(url), desFile, width, seconds, 60, TimeUnit.SECONDS);
-	}
-	
-	/**
-	 * 截图
-	 *
-	 * @param object   媒体文件
-	 * @param desFile  目标文件
-	 * @param width    宽度
-	 * @param seconds  第几秒
-	 * @param timeout  超时
-	 * @param timeUnit 超时单位
-	 * @throws Exception 异常
-	 */
-	public static void screenShot(MultimediaObject object, File desFile, int width, final int seconds, long timeout, TimeUnit timeUnit) throws Exception {
-		if (desFile.exists()) {
-			return;
-		}
-		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-		try {
-			Future<?> submit = singleThreadExecutor.submit(() -> {
-				try {
-					File parentFile = desFile.getParentFile();
-					if (!parentFile.exists()) {
-						parentFile.mkdirs();
-					}
-					double maxSeconds = 0;
-					int s = seconds;
-					if (s > 0) {
-						try {
-							long duration = object.getInfo().getDuration();
-							maxSeconds = Math.floor(duration * 1.0 / 1000) - 5;
-							if (maxSeconds < 0) {
-								maxSeconds = 0;
-							}
-						} catch (Exception ignored) {
-							s = 0;
-						}
-					}
-					ScreenExtractor screenExtractor = new ScreenExtractor();
-					VideoSize size = object.getInfo().getVideo().getSize();
-					int height = (int) Math.ceil(width * size.getHeight() * 1.0 / size.getWidth());
-					screenExtractor.render(object, width, height, (int) Math.min(maxSeconds, s), desFile, 1);
-				} catch (Exception e) {
-					log.error(e.getMessage(), e);
-					throw new RuntimeException(e);
-				}
-			});
-			submit.get(timeout, timeUnit);
-		} finally {
-			singleThreadExecutor.shutdownNow();
+	public static void screenShot(String pathOrUrl, File desFile, int width, int seconds, long timeout, TimeUnit timeUnit) throws Exception {
+		//ffmpeg -i input.mp4 -ss 00:00:10 -f image2 -vframes 1 -vf "scale=400:-2" -qscale 1 -an -y test.jpg
+		FfmpegJob.FfmpegWorker ffmpegWorker = ffmpeg -> {
+			ffmpeg.addArgument("-i");
+			ffmpeg.addArgument(pathOrUrl);
+			ffmpeg.addArgument("-ss");
+			ffmpeg.addArgument(Utils.buildTimeDuration(seconds * 1000L));
+			ffmpeg.addArgument("-f");
+			ffmpeg.addArgument("image2");
+			ffmpeg.addArgument("-vframes");
+			ffmpeg.addArgument("1");
+			ffmpeg.addArgument("-vf");
+			if (width > 0) {
+				ffmpeg.addArgument("scale=" + width + ":-2");
+			}
+			ffmpeg.addArgument("-qscale");
+			ffmpeg.addArgument("1");
+			ffmpeg.addArgument("-an");
+			ffmpeg.addArgument("-y");
+			ffmpeg.addArgument(desFile.getAbsolutePath());
+		};
+		if (timeout > 0) {
+			FfmpegJob.executeWithTimeout(ffmpegWorker, timeout, timeUnit);
+		} else {
+			FfmpegJob.execute(ffmpegWorker);
 		}
 	}
+
+//	/**
+//	 * 截图
+//	 *
+//	 * @param object   媒体文件
+//	 * @param desFile  目标文件
+//	 * @param width    宽度
+//	 * @param seconds  第几秒
+//	 * @param timeout  超时
+//	 * @param timeUnit 超时单位
+//	 * @throws Exception 异常
+//	 */
+//	public static void screenShot(MultimediaObject object, File desFile, int width, final int seconds, long timeout, TimeUnit timeUnit) throws Exception {
+//		if (desFile.exists()) {
+//			return;
+//		}
+//		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+//		try {
+//			Future<?> submit = singleThreadExecutor.submit(() -> {
+//				try {
+//					File parentFile = desFile.getParentFile();
+//					if (!parentFile.exists()) {
+//						parentFile.mkdirs();
+//					}
+//					double maxSeconds = 0;
+//					int s = seconds;
+//					if (s > 0) {
+//						try {
+//							long duration = object.getInfo().getDuration();
+//							maxSeconds = Math.floor(duration * 1.0 / 1000) - 5;
+//							if (maxSeconds < 0) {
+//								maxSeconds = 0;
+//							}
+//						} catch (Exception ignored) {
+//							s = 0;
+//						}
+//					}
+//					ScreenExtractor screenExtractor = new ScreenExtractor();
+//					VideoSize size = object.getInfo().getVideo().getSize();
+//					int height = (int) Math.ceil(width * size.getHeight() * 1.0 / size.getWidth());
+//					screenExtractor.render(object, width, height, (int) Math.min(maxSeconds, s), desFile, 1);
+//				} catch (Exception e) {
+//					log.error(e.getMessage(), e);
+//					throw new RuntimeException(e);
+//				}
+//			});
+//			submit.get(timeout, timeUnit);
+//		} finally {
+//			singleThreadExecutor.shutdownNow();
+//		}
+//	}
 	
 	/**
 	 * 连续截图20分钟
@@ -236,27 +260,27 @@ public class FfmpegUtils {
 	 * @param dstPath 目标目录
 	 */
 	public static void screenshotsTwentyMinutes(@NotNull File srcFile, @NotNull File dstPath) {
-		screenshots(srcFile, dstPath, 0.01667, "00:00", "20:00", 400);
+		screenshots(srcFile.getAbsolutePath(), dstPath, 0.01667, "00:00", "20:00", 400);
 	}
 	
 	/**
 	 * 连续截图
 	 * ffmpeg -ss 00:00 -i 5.mp4 -f image2 -r 0.01667 -t 20:00 -filter:v scale=400:-1 thumb/%3d.jpg
 	 *
-	 * @param srcFile    源文件
+	 * @param pathOrUrl  网络地址或本地路径
 	 * @param dstPath    目标目录
 	 * @param rate       每秒播放的帧  1 = 间隔秒数 * rate，例如5秒截图一次，那就是rate = 0.2
 	 * @param startTime  开始时间，格式xx:xx，例如00:00
 	 * @param duringRime 持续时间，格式xx:xx，例如20:00
 	 * @param width      宽度
 	 */
-	public static void screenshots(@NotNull File srcFile, @NotNull File dstPath, double rate, @NotNull String startTime, @NotNull String duringRime, int width) {
+	public static void screenshots(@NotNull String pathOrUrl, @NotNull File dstPath, double rate, @NotNull String startTime, @NotNull String duringRime, int width) {
 		dstPath.mkdirs();
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-ss");
 			ffmpeg.addArgument(startTime);
 			ffmpeg.addArgument("-i");
-			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument(pathOrUrl);
 			ffmpeg.addArgument("-f");
 			ffmpeg.addArgument("image2");
 			ffmpeg.addArgument("-r");
@@ -278,26 +302,26 @@ public class FfmpegUtils {
 	 * @throws Exception 异常
 	 */
 	public static void compressImage(File srcFile, File desFile, int width) throws Exception {
-		screenShot(srcFile, desFile, width, 0);
+		screenShot(srcFile, desFile, width, 0, -1, TimeUnit.SECONDS);
 	}
 	
 	/**
 	 * 剪切视频
 	 * 命令：ffmpeg -i 1.mp4 -ss 00:00:00 -to 00:00:20 -y -f mp4 -vcodec copy -acodec copy -q:v 1 thumb.mp4
 	 *
-	 * @param srcFile 源文件
-	 * @param desFile 目标文件
-	 * @param from    从，例：00:00:00
-	 * @param to      到，例：00:00:20
+	 * @param pathOrUrl 网络地址或本地路径
+	 * @param desFile   目标文件
+	 * @param from      从，例：00:00:00
+	 * @param to        到，例：00:00:20
 	 */
-	public static void cutVideo(@NotNull File srcFile, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec) {
+	public static void cutVideo(@NotNull String pathOrUrl, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec) {
 		if (StringUtils.isBlank(vCodec)) {
 			vCodec = "copy";
 		}
 		String finalVCodec = vCodec;
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-i");
-			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument(pathOrUrl);
 			ffmpeg.addArgument("-ss");
 			ffmpeg.addArgument(from);
 			ffmpeg.addArgument("-to");
