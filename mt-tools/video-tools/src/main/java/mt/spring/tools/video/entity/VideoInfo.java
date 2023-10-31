@@ -14,7 +14,7 @@ public class VideoInfo {
 	private int width;
 	private int height;
 	private float frameRate;
-	private int bitRate;
+	private long bitRate;
 	private String decoder;
 	
 }

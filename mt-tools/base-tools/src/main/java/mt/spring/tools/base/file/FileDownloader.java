@@ -26,4 +26,9 @@ public interface FileDownloader {
 	 * @param desFile 目标文件
 	 */
 	void deleteTempFiles(@NotNull File desFile);
+	
+	/**
+	 * 关闭
+	 */
+	default void shutdown(){};
 }

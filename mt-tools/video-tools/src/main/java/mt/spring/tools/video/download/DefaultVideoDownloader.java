@@ -66,6 +66,16 @@ public class DefaultVideoDownloader implements VideoDownloader {
 	}
 	
 	@Override
+	public void shutdown() {
+		if (serviceClient != null) {
+			serviceClient.shutdown();
+		}
+		if (fileDownloader != null) {
+			fileDownloader.shutdown();
+		}
+	}
+	
+	@Override
 	public void downloadMp4(@NotNull String mp4Url, @NotNull File desFile, boolean convertMp4, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException {
 		desFile.getParentFile().mkdirs();
 		File tempFile = new File(desFile.getParentFile(), desFile.getName() + ".tmp");
@@ -80,7 +90,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 			}
 			updateMessage(downloaderMessageListener, desFile.getName() + "下载完成");
 			FileUtils.deleteQuietly(tempFile);
-		} catch (RuntimeException e) {
+		} catch (Throwable e) {
 			if (cleanTempDirectoryWhenError) {
 				FileUtils.deleteQuietly(tempFile);
 				getFileDownloader().deleteTempFiles(tempFile);
@@ -189,8 +199,8 @@ public class DefaultVideoDownloader implements VideoDownloader {
 			merge(m3u8Info.getContent(), tempPath.getPath(), desFile);
 			FileUtils.deleteDirectory(tempPath);
 			updateMessage(downloaderMessageListener, "下载完成！");
-		} catch (Exception e) {
-			log.error(e.getMessage());
+		} catch (Throwable e) {
+			log.error("下载m3u8失败：{}", e.getMessage(), e);
 			if (cleanTempDirectoryWhenError) {
 				FileUtils.deleteDirectory(tempPath);
 			}

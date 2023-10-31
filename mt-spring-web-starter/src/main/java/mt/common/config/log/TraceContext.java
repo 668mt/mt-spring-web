@@ -1,8 +1,10 @@
 package mt.common.config.log;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.MDC;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -10,18 +12,23 @@ import java.util.UUID;
  * @Date 2023/9/15
  */
 public class TraceContext {
-	private static final ThreadLocal<String> TRACE_ID = new ThreadLocal<>();
+//	private static final ThreadLocal<String> TRACE_ID = new ThreadLocal<>();
 	
-	public static void setTraceId(@NotNull String traceId) {
-		TRACE_ID.set(traceId);
+	public static void setTraceId(@Nullable String traceId) {
+		if (StringUtils.isNotBlank(traceId)) {
+			MDC.put("traceId", traceId);
+//			TRACE_ID.set(traceId);
+		}
 	}
 	
 	public static String getTraceId() {
-		return TRACE_ID.get();
+		return MDC.get("traceId");
+//		return TRACE_ID.get();
 	}
 	
 	public static void removeTraceId() {
-		TRACE_ID.remove();
+//		TRACE_ID.remove();
+		MDC.remove("traceId");
 	}
 	
 	public static String create() {

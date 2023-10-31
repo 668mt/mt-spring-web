@@ -65,6 +65,20 @@ public class FfmpegUtils {
 	}
 	
 	/**
+	 * 比特率计算
+	 *
+	 * @param size   文件大小，单位字节
+	 * @param during 时长，单位毫秒
+	 * @return 比特率
+	 */
+	public static long getBitRate(long size, long during) {
+		if (during < 0 || size < 0) {
+			return -1;
+		}
+		return size * 8 / during * 1000;
+	}
+	
+	/**
 	 * 获取视频信息
 	 *
 	 * @param source   源文件

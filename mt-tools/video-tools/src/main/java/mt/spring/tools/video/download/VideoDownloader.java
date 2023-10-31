@@ -30,4 +30,10 @@ public interface VideoDownloader {
 	 * @throws IOException 异常
 	 */
 	void downloadM3u8(@NotNull String m3u8Url, @NotNull File desFile, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException;
+	
+	/**
+	 * 下载m3u8地址
+	 */
+	default void shutdown() {
+	}
 }

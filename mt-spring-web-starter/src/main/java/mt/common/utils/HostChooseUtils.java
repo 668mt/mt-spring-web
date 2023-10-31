@@ -180,9 +180,10 @@ public class HostChooseUtils {
 			if (!hasWeightGreaterThanZero) {
 				list.forEach(parseResult -> parseResult.setWeight(100));
 			}
+			
 			list.sort((o1, o2) -> {
-				int weight1 = o1.getWeight() > 0 ? random.nextInt(o1.getWeight()) : 0;
-				int weight2 = o2.getWeight() > 0 ? random.nextInt(o2.getWeight()) : 0;
+				int weight1 = o1.getWeight() > 0 ? random.nextInt(o1.getWeight()) + 1 : 0;
+				int weight2 = o2.getWeight() > 0 ? random.nextInt(o2.getWeight()) + 1 : 0;
 				//从大到小排序
 				return weight2 - weight1;
 			});
@@ -191,4 +192,15 @@ public class HostChooseUtils {
 		return null;
 	}
 	
+	
+	public static void main(String[] args) {
+		List<String> domains = new ArrayList<>();
+//		domains.add("http://192.168.0.2:4100(0)");
+		domains.add("http://192.168.0.174:4100(1)");
+		for (int i = 0; i < 100; i++) {
+			String availableHostByWeight = HostChooseUtils.getAvailableHostByWeight(domains, null);
+			System.out.println(availableHostByWeight);
+//			Assert.state(availableHostByWeight.contains("174"), "failed");
+		}
+	}
 }

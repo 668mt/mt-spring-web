@@ -1,9 +1,11 @@
 package mt.utils.common;
 
 import mt.utils.ReflectUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * @Author Martin
@@ -52,4 +54,17 @@ public class CollectionUtils {
 		return groupBy(list, key, String.class);
 	}
 	
+	public static <T> void splitBySize(@NotNull Collection<T> list, int size, @NotNull Consumer<List<T>> consumer) {
+		List<T> buffer = new ArrayList<>();
+		for (T t : list) {
+			buffer.add(t);
+			if (buffer.size() >= size) {
+				consumer.accept(buffer);
+				buffer.clear();
+			}
+		}
+		if (buffer.size() > 0) {
+			consumer.accept(buffer);
+		}
+	}
 }

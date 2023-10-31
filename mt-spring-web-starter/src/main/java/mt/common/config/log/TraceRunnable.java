@@ -1,6 +1,9 @@
 package mt.common.config.log;
 
 import lombok.Getter;
+import org.slf4j.MDC;
+
+import java.util.Map;
 
 /**
  * @Author Martin
@@ -10,6 +13,7 @@ public class TraceRunnable implements Runnable {
 	@Getter
 	private final Runnable proxy;
 	private final String traceId;
+	private final Map<String, String> copyOfContextMap;
 	
 	public TraceRunnable(Runnable proxy) {
 		this(proxy, TraceContext.getTraceId());
@@ -22,12 +26,14 @@ public class TraceRunnable implements Runnable {
 			this.proxy = proxy;
 		}
 		this.traceId = traceId;
+		this.copyOfContextMap = MDC.getCopyOfContextMap();
 	}
 	
 	@Override
 	public void run() {
 		try {
 			TraceContext.setTraceId(traceId);
+			MDC.setContextMap(copyOfContextMap);
 			proxy.run();
 		} finally {
 			TraceContext.removeTraceId();

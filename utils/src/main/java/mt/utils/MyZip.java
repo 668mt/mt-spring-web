@@ -26,7 +26,7 @@ public class MyZip {
 		File file = new File(path);
 		if (file.isDirectory()) {
 			File[] listFiles = file.listFiles();
-			if (listFiles != null && listFiles.length > 0) {
+			if (listFiles != null) {
 				for (File file2 : listFiles) {
 					if (file2.isDirectory()) {
 						List<File> files = getFiles(file2.toString());

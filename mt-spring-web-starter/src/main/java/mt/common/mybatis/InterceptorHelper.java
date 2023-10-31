@@ -5,7 +5,6 @@ import mt.common.annotation.GenerateClass;
 import mt.common.annotation.IdGenerator;
 import mt.common.service.IdGenerateService;
 import mt.common.utils.SpringUtils;
-import mt.utils.common.ObjectUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -14,6 +13,7 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.Invocation;
+import org.apache.ibatis.session.defaults.DefaultSqlSession;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mybatis.spring.transaction.SpringManagedTransaction;
@@ -28,10 +28,7 @@ import javax.sql.DataSource;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Author Martin
@@ -205,29 +202,53 @@ public class InterceptorHelper {
 		public abstract T getValue(Field field);
 	}
 	
+	@SuppressWarnings("rawtypes")
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
-		List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
-		if (CollectionUtils.isEmpty(createdByFields)) {
-			return;
-		}
-		//数据库对象
-		for (Field field : createdByFields) {
-			if (!field.getType().isAssignableFrom(valueGenerator.getTClass())) {
-				continue;
+		if (entity instanceof DefaultSqlSession.StrictMap) {
+			DefaultSqlSession.StrictMap strictMap = (DefaultSqlSession.StrictMap) entity;
+			Object o = strictMap.get("collection");
+			if (o instanceof Collection) {
+				Collection collection = (Collection) o;
+				for (Object o1 : collection) {
+					setFieldsValue(o1, annotation, force, valueGenerator);
+				}
 			}
-			field.setAccessible(true);
-			Object fieldValue = field.get(entity);
-			if (!force && fieldValue != null) {
-				continue;
+			Object l = strictMap.get("list");
+			if (l instanceof List) {
+				List list = (List) l;
+				for (Object o1 : list) {
+					setFieldsValue(o1, annotation, force, valueGenerator);
+				}
 			}
-			Object value = valueGenerator.getValue(field);
-			if (value == null) {
-				continue;
+		} else if (entity instanceof Collection) {
+			Collection collection = (Collection) entity;
+			for (Object o : collection) {
+				setFieldsValue(o, annotation, force, valueGenerator);
 			}
-			try {
-				field.set(entity, ConvertUtils.convert(value, field.getType()));
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
+		} else {
+			List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
+			if (CollectionUtils.isEmpty(createdByFields)) {
+				return;
+			}
+			//数据库对象
+			for (Field field : createdByFields) {
+				if (!field.getType().isAssignableFrom(valueGenerator.getTClass())) {
+					continue;
+				}
+				field.setAccessible(true);
+				Object fieldValue = field.get(entity);
+				if (!force && fieldValue != null) {
+					continue;
+				}
+				Object value = valueGenerator.getValue(field);
+				if (value == null) {
+					continue;
+				}
+				try {
+					field.set(entity, ConvertUtils.convert(value, field.getType()));
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
+				}
 			}
 		}
 	}

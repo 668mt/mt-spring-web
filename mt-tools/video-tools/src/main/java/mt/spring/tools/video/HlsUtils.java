@@ -2,6 +2,7 @@ package mt.spring.tools.video;
 
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import ws.schild.jave.EncoderException;
@@ -57,9 +58,13 @@ public class HlsUtils {
 	 */
 	public static void convertToHlsBySeconds(File source, File target, int segmentSeconds, @Nullable String vCodec) {
 		File tsFile = new File(target.getParentFile(), target.getName() + ".ts");
-		convertTs(source, tsFile, vCodec);
-		splitTs(tsFile, target, segmentSeconds);
-		tsFile.delete();
+		tsFile.getParentFile().mkdirs();
+		try {
+			convertTs(source, tsFile, vCodec);
+			splitTs(tsFile, target, segmentSeconds);
+		} finally {
+			FileUtils.deleteQuietly(tsFile);
+		}
 	}
 	
 	/**

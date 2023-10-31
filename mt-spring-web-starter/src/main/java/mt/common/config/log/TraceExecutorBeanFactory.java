@@ -13,6 +13,14 @@ import java.util.concurrent.ExecutorService;
  */
 @Component
 public class TraceExecutorBeanFactory implements BeanPostProcessor {
+//	@Override
+//	public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
+//		if (bean instanceof ExecutorService) {
+//			return new TraceExecutor((ExecutorService) bean);
+//		}
+//		return bean;
+//	}
+	
 	@Override
 	public Object postProcessBeforeInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
 		if (bean instanceof ExecutorService) {

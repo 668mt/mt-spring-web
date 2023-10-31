@@ -1,6 +1,8 @@
 package mt.utils.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @Author Martin
@@ -18,26 +20,26 @@ public class TimeWatcher {
 		start(null);
 	}
 	
-	public void start(String describe) {
-		if (describe != null) {
-			log.info("开始执行[{}]...", describe);
+	public void start(@Nullable String taskName) {
+		if (taskName != null) {
+			log.info("{}开始执行...", taskName);
 		}
 		lastRecord = start = System.currentTimeMillis();
 	}
 	
-	public long recordFromStart(String describe) {
-		return record(start, describe);
+	public long printFromStart(@NotNull String taskName) {
+		return printFrom(start, taskName);
 	}
 	
-	public long recordFromLastRecord(String describe) {
-		return record(lastRecord, describe);
+	public long printFromLastRecord(@NotNull String taskName) {
+		return printFrom(lastRecord, taskName);
 	}
 	
-	private long record(long start, String describe) {
+	private long printFrom(long startTime, @NotNull String taskName) {
 		long end = System.currentTimeMillis();
 		this.lastRecord = end;
-		long time = end - start;
-		log.info("执行结束[{}]，用时{}!", describe, TimeUtils.getReadableTime(time, 3));
+		long time = end - startTime;
+		log.info("{}执行结束，用时{}!", taskName, TimeUtils.getReadableTime(time, 3));
 		return time;
 	}
 }

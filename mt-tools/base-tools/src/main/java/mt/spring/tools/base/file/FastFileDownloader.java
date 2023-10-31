@@ -66,6 +66,13 @@ public class FastFileDownloader implements FileDownloader {
 	}
 	
 	@Override
+	public void shutdown() {
+		if (threadPoolExecutor != null) {
+			threadPoolExecutor.shutdown();
+		}
+	}
+	
+	@Override
 	public void downloadFile(@NotNull String url, @NotNull File desFile) throws IOException {
 		String name = desFile.getName();
 		long length = httpExecutor.getFileLength(url);
