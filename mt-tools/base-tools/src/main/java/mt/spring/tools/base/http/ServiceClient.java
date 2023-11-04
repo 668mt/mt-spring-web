@@ -69,6 +69,9 @@ public class ServiceClient {
 	@Setter
 	@Getter
 	private HttpHost proxy;
+	@Getter
+	@Setter
+	private boolean disableRedirectHandling = false;
 	
 	public ServiceClient() {
 		this.responseErrorHandler = new DefaultResponseErrorHandler();
@@ -122,11 +125,11 @@ public class ServiceClient {
 			synchronized (this) {
 				if (this.connectionManager == null) {
 					this.connectionManager = newConnectionManager(
-							true,
-							1024,
-							1024,
-							-1, TimeUnit.MILLISECONDS,
-							null);
+						true,
+						1024,
+						1024,
+						-1, TimeUnit.MILLISECONDS,
+						null);
 					timer = new Timer();
 					timer.schedule(new TimerTask() {
 						@Override
@@ -142,13 +145,17 @@ public class ServiceClient {
 	
 	private CloseableHttpClient newHttpClient() {
 		final RequestConfig requestConfig = RequestConfig.custom()
-				.setConnectionRequestTimeout(connectionRequestTimeout)
-				.setSocketTimeout(socketTimeout)
-				.setConnectTimeout(connectionTimeout)
-				.setContentCompressionEnabled(false)
-				.setCookieSpec(CookieSpecs.STANDARD).build();
-		HttpClientBuilder httpClientBuilder = HttpClients.custom().setDefaultRequestConfig(requestConfig)
-				.setConnectionManager(newConnectionManager()).disableRedirectHandling();
+			.setConnectionRequestTimeout(connectionRequestTimeout)
+			.setSocketTimeout(socketTimeout)
+			.setConnectTimeout(connectionTimeout)
+			.setContentCompressionEnabled(false)
+			.setCookieSpec(CookieSpecs.STANDARD).build();
+		HttpClientBuilder httpClientBuilder = HttpClients.custom()
+			.setDefaultRequestConfig(requestConfig)
+			.setConnectionManager(newConnectionManager());
+		if (disableRedirectHandling) {
+			httpClientBuilder.disableRedirectHandling();
+		}
 		if (proxy != null) {
 			httpClientBuilder.setProxy(proxy);
 		}
@@ -197,9 +204,9 @@ public class ServiceClient {
 	public CloseableHttpResponse upload(String url, InputStream inputStream, Map<String, Object> params, long length) throws IOException {
 		ContentType contentType = ContentType.create("multipart/form-data", StandardCharsets.UTF_8);
 		RequestBuilder requestBuilder = RequestBuilder.create()
-				.setUrl(url)
-				.setContentType(Request.ContentType.APPLICATION_FORM_DATA)
-				.addBody("file", new MyInputStreamBody(inputStream, contentType, "file", length));
+			.setUrl(url)
+			.setContentType(Request.ContentType.APPLICATION_FORM_DATA)
+			.addBody("file", new MyInputStreamBody(inputStream, contentType, "file", length));
 		for (Map.Entry<String, Object> stringObjectEntry : params.entrySet()) {
 			requestBuilder.addBody(stringObjectEntry.getKey(), stringObjectEntry.getValue().toString());
 		}
