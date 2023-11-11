@@ -3,6 +3,8 @@ package mt.common.progress;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,6 +54,6 @@ public class RedisProgress implements Progress {
 		if (value == null) {
 			return 0;
 		}
-		return Double.parseDouble(value.toString());
+		return new BigDecimal(value.toString()).setScale(2, RoundingMode.HALF_UP).doubleValue();
 	}
 }

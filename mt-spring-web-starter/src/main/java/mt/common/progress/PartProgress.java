@@ -33,7 +33,7 @@ public class PartProgress implements Progress {
 	@Override
 	public void update(@NotNull String key, double percent) {
 		double addPercent = percent - lastPercent;
-		delegate.add(key, scale(addPercent * partPercent));
+		delegate.add(key, addPercent * partPercent);
 		this.lastPercent = percent;
 	}
 	
@@ -43,7 +43,7 @@ public class PartProgress implements Progress {
 	
 	@Override
 	public void add(@NotNull String key, double percent) {
-		delegate.add(key, scale(percent * partPercent));
+		delegate.add(key, percent * partPercent);
 	}
 	
 	@Override
@@ -57,4 +57,14 @@ public class PartProgress implements Progress {
 		return 0d;
 	}
 	
+	public static void main(String[] args) {
+		String key = "test";
+		LocalProgress progress = new LocalProgress();
+		PartProgress part1 = PartProgress.createPart(progress, 0.5);
+		PartProgress part2 = PartProgress.createPart(progress, 0.5);
+		for (double percent = 0; percent <= 1; percent += 0.01) {
+			part1.update(key, percent);
+		}
+		System.out.println(progress.getPercent(key));
+	}
 }

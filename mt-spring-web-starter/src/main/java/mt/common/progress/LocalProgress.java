@@ -2,6 +2,8 @@ package mt.common.progress;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ public class LocalProgress implements Progress {
 	@Override
 	public double getPercent(@NotNull String key) {
 		Double percent = progressMap.get(key);
-		return percent == null ? 0 : percent;
+		percent = percent == null ? 0 : percent;
+		return BigDecimal.valueOf(percent).setScale(2, RoundingMode.HALF_UP).doubleValue();
 	}
 }
