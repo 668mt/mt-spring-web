@@ -284,7 +284,6 @@ public class DefaultVideoDownloader implements VideoDownloader {
 	
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
 //		LoggingSystem.get(mt.utils.httpclient.ServiceClient.class.getClassLoader()).setLogLevel("root", LogLevel.INFO);
-//		String url = "http://192.168.0.2:4100/mos/default/resources/kuaishou/%E8%BC%95%E6%B2%85%E7%99%BD%E5%A4%A9%E6%9C%89%E8%AF%B4%E6%9C%89%E7%AC%91%EF%BC%8C%E6%99%9A%E4%B8%8A%E7%9D%A1%E4%B8%AA%E5%A5%BD%E8%A7%89+%23%E7%BB%99%E7%94%9F%E6%B4%BB%E5%A4%9A%E4%B8%80%E7%82%B9%E5%BE%AE%E7%AC%91%E5%A4%9A%E4%B8%80%E7%82%B9%E5%BF%AB%E4%B9%90+%23%E6%88%AA%E8%82%A2%E5%A5%B3%E5%AD%A9%EF%BC%883xh9i6yefyh4bhi%EF%BC%89.mp4?sign=iTT7PvYUViRUVUxy2yGKRlfj0C7OC_prflYxEjZowAErJ9RvrsLRNvton968aukh5tf15-HuDXG7uVjE5s4_fJwiJrUQpacmovAQwwADwiAjLcsa8f1_dQUNiTBS-ryD0N0tuCcD9VlTAw7tZ3nFID3sKfZG6xt1VOar51mAx-4AhPQG-xIeAHmHGQ0AiLY7RTiorw8m-KQ0CkhLaIAXveZY9b0McYy6xlgAQQywXffz-hTK6VKEAFN2nBqCF500E9D517sxa1dQf8v4lINbBRNH6CIdHMs41FogLKEi5B9rG4pfubzh5Wo97alNsIP-M5sLhWj6kK-z42stifB4jZRrViIP0-yg3HATBUFvBfgcY8=";
 		String url = "http://192.168.0.2:4100/mos/mukeyuan/202311/13538/index.m3u8?sign=Ex_hoBBHKapctMV8Gw4H4vSfe7PkW0OIksr2De5NLmdOdvRV05Yac8YwS68M7nvdOQ7aXr-kLT730DBG_UbDUqdfver15BkayPQ8n8IrJwtWaFLJPkU6Lh7r-wM4gy7HILScvElu12WyKyHbjTayHy18mgCVch5rvFwX_yzcUtTYboQ4ovQ7NhGAEgV9z_gbUXTK9OYjXKm5fvp8_JiuPs1TXA==";
 		ServiceClient serviceClient = new ServiceClient();
 		DefaultVideoDownloader videoDownloader = new DefaultVideoDownloader(serviceClient);
