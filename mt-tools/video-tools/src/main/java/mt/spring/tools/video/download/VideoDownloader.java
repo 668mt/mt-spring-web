@@ -21,6 +21,8 @@ public interface VideoDownloader {
 	 */
 	void downloadMp4(@NotNull String url, @NotNull File desFile, boolean convertMp4, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException;
 	
+	M3u8Info downloadM3u8Files(@NotNull String m3u8Url, @NotNull File path, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException;
+	
 	/**
 	 * 下载m3u8地址
 	 *

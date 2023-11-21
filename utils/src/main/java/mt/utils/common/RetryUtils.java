@@ -11,9 +11,9 @@ import java.util.Arrays;
 @Slf4j
 public class RetryUtils {
 	public interface DoExecute<T> {
-		T execute() throws Exception;
+		T execute() throws Throwable;
 		
-		default void onException(Exception exception) {
+		default void onException(Throwable exception) {
 		}
 	}
 	
@@ -21,18 +21,18 @@ public class RetryUtils {
 		if (retryExceptions == null) {
 			retryExceptions = new Class[]{Exception.class};
 		}
-		Exception finalException;
+		Throwable finalException;
 		do {
 			try {
 				return doExecute.execute();
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				finalException = e;
 				doExecute.onException(e);
 				Arrays.stream(retryExceptions)
-						.filter(aClass -> aClass.isAssignableFrom(e.getClass()))
-						.findFirst()
-						.orElseThrow(() -> new RuntimeException(e));
-				retry--;
+					.filter(aClass -> aClass.isAssignableFrom(e.getClass()))
+					.findFirst()
+					.orElseThrow(() -> new RuntimeException(e));
+				log.warn("操作失败，重试中，剩余次数：{}", retry - 1);
 				if (delayMills > 0) {
 					try {
 						Thread.sleep(delayMills);
@@ -40,6 +40,8 @@ public class RetryUtils {
 						throw new RuntimeException(interruptedException);
 					}
 				}
+			} finally {
+				retry--;
 			}
 		} while (retry >= 0);
 		throw new RuntimeException(finalException);

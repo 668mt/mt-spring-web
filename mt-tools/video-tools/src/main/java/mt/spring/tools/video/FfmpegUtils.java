@@ -1,7 +1,9 @@
 package mt.spring.tools.video;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
+import mt.spring.tools.video.ffmpeg.params.CutVideoParams;
 import mt.utils.common.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +18,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @Author Martin
@@ -209,11 +208,7 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("-y");
 			ffmpeg.addArgument(desFile.getAbsolutePath());
 		};
-		if (timeout > 0) {
-			FfmpegJob.executeWithTimeout(ffmpegWorker, timeout, timeUnit);
-		} else {
-			FfmpegJob.execute(ffmpegWorker);
-		}
+		FfmpegJob.execute(ffmpegWorker, timeout, timeUnit);
 	}
 
 //	/**
@@ -273,8 +268,8 @@ public class FfmpegUtils {
 	 * @param srcFile 源文件
 	 * @param dstPath 目标目录
 	 */
-	public static void screenshotsTwentyMinutes(@NotNull File srcFile, @NotNull File dstPath) {
-		screenshots(srcFile.getAbsolutePath(), dstPath, 0.01667, "00:00", "20:00", 400);
+	public static void screenshotsTwentyMinutes(@NotNull File srcFile, @NotNull File dstPath, long timeout, TimeUnit timeUnit) {
+		screenshots(srcFile.getAbsolutePath(), dstPath, 0.01667, "00:00", "20:00", 400, timeout, timeUnit);
 	}
 	
 	/**
@@ -288,7 +283,8 @@ public class FfmpegUtils {
 	 * @param duringRime 持续时间，格式xx:xx，例如20:00
 	 * @param width      宽度
 	 */
-	public static void screenshots(@NotNull String pathOrUrl, @NotNull File dstPath, double rate, @NotNull String startTime, @NotNull String duringRime, int width) {
+	public static void screenshots(@NotNull String pathOrUrl, @NotNull File dstPath, double rate, @NotNull String startTime, @NotNull String duringRime,
+								   int width, long timeout, TimeUnit timeUnit) {
 		dstPath.mkdirs();
 		FfmpegJob.execute(ffmpeg -> {
 			ffmpeg.addArgument("-ss");
@@ -304,7 +300,7 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("-filter:v");
 			ffmpeg.addArgument("scale=" + width + ":-1");
 			ffmpeg.addArgument(dstPath.getAbsolutePath() + "/%3d.jpg");
-		});
+		}, timeout, timeUnit);
 	}
 	
 	/**
@@ -328,12 +324,12 @@ public class FfmpegUtils {
 	 * @param from      从，例：00:00:00
 	 * @param to        到，例：00:00:20
 	 */
-	public static void cutVideo(@NotNull String pathOrUrl, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec) {
+	public static void cutVideo(@NotNull String pathOrUrl, @NotNull File desFile, @NotNull String from, @NotNull String to, @Nullable String vCodec, int timeout, TimeUnit timeUnit) throws Exception {
 		if (StringUtils.isBlank(vCodec)) {
 			vCodec = "copy";
 		}
 		String finalVCodec = vCodec;
-		FfmpegJob.execute(ffmpeg -> {
+		FfmpegJob.FfmpegWorker worker = ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(pathOrUrl);
 			ffmpeg.addArgument("-ss");
@@ -350,7 +346,12 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("-q:v");
 			ffmpeg.addArgument("1");
 			ffmpeg.addArgument(desFile.getAbsolutePath());
-		});
+		};
+		if (timeout > 0) {
+			FfmpegJob.execute(worker, timeout, timeUnit);
+		} else {
+			FfmpegJob.execute(worker);
+		}
 	}
 	
 	/**
@@ -364,8 +365,11 @@ public class FfmpegUtils {
 	 * @return 是否生成
 	 * @throws Exception 异常
 	 */
-	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile, int segments, int width, @Nullable String vCodec) throws Exception {
-		return generatePreviewVideo(srcFile, dstFile, segments, width, -2, vCodec);
+	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile,
+											   int segments, int width, @Nullable String vCodec,
+											   long timeout, TimeUnit timeUnit
+	) throws Exception {
+		return generatePreviewVideo(srcFile, dstFile, segments, width, -2, vCodec, timeout, timeUnit);
 	}
 	
 	/**
@@ -381,7 +385,7 @@ public class FfmpegUtils {
 	 * @return 是否生成
 	 * @throws Exception 异常
 	 */
-	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile, int segments, int width, int height, @Nullable String vCodec) throws Exception {
+	public static boolean generatePreviewVideo(@NotNull File srcFile, @NotNull File dstFile, int segments, int width, int height, @Nullable String vCodec, long timeout, TimeUnit timeUnit) throws Exception {
 		mt.spring.tools.video.entity.VideoInfo videoInfo = getVideoInfo(srcFile, 1, TimeUnit.MINUTES);
 		long during = videoInfo.getDuring();
 		long second = during / 1000 / segments;
@@ -398,7 +402,7 @@ public class FfmpegUtils {
 				ffmpeg.addArgument("-an");
 				ffmpeg.addArgument("-y");
 				ffmpeg.addArgument(dstFile.getAbsolutePath());
-			});
+			}, timeout, timeUnit);
 			return true;
 		}
 		log.info("视频长度小于分片长度，不能生成预览视频,segments={}", segments);
@@ -413,7 +417,12 @@ public class FfmpegUtils {
 	 * @param dstFile 目标文件
 	 */
 	public static void convert(@NotNull File srcFile, @NotNull File dstFile, @Nullable String vCodec) {
-		FfmpegJob.execute(ffmpeg -> {
+		convert(srcFile, dstFile, vCodec, -1, TimeUnit.MINUTES);
+	}
+	
+	@SneakyThrows
+	public static void convert(@NotNull File srcFile, @NotNull File dstFile, @Nullable String vCodec, int timeout, TimeUnit timeUnit) {
+		FfmpegJob.FfmpegWorker worker = ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
 			if (StringUtils.isNotBlank(vCodec)) {
@@ -424,6 +433,92 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("scale=iw:-2");
 			ffmpeg.addArgument("-y");
 			ffmpeg.addArgument(dstFile.getAbsolutePath());
-		});
+		};
+		FfmpegJob.execute(worker, timeout, timeUnit);
+	}
+	
+	public static String secondsFormat(int seconds) {
+		//格式化成00:00:00的格式
+		return String.format("%02d:%02d:%02d", seconds / 3600, seconds % 3600 / 60, seconds % 60);
+	}
+	
+	/**
+	 * 剪切视频
+	 *
+	 * @param srcFile     源文件
+	 * @param dstFile     目标文件
+	 * @param fromSeconds 从第几秒开始
+	 * @param toSeconds   到第几秒结束
+	 * @param params      参数
+	 * @throws Exception 异常
+	 */
+	public static void cutVideo(
+		@NotNull File srcFile,
+		@NotNull File dstFile,
+		int fromSeconds,
+		int toSeconds,
+		@Nullable CutVideoParams params
+	) throws Exception {
+		if (params == null) {
+			params = CutVideoParams.builder().build();
+		}
+		Integer width;
+		Integer frameRate;
+		if (params.getMaxWidth() != null || params.getMaxFrameRate() != null) {
+			mt.spring.tools.video.entity.VideoInfo videoInfo = FfmpegUtils.getVideoInfo(srcFile, 2, TimeUnit.MINUTES);
+			if (params.getMaxWidth() != null) {
+				width = Math.min(videoInfo.getWidth(), params.getMaxWidth());
+			} else {
+				width = null;
+			}
+			if (params.getMaxFrameRate() != null) {
+				frameRate = (int) Math.min(videoInfo.getFrameRate(), params.getMaxFrameRate());
+			} else {
+				frameRate = null;
+			}
+		} else {
+			frameRate = null;
+			width = null;
+		}
+		CutVideoParams finalParams = params;
+		FfmpegJob.FfmpegWorker worker = ffmpeg -> {
+			ffmpeg.addArgument("-i");
+			ffmpeg.addArgument(srcFile.getAbsolutePath());
+			ffmpeg.addArgument("-ss");
+			FfmpegUtils.secondToTime(fromSeconds);
+			ffmpeg.addArgument(secondsFormat(fromSeconds));
+			ffmpeg.addArgument("-to");
+			ffmpeg.addArgument(secondsFormat(toSeconds));
+			ffmpeg.addArgument("-y");
+			if (StringUtils.isNotBlank(finalParams.getFormat())) {
+				ffmpeg.addArgument("-f");
+				ffmpeg.addArgument(finalParams.getFormat());
+			}
+			ffmpeg.addArgument("-vcodec");
+			if (StringUtils.isNotBlank(finalParams.getVCodec())) {
+				ffmpeg.addArgument(finalParams.getVCodec());
+			} else {
+				ffmpeg.addArgument("copy");
+			}
+			ffmpeg.addArgument("-acodec");
+			if (StringUtils.isNotBlank(finalParams.getACodec())) {
+				ffmpeg.addArgument(finalParams.getACodec());
+			} else {
+				ffmpeg.addArgument("copy");
+			}
+			if (width != null) {
+				ffmpeg.addArgument("-vf");
+				ffmpeg.addArgument("scale=" + width + ":-2");
+			}
+			if (frameRate != null) {
+				ffmpeg.addArgument("-r");
+				ffmpeg.addArgument(frameRate + "");
+			}
+			ffmpeg.addArgument("-q:v");
+			ffmpeg.addArgument("1");
+			ffmpeg.addArgument(dstFile.getAbsolutePath());
+		};
+		long timeout = params.getTimeout() == null ? -1 : params.getTimeout();
+		FfmpegJob.execute(worker, timeout, params.getTimeUnit());
 	}
 }

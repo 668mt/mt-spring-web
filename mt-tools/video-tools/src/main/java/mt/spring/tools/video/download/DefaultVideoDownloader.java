@@ -6,6 +6,7 @@ import mt.spring.tools.base.file.FastFileDownloader;
 import mt.spring.tools.base.file.FileDownloader;
 import mt.spring.tools.base.file.HttpClientFastFileDownloaderHttpSupport;
 import mt.spring.tools.base.http.ServiceClient;
+import mt.spring.tools.video.FfmpegUtils;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import mt.utils.RegexUtils;
 import mt.utils.common.Assert;
@@ -25,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -149,22 +151,20 @@ public class DefaultVideoDownloader implements VideoDownloader {
 	}
 	
 	@Override
-	public void downloadM3u8(@NotNull String m3u8Url, @NotNull File desFile, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException {
-		log.info("下载{}到{}", m3u8Url, desFile);
+	public M3u8Info downloadM3u8Files(@NotNull String m3u8Url, @NotNull File path, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException {
+		log.info("下载{}到{}", m3u8Url, path);
 		M3u8Info m3u8Info = requestM3u8Info(m3u8Url);
 		Assert.notNull(m3u8Info, "解析失败");
 		List<String> tsUrls = m3u8Info.getTsUrls();
 		Assert.notEmpty(tsUrls, "获取tsUrls失败");
-		File parentFile = desFile.getParentFile();
-		File tempPath = new File(parentFile, DigestUtils.md5Hex(desFile.getName()) + "-temp");
-		log.info("临时文件夹：{}", tempPath);
-		tempPath.mkdirs();
+		log.info("下载文件夹：{}", path);
+		path.mkdirs();
 		String keyUrl = m3u8Info.getKeyUrl();
 		if (StringUtils.isNotBlank(keyUrl)) {
 			updateMessage(downloaderMessageListener, "下载key:" + keyUrl);
 			String key = RetryUtils.doWithRetry(() -> serviceClient.getAsString(keyUrl), retry, retryDelay, Throwable.class);
 			if (StringUtils.isNotBlank(key)) {
-				File keyFile = new File(tempPath, "key.key");
+				File keyFile = new File(path, "key.key");
 				try (FileOutputStream fileOutputStream = new FileOutputStream(keyFile)) {
 					IOUtils.write(key.getBytes(StandardCharsets.UTF_8), fileOutputStream);
 				}
@@ -173,30 +173,46 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		int total = tsUrls.size();
 		AtomicInteger atomicInteger = new AtomicInteger(0);
 		log.info("共{}个分片", total);
-		ExecutorService executorService = Executors.newFixedThreadPool(threads);
 		try {
-			List<Future<?>> futures = new ArrayList<>();
 			for (String s : tsUrls) {
-				Future<?> future = executorService.submit(() -> {
-					String tsName = getTsName(s);
-					File desTsFile = new File(tempPath, tsName);
-					if (desTsFile.exists()) {
-						return;
-					}
-					RetryUtils.doWithRetry(() -> {
-						getFileDownloader().downloadFile(s, desTsFile);
-						return null;
-					}, retry, retryDelay, Throwable.class);
+				String tsName = getTsName(s);
+				File desTsFile = new File(path, tsName);
+				if (desTsFile.exists()) {
+					continue;
+				}
+				RetryUtils.doWithRetry(() -> {
 					updateMessage(downloaderMessageListener, "下载ts文件中：" + (total + 1) + "/" + (atomicInteger.incrementAndGet()));
-				});
-				futures.add(future);
+					getFileDownloader().downloadFile(s, desTsFile);
+					return null;
+				}, retry, retryDelay, Throwable.class);
 			}
-			for (Future<?> future : futures) {
-				future.get();
+			//生成index.m3u8
+			updateMessage(downloaderMessageListener, "生成index.m3u8文件中...");
+			File indexFile = generateM3u8IndexFile(m3u8Info.getContent(), path);
+			m3u8Info.setIndexFile(indexFile);
+			updateMessage(downloaderMessageListener, "ts文件下载完成！");
+			return m3u8Info;
+		} catch (Throwable e) {
+			log.error("下载m3u8失败：{}", e.getMessage(), e);
+			if (cleanTempDirectoryWhenError) {
+				FileUtils.deleteDirectory(path);
 			}
-			//下载完成
+			throw new IOException("下载失败", e);
+		}
+	}
+	
+	@Override
+	public void downloadM3u8(@NotNull String m3u8Url, @NotNull File desFile, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException {
+		File parentFile = desFile.getParentFile();
+		File tempPath = new File(parentFile, DigestUtils.md5Hex(desFile.getName()) + "-temp");
+		log.info("临时文件夹：{}", tempPath);
+		tempPath.mkdirs();
+		
+		try {
+			M3u8Info m3u8Info = downloadM3u8Files(m3u8Url, tempPath, downloaderMessageListener);
 			updateMessage(downloaderMessageListener, "合并ts文件中...");
-			merge(m3u8Info.getContent(), tempPath.getPath(), desFile);
+			m3u8MergeToMp4(m3u8Info.getIndexFile(), desFile);
+			//删除临时文件
 			FileUtils.deleteDirectory(tempPath);
 			updateMessage(downloaderMessageListener, "下载完成！");
 		} catch (Throwable e) {
@@ -205,12 +221,10 @@ public class DefaultVideoDownloader implements VideoDownloader {
 				FileUtils.deleteDirectory(tempPath);
 			}
 			throw new IOException("下载失败", e);
-		} finally {
-			executorService.shutdownNow();
 		}
 	}
 	
-	private void merge(String m3u8, String path, File desFile) throws IOException {
+	private File generateM3u8IndexFile(String m3u8, File path) throws IOException {
 		List<String> lines = new ArrayList<>();
 		for (String s : m3u8.split("\n")) {
 			if (s.contains("X-KEY")) {
@@ -224,7 +238,10 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		try (FileOutputStream fileOutputStream = new FileOutputStream(indexFile)) {
 			IOUtils.write(StringUtils.join(lines, "\n").getBytes(StandardCharsets.UTF_8), fileOutputStream);
 		}
-		
+		return indexFile;
+	}
+	
+	protected void m3u8MergeToMp4(File indexFile, File desFile) {
 		FfmpegJob.execute(ffmpegExecutor -> {
 			ffmpegExecutor.addArgument("-allowed_extensions");
 			ffmpegExecutor.addArgument("ALL");
@@ -234,10 +251,36 @@ public class DefaultVideoDownloader implements VideoDownloader {
 			ffmpegExecutor.addArgument("mp4");
 			ffmpegExecutor.addArgument("-c");
 			ffmpegExecutor.addArgument("copy");
+//			//音频复制
+//			ffmpegExecutor.addArgument("-c:a");
+//			ffmpegExecutor.addArgument("copy");
+//			//h264_nvenc
+//			ffmpegExecutor.addArgument("-c:v");
+//			ffmpegExecutor.addArgument("h264_nvenc");
 			ffmpegExecutor.addArgument("-y");
 			ffmpegExecutor.addArgument(desFile.getAbsolutePath());
 		});
 	}
 	
+	public static void main(String[] args) throws Exception {
+//		String url = "http://192.168.0.2:4100/mos/mukeyuan/202311/13394/index.m3u8?sign=Rx_hoKapctMV8Gw4H4BBHvSfe7PkW0OIksr2De5NLmdOdvRUUjIGRymZ5W-l8Q2zjekTXr-kLT730DBG_UbDUqdfvVhocxOsQZsOWvxHfH5L9d3JPkU6Lh7r-wM4gy7HILScvElu12WyKyHbjTayHy18mgCVch5rvFwX_yzcUtTYboQ4ovQ7NhGAEgV9z_gbUXTK9OYjXKm5fvp8_JiuPs1TXA==";
+		DefaultVideoDownloader defaultVideoDownloader = new DefaultVideoDownloader(new ServiceClient());
+		File file = new File("D:/test/bailu/test/testtarget.mp4");
+		File file2 = new File("D:/test/bailu/test/testtarget-output.mp4");
+		File path = new File("D:/test/bailu/test/m3u8");
+//		defaultVideoDownloader.downloadM3u8(url, file, new DownloaderMessageListener() {
+//			@Override
+//			public void update(@NotNull String message) {
+//				System.out.println(message);
+//			}
+//		});
+//		M3u8Info m3u8Info = defaultVideoDownloader.downloadM3u8Files(url, path, new DownloaderMessageListener() {
+//			@Override
+//			public void update(@NotNull String message) {
+//				System.out.println(message);
+//			}
+//		});
+		FfmpegUtils.cutVideo(new File(path, "index.m3u8").getAbsolutePath(), file2, "00:30:00", "00:31:00", "h264", 5, TimeUnit.MINUTES);
+	}
 	
 }
