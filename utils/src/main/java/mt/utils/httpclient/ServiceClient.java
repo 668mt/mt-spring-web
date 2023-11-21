@@ -2,6 +2,7 @@ package mt.utils.httpclient;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -20,20 +21,25 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHttpRequest;
+import org.springframework.boot.logging.LogLevel;
+import org.springframework.boot.logging.LoggingSystem;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @Author Martin
@@ -49,9 +55,9 @@ public class ServiceClient {
 	@Setter
 	public int socketTimeout = 3600 * 1000;
 	@Setter
-	public int connectionTimeout = 50 * 1000;
+	public int connectionTimeout = 3000;
 	@Setter
-	public int connectionRequestTimeout = -1;
+	public int connectionRequestTimeout = 3000;
 	private Timer timer;
 	
 	public ServiceClient() {
@@ -107,11 +113,11 @@ public class ServiceClient {
 			synchronized (this) {
 				if (this.connectionManager == null) {
 					this.connectionManager = newConnectionManager(
-							true,
-							1024,
-							1024,
-							-1, TimeUnit.MILLISECONDS,
-							null);
+						true,
+						1024,
+						1024,
+						-1, TimeUnit.MILLISECONDS,
+						null);
 					timer = new Timer();
 					timer.schedule(new TimerTask() {
 						@Override
@@ -127,14 +133,14 @@ public class ServiceClient {
 	
 	public CloseableHttpClient newHttpClient() {
 		final RequestConfig requestConfig = RequestConfig.custom()
-				.setConnectionRequestTimeout(connectionRequestTimeout)
-				.setSocketTimeout(socketTimeout)
-				.setConnectTimeout(connectionTimeout)
-				.setContentCompressionEnabled(false)
-				.setCookieSpec(CookieSpecs.IGNORE_COOKIES).build();
+			.setConnectionRequestTimeout(connectionRequestTimeout)
+			.setSocketTimeout(socketTimeout)
+			.setConnectTimeout(connectionTimeout)
+			.setContentCompressionEnabled(false)
+			.setCookieSpec(CookieSpecs.IGNORE_COOKIES).build();
 		return HttpClients.custom().setDefaultRequestConfig(requestConfig)
-				.setConnectionManager(newConnectionManager()).disableRedirectHandling()
-				.build();
+			.setConnectionManager(newConnectionManager()).disableRedirectHandling()
+			.build();
 	}
 	
 	public CloseableHttpClient getHttpClient() {
@@ -199,4 +205,5 @@ public class ServiceClient {
 	public CloseableHttpResponse execute(Request request) throws IOException {
 		return handleResponse(getHttpClient().execute(getHttpHost(new URL(request.getUrl())), request.buildRequest()));
 	}
+	
 }

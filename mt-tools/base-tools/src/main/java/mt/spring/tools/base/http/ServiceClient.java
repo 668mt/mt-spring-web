@@ -11,6 +11,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -56,15 +57,24 @@ public class ServiceClient {
 	@Getter
 	private ResponseErrorHandler responseErrorHandler;
 	
+	/**
+	 * 连接建立后，数据传输过程中数据包之间间隔的最大时间
+	 */
 	@Setter
 	@Getter
 	public int socketTimeout = 3600 * 1000;
+	/**
+	 * 连接建立时间，即三次握手完成时间
+	 */
 	@Setter
 	@Getter
-	public int connectionTimeout = 50 * 1000;
+	public int connectionTimeout = 3000;
+	/**
+	 * 从连接池获取连接的超时
+	 */
 	@Setter
 	@Getter
-	public int connectionRequestTimeout = -1;
+	public int connectionRequestTimeout = 3000;
 	private Timer timer;
 	@Setter
 	@Getter

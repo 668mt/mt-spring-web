@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @Author Martin
@@ -26,5 +27,5 @@ public interface FastFileDownloaderHttpSupport {
 	 * @param url 文件地址
 	 * @return
 	 */
-	InputStream getInputStream(@NotNull String url, @Nullable Map<String, String> headers) throws IOException;
+	void getInputStream(@NotNull String url, @Nullable Map<String, String> headers, @NotNull Consumer<InputStream> consumer) throws IOException;
 }

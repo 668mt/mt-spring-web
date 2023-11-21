@@ -3,6 +3,7 @@ package mt.spring.tools.base.file;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.base.http.ServiceClient;
+import mt.spring.tools.base.io.IOUtils;
 import mt.spring.tools.base.io.TimeUtils;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -45,15 +46,23 @@ public class SpeedLimitedFileDownloader implements FileDownloader {
 		TaskTimeWatch taskTimeWatch = new TaskTimeWatch();
 		taskTimeWatch.start();
 		File tempFile = getTempFile(desFile);
-		try (InputStream inputStream = httpExecutor.getInputStream(url, null);
-			 FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-			if (limitKbSeconds > 0) {
-				try (InputStream limitInputStream = new LimitInputStream(inputStream, limitKbSeconds)) {
-					org.apache.commons.io.IOUtils.copyLarge(limitInputStream, outputStream);
+		try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+			httpExecutor.getInputStream(url, null, inputStream -> {
+				try {
+					if (limitKbSeconds > 0) {
+						try (InputStream limitInputStream = new LimitInputStream(inputStream, limitKbSeconds)) {
+							org.apache.commons.io.IOUtils.copyLarge(limitInputStream, outputStream);
+						}
+					} else {
+						org.apache.commons.io.IOUtils.copyLarge(inputStream, outputStream);
+					}
+				} catch (Exception e) {
+					log.error("inputStream read failed:{}", e.getMessage(), e);
+					throw new RuntimeException(e);
+				} finally {
+					IOUtils.closeQuietly(inputStream);
 				}
-			} else {
-				org.apache.commons.io.IOUtils.copyLarge(inputStream, outputStream);
-			}
+			});
 		}
 		if (desFile.exists()) {
 			desFile.delete();

@@ -15,18 +15,17 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -261,26 +260,54 @@ public class DefaultVideoDownloader implements VideoDownloader {
 			ffmpegExecutor.addArgument(desFile.getAbsolutePath());
 		});
 	}
+
+//	public static void main(String[] args) throws Exception {
+////		String url = "http://192.168.0.2:4100/mos/mukeyuan/202311/13394/index.m3u8?sign=Rx_hoKapctMV8Gw4H4BBHvSfe7PkW0OIksr2De5NLmdOdvRUUjIGRymZ5W-l8Q2zjekTXr-kLT730DBG_UbDUqdfvVhocxOsQZsOWvxHfH5L9d3JPkU6Lh7r-wM4gy7HILScvElu12WyKyHbjTayHy18mgCVch5rvFwX_yzcUtTYboQ4ovQ7NhGAEgV9z_gbUXTK9OYjXKm5fvp8_JiuPs1TXA==";
+//		DefaultVideoDownloader defaultVideoDownloader = new DefaultVideoDownloader(new ServiceClient());
+//		File file = new File("D:/test/bailu/test/testtarget.mp4");
+//		File file2 = new File("D:/test/bailu/test/testtarget-output.mp4");
+//		File path = new File("D:/test/bailu/test/m3u8");
+////		defaultVideoDownloader.downloadM3u8(url, file, new DownloaderMessageListener() {
+////			@Override
+////			public void update(@NotNull String message) {
+////				System.out.println(message);
+////			}
+////		});
+////		M3u8Info m3u8Info = defaultVideoDownloader.downloadM3u8Files(url, path, new DownloaderMessageListener() {
+////			@Override
+////			public void update(@NotNull String message) {
+////				System.out.println(message);
+////			}
+////		});
+//		FfmpegUtils.cutVideo(new File(path, "index.m3u8").getAbsolutePath(), file2, "00:30:00", "00:31:00", "h264", 5, TimeUnit.MINUTES);
+//	}
 	
-	public static void main(String[] args) throws Exception {
-//		String url = "http://192.168.0.2:4100/mos/mukeyuan/202311/13394/index.m3u8?sign=Rx_hoKapctMV8Gw4H4BBHvSfe7PkW0OIksr2De5NLmdOdvRUUjIGRymZ5W-l8Q2zjekTXr-kLT730DBG_UbDUqdfvVhocxOsQZsOWvxHfH5L9d3JPkU6Lh7r-wM4gy7HILScvElu12WyKyHbjTayHy18mgCVch5rvFwX_yzcUtTYboQ4ovQ7NhGAEgV9z_gbUXTK9OYjXKm5fvp8_JiuPs1TXA==";
-		DefaultVideoDownloader defaultVideoDownloader = new DefaultVideoDownloader(new ServiceClient());
-		File file = new File("D:/test/bailu/test/testtarget.mp4");
-		File file2 = new File("D:/test/bailu/test/testtarget-output.mp4");
-		File path = new File("D:/test/bailu/test/m3u8");
-//		defaultVideoDownloader.downloadM3u8(url, file, new DownloaderMessageListener() {
-//			@Override
-//			public void update(@NotNull String message) {
-//				System.out.println(message);
-//			}
-//		});
-//		M3u8Info m3u8Info = defaultVideoDownloader.downloadM3u8Files(url, path, new DownloaderMessageListener() {
-//			@Override
-//			public void update(@NotNull String message) {
-//				System.out.println(message);
-//			}
-//		});
-		FfmpegUtils.cutVideo(new File(path, "index.m3u8").getAbsolutePath(), file2, "00:30:00", "00:31:00", "h264", 5, TimeUnit.MINUTES);
+	public static void main(String[] args) throws ExecutionException, InterruptedException {
+//		LoggingSystem.get(mt.utils.httpclient.ServiceClient.class.getClassLoader()).setLogLevel("root", LogLevel.INFO);
+//		String url = "http://192.168.0.2:4100/mos/default/resources/kuaishou/%E8%BC%95%E6%B2%85%E7%99%BD%E5%A4%A9%E6%9C%89%E8%AF%B4%E6%9C%89%E7%AC%91%EF%BC%8C%E6%99%9A%E4%B8%8A%E7%9D%A1%E4%B8%AA%E5%A5%BD%E8%A7%89+%23%E7%BB%99%E7%94%9F%E6%B4%BB%E5%A4%9A%E4%B8%80%E7%82%B9%E5%BE%AE%E7%AC%91%E5%A4%9A%E4%B8%80%E7%82%B9%E5%BF%AB%E4%B9%90+%23%E6%88%AA%E8%82%A2%E5%A5%B3%E5%AD%A9%EF%BC%883xh9i6yefyh4bhi%EF%BC%89.mp4?sign=iTT7PvYUViRUVUxy2yGKRlfj0C7OC_prflYxEjZowAErJ9RvrsLRNvton968aukh5tf15-HuDXG7uVjE5s4_fJwiJrUQpacmovAQwwADwiAjLcsa8f1_dQUNiTBS-ryD0N0tuCcD9VlTAw7tZ3nFID3sKfZG6xt1VOar51mAx-4AhPQG-xIeAHmHGQ0AiLY7RTiorw8m-KQ0CkhLaIAXveZY9b0McYy6xlgAQQywXffz-hTK6VKEAFN2nBqCF500E9D517sxa1dQf8v4lINbBRNH6CIdHMs41FogLKEi5B9rG4pfubzh5Wo97alNsIP-M5sLhWj6kK-z42stifB4jZRrViIP0-yg3HATBUFvBfgcY8=";
+		String url = "http://192.168.0.2:4100/mos/mukeyuan/202311/13538/index.m3u8?sign=Ex_hoBBHKapctMV8Gw4H4vSfe7PkW0OIksr2De5NLmdOdvRV05Yac8YwS68M7nvdOQ7aXr-kLT730DBG_UbDUqdfver15BkayPQ8n8IrJwtWaFLJPkU6Lh7r-wM4gy7HILScvElu12WyKyHbjTayHy18mgCVch5rvFwX_yzcUtTYboQ4ovQ7NhGAEgV9z_gbUXTK9OYjXKm5fvp8_JiuPs1TXA==";
+		ServiceClient serviceClient = new ServiceClient();
+		DefaultVideoDownloader videoDownloader = new DefaultVideoDownloader(serviceClient);
+		ExecutorService executorService = Executors.newFixedThreadPool(100);
+		List<Future<?>> futures = new ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			int finalI = i;
+			Future<?> submit = executorService.submit(() -> {
+				try {
+					File dstFile = new File("D:/test/bailu/test/down/" + finalI + ".mp4");
+					videoDownloader.downloadM3u8(url, dstFile, null);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			futures.add(submit);
+		}
+		for (Future<?> future : futures) {
+			future.get();
+		}
+		log.info("执行完毕");
+		serviceClient.shutdown();
+		executorService.shutdownNow();
 	}
 	
 }

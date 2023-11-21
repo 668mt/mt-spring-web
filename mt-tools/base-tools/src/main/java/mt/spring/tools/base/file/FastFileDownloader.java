@@ -105,10 +105,13 @@ public class FastFileDownloader implements FileDownloader {
 			}
 		} else {
 			log.info("使用单线程下载");
-			try (InputStream content = httpExecutor.getInputStream(url, null);
-				 FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-				org.apache.commons.io.IOUtils.copyLarge(content, outputStream);
-			}
+			httpExecutor.getInputStream(url, null, inputStream -> {
+				try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+					org.apache.commons.io.IOUtils.copyLarge(inputStream, outputStream);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			});
 		}
 		if (desFile.exists()) {
 			desFile.delete();
@@ -173,32 +176,31 @@ public class FastFileDownloader implements FileDownloader {
 				log.info("part{}已经下载，跳过", part.getIndex());
 				return;
 			}
-			RandomAccessFile randomAccessFile = null;
-			InputStream inputStream = null;
 			try {
 				TaskTimeWatch taskTimeWatch = new TaskTimeWatch();
 				taskTimeWatch.start();
 				log.trace("[{}]下载分片{}...", name, part.getIndex());
 				Map<String, String> headers = new HashMap<>();
 				headers.put("Range", "bytes=" + part.getStart() + "-" + part.getEnd());
-				inputStream = httpExecutor.getInputStream(url, headers);
-				randomAccessFile = new RandomAccessFile(tempFile, "rw");
-				randomAccessFile.seek(part.getStart());
-				byte[] buffer = new byte[4096];
-				int read;
-				while ((read = inputStream.read(buffer)) != -1) {
-					randomAccessFile.write(buffer, 0, read);
-				}
-				long length = part.getLength();
-				taskTimeWatch.end();
-				long costMills = taskTimeWatch.getCostMills();
-				log.info("[{}]分片{}下载完成，用时：{},平均下载速度：{}", name, part.getIndex(), TimeUtils.getReadableTime(costMills), getSpeed(length, costMills));
-				recordFile.finish(part.getIndex());
+				httpExecutor.getInputStream(url, headers, inputStream -> {
+					try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "rw")) {
+						randomAccessFile.seek(part.getStart());
+						byte[] buffer = new byte[4096];
+						int read;
+						while ((read = inputStream.read(buffer)) != -1) {
+							randomAccessFile.write(buffer, 0, read);
+						}
+						long length = part.getLength();
+						taskTimeWatch.end();
+						long costMills = taskTimeWatch.getCostMills();
+						log.info("[{}]分片{}下载完成，用时：{},平均下载速度：{}", name, part.getIndex(), TimeUtils.getReadableTime(costMills), getSpeed(length, costMills));
+						recordFile.finish(part.getIndex());
+					} catch (Exception e) {
+						throw new RuntimeException("下载" + name + "分片" + part.getIndex() + "失败", e);
+					}
+				});
 			} catch (IOException e) {
 				throw new RuntimeException("下载" + name + "分片" + part.getIndex() + "失败", e);
-			} finally {
-				IOUtils.closeQuietly(randomAccessFile);
-				IOUtils.closeQuietly(inputStream);
 			}
 		}
 		

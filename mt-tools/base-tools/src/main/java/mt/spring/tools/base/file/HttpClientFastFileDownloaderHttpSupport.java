@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @Author Martin
@@ -37,7 +38,7 @@ public class HttpClientFastFileDownloaderHttpSupport implements FastFileDownload
 	}
 	
 	@Override
-	public InputStream getInputStream(@NotNull String url, @Nullable Map<String, String> headers) throws IOException {
+	public void getInputStream(@NotNull String url, @Nullable Map<String, String> headers, @NotNull Consumer<InputStream> inputStreamConsumer) throws IOException {
 		List<Header> httpHeaders = new ArrayList<>();
 		if (headers != null) {
 			for (Map.Entry<String, String> stringStringEntry : headers.entrySet()) {
@@ -45,8 +46,11 @@ public class HttpClientFastFileDownloaderHttpSupport implements FastFileDownload
 				httpHeaders.add(basicHeader);
 			}
 		}
-		CloseableHttpResponse response = serviceClient.get(url, httpHeaders.toArray(new Header[0]));
-		return response.getEntity().getContent();
+		try (CloseableHttpResponse response = serviceClient.get(url, httpHeaders.toArray(new Header[0]))) {
+			try (InputStream content = response.getEntity().getContent()) {
+				inputStreamConsumer.accept(content);
+			}
+		}
 	}
 	
 	public void shutdown() {
