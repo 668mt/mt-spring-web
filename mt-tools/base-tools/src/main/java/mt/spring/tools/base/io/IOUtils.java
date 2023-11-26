@@ -3,7 +3,6 @@ package mt.spring.tools.base.io;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import sun.misc.Cleaner;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -12,8 +11,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static mt.utils.ReflectUtils.getValue;
 
 /**
  * @Author Martin
@@ -169,22 +166,23 @@ public class IOUtils {
 			byte[] buffer = new byte[4096];
 			int partSize = 2 * MB;
 			ByteBuffer byteBuffer = ByteBuffer.allocateDirect(partSize);
-			
-			Cleaner cleaner = getValue(byteBuffer, "cleaner", Cleaner.class);
-			while ((read = inputStream.read(buffer, 0, Math.min(byteBuffer.remaining(), buffer.length))) != -1) {
-				byteBuffer.put(buffer, 0, read);
-				if (!byteBuffer.hasRemaining()) {
-					try (ByteBufferInputStream byteBufferInputStream = new ByteBufferInputStream(byteBuffer)) {
-						convertCallback.onConvertedChunk(byteBufferInputStream, i);
+			try {
+				while ((read = inputStream.read(buffer, 0, Math.min(byteBuffer.remaining(), buffer.length))) != -1) {
+					byteBuffer.put(buffer, 0, read);
+					if (!byteBuffer.hasRemaining()) {
+						try (ByteBufferInputStream byteBufferInputStream = new ByteBufferInputStream(byteBuffer)) {
+							convertCallback.onConvertedChunk(byteBufferInputStream, i);
+						}
+						i++;
 					}
-					i++;
 				}
+				try (ByteBufferInputStream byteBufferInputStream = new ByteBufferInputStream(byteBuffer)) {
+					convertCallback.onConvertedChunk(byteBufferInputStream, i);
+				}
+				return i + 1;
+			} finally {
+				byteBuffer.clear();
 			}
-			try (ByteBufferInputStream byteBufferInputStream = new ByteBufferInputStream(byteBuffer)) {
-				convertCallback.onConvertedChunk(byteBufferInputStream, i);
-			}
-			cleaner.clean();
-			return i + 1;
 		} finally {
 			inputStream.close();
 		}

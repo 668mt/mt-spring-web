@@ -1,7 +1,6 @@
 package mt.common.entity;
 
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import mt.common.annotation.CreatedDate;
 import mt.common.annotation.GenerateOrder;
@@ -24,16 +23,13 @@ public class BaseFields implements Serializable {
 	
 	@CreatedDate
 	@GenerateOrder(5)
-	@ApiModelProperty(hidden = true)
 	private Date createdDate;
 	
 	@Version
 	@GenerateOrder(5)
-	@ApiModelProperty(hidden = true)
 	private Long version;
 	
 	@UpdatedDate
 	@GenerateOrder(5)
-	@ApiModelProperty(hidden = true)
 	private Date lastModifiedDate;
 }

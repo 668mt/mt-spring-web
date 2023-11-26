@@ -1,8 +1,10 @@
 package mt.common.currentUser;
 
 import mt.common.annotation.CurrentUserName;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -11,9 +13,10 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 /**
  * Security - 当前用户MethodArgumentResolver
  */
+@Component
 public class CurrentUserNameMethodArgumentResolver implements HandlerMethodArgumentResolver {
 	
-	@Autowired
+	@Autowired(required = false)
 	private UserContext userContext;
 	
 	/**
@@ -38,7 +41,7 @@ public class CurrentUserNameMethodArgumentResolver implements HandlerMethodArgum
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public Object resolveArgument(MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
+	public Object resolveArgument(@NotNull MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
 		return userContext.getCurrentUserName();
 	}
 	

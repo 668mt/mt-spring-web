@@ -1,5 +1,6 @@
 package mt.common.service;
 
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import mt.common.annotation.Filter;
@@ -184,32 +185,39 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList) {
 		Class<T> entityClass = getEntityClass();
 		//分页
-		if (pageNum != null && pageSize != null && pageNum > 0 && pageSize > 0) {
-			PageHelper.startPage(pageNum, pageSize);
-		}
-		//排序
-		String realOrderBy = null;
-		if (orderBy != null) {
-			realOrderBy = orderBy;
-		} else {
-			List<Field> ids = ReflectUtils.findFields(entityClass, Id.class);
-			if (CollectionUtils.isNotEmpty(ids)) {
-				List<String> orderBys = new ArrayList<>();
-				for (Field id : ids) {
-					Column column = id.getAnnotation(Column.class);
-					String columnName = id.getName();
-					if (column != null && StringUtils.isNotBlank(column.name())) {
-						columnName = column.name();
+		Page<T2> page = null;
+		try {
+			if (pageNum != null && pageSize != null && pageNum > 0 && pageSize > 0) {
+				page = PageHelper.startPage(pageNum, pageSize);
+			}
+			//排序
+			String realOrderBy = null;
+			if (orderBy != null) {
+				realOrderBy = orderBy;
+			} else {
+				List<Field> ids = ReflectUtils.findFields(entityClass, Id.class);
+				if (CollectionUtils.isNotEmpty(ids)) {
+					List<String> orderBys = new ArrayList<>();
+					for (Field id : ids) {
+						Column column = id.getAnnotation(Column.class);
+						String columnName = id.getName();
+						if (column != null && StringUtils.isNotBlank(column.name())) {
+							columnName = column.name();
+						}
+						orderBys.add(MapperColumnUtils.parseColumn(columnName) + " desc");
 					}
-					orderBys.add(MapperColumnUtils.parseColumn(columnName) + " desc");
+					realOrderBy = StringUtils.join(orderBys, ",");
 				}
-				realOrderBy = StringUtils.join(orderBys, ",");
+			}
+			if (StringUtils.isNotBlank(realOrderBy) && page != null) {
+				page.setUnsafeOrderBy(realOrderBy);
+			}
+			return new PageInfo<>(getList.getList());
+		} finally {
+			if (page != null) {
+				page.close();
 			}
 		}
-		if (StringUtils.isNotBlank(realOrderBy)) {
-			PageHelper.orderBy(realOrderBy);
-		}
-		return new PageInfo<>(getList.getList());
 	}
 	
 	@Override

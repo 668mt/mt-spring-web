@@ -1,7 +1,6 @@
 package mt.common.config;
 
 import lombok.extern.slf4j.Slf4j;
-import mt.common.service.IdGenerateService;
 import mt.utils.BasePackageUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +13,6 @@ import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
 
@@ -31,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configuration
 @ComponentScan(basePackages = {"mt.common", "mt.utils"})
 @Slf4j
-public class CommonConfig implements InitializingBean {
+public class MtWebAutoConfiguration implements InitializingBean {
 	
 	@Autowired
 	private LoggingSystem loggingSystem;
@@ -106,7 +104,7 @@ public class CommonConfig implements InitializingBean {
 			log.info("当前服务daoPackage:{}", Arrays.toString(daoPackage));
 			for (String s : daoPackage) {
 				LoggerConfiguration loggerConfiguration = loggingSystem.getLoggerConfiguration(s);
-				if (loggerConfiguration.getConfiguredLevel() == null) {
+				if (loggerConfiguration == null || loggerConfiguration.getConfiguredLevel() == null) {
 					log.info("默认设置日志级别{}为{}", s, commonProperties.getLoggingDaoPackageLevel().toUpperCase());
 					loggingSystem.setLogLevel(s, LogLevel.valueOf(commonProperties.getLoggingDaoPackageLevel().toUpperCase()));
 				} else {
@@ -116,7 +114,7 @@ public class CommonConfig implements InitializingBean {
 		}
 		//设置redis日志级别
 		LoggerConfiguration redisConfig = loggingSystem.getLoggerConfiguration("io.lettuce.core.protocol");
-		if (redisConfig.getConfiguredLevel() == null) {
+		if (redisConfig == null || redisConfig.getConfiguredLevel() == null) {
 			loggingSystem.setLogLevel("io.lettuce.core.protocol", LogLevel.valueOf(commonProperties.getLoggingRedisLevel().toUpperCase()));
 		}
 		inited.set(true);

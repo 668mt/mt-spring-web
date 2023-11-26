@@ -1,5 +1,10 @@
 package mt.common.utils;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -27,9 +32,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,6 +39,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -47,6 +50,7 @@ import java.util.Map.Entry;
  * @Description:
  * @date 2017-10-13 下午5:48:37
  */
+@Slf4j
 public final class WebUtils {
 	
 	/**
@@ -80,7 +84,7 @@ public final class WebUtils {
 	 */
 	public static HttpServletRequest getRequest() {
 		RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-		return requestAttributes != null && requestAttributes instanceof ServletRequestAttributes ? ((ServletRequestAttributes) requestAttributes).getRequest() : null;
+		return requestAttributes instanceof ServletRequestAttributes ? ((ServletRequestAttributes) requestAttributes).getRequest() : null;
 	}
 	
 	/**
@@ -90,7 +94,7 @@ public final class WebUtils {
 	 */
 	public static HttpServletResponse getResponse() {
 		RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-		return requestAttributes != null && requestAttributes instanceof ServletRequestAttributes ? ((ServletRequestAttributes) requestAttributes).getResponse() : null;
+		return requestAttributes instanceof ServletRequestAttributes ? ((ServletRequestAttributes) requestAttributes).getResponse() : null;
 	}
 	
 	/**
@@ -101,7 +105,6 @@ public final class WebUtils {
 	 */
 	public static boolean isAjaxRequest(HttpServletRequest request) {
 		assert request != null;
-		
 		return StringUtils.equalsIgnoreCase(request.getHeader("X-Requested-With"), "XMLHttpRequest");
 	}
 	
@@ -117,33 +120,28 @@ public final class WebUtils {
 	 * @param domain   域
 	 * @param secure   是否启用加密
 	 */
-	@SuppressWarnings("deprecation")
 	public static void addCookie(HttpServletRequest request, HttpServletResponse response, String name, String value, Integer maxAge, String path, String domain, Boolean secure) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(name);
-		Assert.hasText(value);
+		Assert.hasText(name, "name不能为空");
+		Assert.hasText(value, "value不能为空");
 		
-		try {
-			name = URLEncoder.encode(name, "UTF-8");
-			value = URLEncoder.encode(value, "UTF-8");
-			Cookie cookie = new Cookie(name, value);
-			if (maxAge != null) {
-				cookie.setMaxAge(maxAge);
-			}
-			if (StringUtils.isNotEmpty(path)) {
-				cookie.setPath(path);
-			}
-			if (StringUtils.isNotEmpty(domain)) {
-				cookie.setDomain(domain);
-			}
-			if (secure != null) {
-				cookie.setSecure(secure);
-			}
-			response.addCookie(cookie);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
+		name = URLEncoder.encode(name, StandardCharsets.UTF_8);
+		value = URLEncoder.encode(value, StandardCharsets.UTF_8);
+		Cookie cookie = new Cookie(name, value);
+		if (maxAge != null) {
+			cookie.setMaxAge(maxAge);
 		}
+		if (StringUtils.isNotEmpty(path)) {
+			cookie.setPath(path);
+		}
+		if (StringUtils.isNotEmpty(domain)) {
+			cookie.setDomain(domain);
+		}
+		if (secure != null) {
+			cookie.setSecure(secure);
+		}
+		response.addCookie(cookie);
 	}
 	
 	/**
@@ -155,13 +153,11 @@ public final class WebUtils {
 	 * @param value    Cookie值
 	 * @param maxAge   有效期(单位: 秒)
 	 */
-	@SuppressWarnings("deprecation")
 	public static void addCookie(HttpServletRequest request, HttpServletResponse response, String name, String value, Integer maxAge) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(name);
-		Assert.hasText(value);
-		
+		Assert.hasText(name, "name不能为空");
+		Assert.hasText(value, "value不能为空");
 		addCookie(request, response, name, value, maxAge, "/", null, null);
 	}
 	
@@ -176,9 +172,8 @@ public final class WebUtils {
 	public static void addCookie(HttpServletRequest request, HttpServletResponse response, String name, String value) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(name);
-		Assert.hasText(value);
-		
+		Assert.hasText(name, "name不能为空");
+		Assert.hasText(value, "value不能为空");
 		addCookie(request, response, name, value, null, "/", null, null);
 	}
 	
@@ -191,19 +186,14 @@ public final class WebUtils {
 	 */
 	public static String getCookie(HttpServletRequest request, String name) {
 		assert request != null;
-		Assert.hasText(name);
-		
+		Assert.hasText(name, "name不能为空");
 		Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
-			try {
-				name = URLEncoder.encode(name, "UTF-8");
-				for (Cookie cookie : cookies) {
-					if (name.equals(cookie.getName())) {
-						return URLDecoder.decode(cookie.getValue(), "UTF-8");
-					}
+			name = URLEncoder.encode(name, StandardCharsets.UTF_8);
+			for (Cookie cookie : cookies) {
+				if (name.equals(cookie.getName())) {
+					return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
 				}
-			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException(e.getMessage(), e);
 			}
 		}
 		return null;
@@ -221,22 +211,18 @@ public final class WebUtils {
 	public static void removeCookie(HttpServletRequest request, HttpServletResponse response, String name, String path, String domain) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(name);
+		Assert.hasText(name, "name不能为空");
 		
-		try {
-			name = URLEncoder.encode(name, "UTF-8");
-			Cookie cookie = new Cookie(name, null);
-			cookie.setMaxAge(0);
-			if (StringUtils.isNotEmpty(path)) {
-				cookie.setPath(path);
-			}
-			if (StringUtils.isNotEmpty(domain)) {
-				cookie.setDomain(domain);
-			}
-			response.addCookie(cookie);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
+		name = URLEncoder.encode(name, StandardCharsets.UTF_8);
+		Cookie cookie = new Cookie(name, null);
+		cookie.setMaxAge(0);
+		if (StringUtils.isNotEmpty(path)) {
+			cookie.setPath(path);
 		}
+		if (StringUtils.isNotEmpty(domain)) {
+			cookie.setDomain(domain);
+		}
+		response.addCookie(cookie);
 	}
 	
 	/**
@@ -249,7 +235,7 @@ public final class WebUtils {
 	public static void removeCookie(HttpServletRequest request, HttpServletResponse response, String name) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(name);
+		Assert.hasText(name, "name不能为空");
 		
 		removeCookie(request, response, name, "/", null);
 	}
@@ -262,13 +248,13 @@ public final class WebUtils {
 	 * @return 参数
 	 */
 	public static Map<String, String> parse(String query, String encoding) {
-		Assert.hasText(query);
+		Assert.hasText(query, "query不能为空");
 		
 		Charset charset;
 		if (StringUtils.isNotEmpty(encoding)) {
 			charset = Charset.forName(encoding);
 		} else {
-			charset = Charset.forName("UTF-8");
+			charset = StandardCharsets.UTF_8;
 		}
 		List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(query, charset);
 		Map<String, String> parameterMap = new HashMap<String, String>();
@@ -285,7 +271,7 @@ public final class WebUtils {
 	 * @return 参数
 	 */
 	public static Map<String, String> parse(String query) {
-		Assert.hasText(query);
+		Assert.hasText(query, "query不能为空");
 		
 		return parse(query, null);
 	}
@@ -302,7 +288,7 @@ public final class WebUtils {
 	public static void sendRedirect(HttpServletRequest request, HttpServletResponse response, String url, boolean contextRelative, boolean http10Compatible) {
 		assert request != null;
 		assert response != null;
-		Assert.hasText(url);
+		Assert.hasText(url, "url不能为空");
 		
 		StringBuilder targetUrl = new StringBuilder();
 		if (contextRelative && url.startsWith("/")) {
@@ -341,7 +327,7 @@ public final class WebUtils {
 	 * @return 返回结果
 	 */
 	public static String post(String url, Map<String, Object> parameterMap) {
-		Assert.hasText(url);
+		Assert.hasText(url, "url不能为空");
 		
 		String result = null;
 		try {
@@ -357,26 +343,14 @@ public final class WebUtils {
 			}
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
-			CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpPost);
-			try {
+			try (CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpPost)) {
 				HttpEntity httpEntity = httpResponse.getEntity();
 				if (httpEntity != null) {
 					result = EntityUtils.toString(httpEntity);
 					EntityUtils.consume(httpEntity);
 				}
-			} finally {
-				try {
-					httpResponse.close();
-				} catch (IOException e) {
-				}
 			}
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ClientProtocolException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ParseException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IOException e) {
+		} catch (ParseException | IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 		return result;
@@ -390,7 +364,7 @@ public final class WebUtils {
 	 * @return 返回结果
 	 */
 	public static String get(String url, Map<String, Object> parameterMap) {
-		Assert.hasText(url);
+		Assert.hasText(url, "url不能为空");
 		
 		String result = null;
 		try {
@@ -405,26 +379,14 @@ public final class WebUtils {
 				}
 			}
 			HttpGet httpGet = new HttpGet(url + (StringUtils.contains(url, "?") ? "&" : "?") + EntityUtils.toString(new UrlEncodedFormEntity(nameValuePairs, "UTF-8")));
-			CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpGet);
-			try {
+			try (CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpGet)) {
 				HttpEntity httpEntity = httpResponse.getEntity();
 				if (httpEntity != null) {
 					result = EntityUtils.toString(httpEntity);
 					EntityUtils.consume(httpEntity);
 				}
-			} finally {
-				try {
-					httpResponse.close();
-				} catch (IOException e) {
-				}
 			}
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ParseException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ClientProtocolException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IOException e) {
+		} catch (ParseException | IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 		return result;
@@ -438,32 +400,20 @@ public final class WebUtils {
 	 * @return 返回结果
 	 */
 	public static String post(String url, String xml) {
-		Assert.hasText(url);
+		Assert.hasText(url, "url不能为空");
 		
 		String result = null;
 		try {
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setEntity(new StringEntity(xml, "UTF-8"));
-			CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpPost);
-			try {
+			try (CloseableHttpResponse httpResponse = HTTP_CLIENT.execute(httpPost)) {
 				HttpEntity httpEntity = httpResponse.getEntity();
 				if (httpEntity != null) {
 					result = EntityUtils.toString(httpEntity, "UTF-8");
 					EntityUtils.consume(httpEntity);
 				}
-			} finally {
-				try {
-					httpResponse.close();
-				} catch (IOException e) {
-				}
 			}
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ClientProtocolException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (ParseException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		} catch (IOException e) {
+		} catch (ParseException | IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 		return result;
@@ -475,20 +425,17 @@ public final class WebUtils {
 	 * @param request
 	 * @return
 	 */
+	@SneakyThrows
 	public static String getContent(HttpServletRequest request) {
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8))) {
 			StringBuilder sb = new StringBuilder();
-			String buffer = null;
+			String buffer;
 			while ((buffer = br.readLine()) != null) {
-				sb.append(buffer + "\r\n");
+				sb.append(buffer).append("\r\n");
 			}
 			br.close();
 			return sb.toString();
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		return null;
 	}
 	
 	/**
@@ -499,6 +446,7 @@ public final class WebUtils {
 	 * @param URLEncode
 	 * @return
 	 */
+	@SneakyThrows
 	public static String concat(Map<String, String> params, String sign, boolean URLEncode) {
 		assert params != null;
 		
@@ -507,13 +455,9 @@ public final class WebUtils {
 		StringBuilder sb = new StringBuilder();
 		for (Entry<String, String> entry : entrySet) {
 			if (URLEncode) {
-				try {
-					sb.append(URLEncoder.encode(entry.getKey(), "UTF-8") + "=" + URLEncoder.encode(entry.getValue(), "UTF-8") + sign);
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+				sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8)).append("=").append(URLEncoder.encode(entry.getValue(), "UTF-8")).append(sign);
 			} else {
-				sb.append(entry.getKey() + "=" + entry.getValue() + sign);
+				sb.append(entry.getKey()).append("=").append(entry.getValue()).append(sign);
 			}
 		}
 		String str = sb.toString();
@@ -565,16 +509,16 @@ public final class WebUtils {
 			return null;
 		}
 		String ip = request.getHeader("x-forwarded-for");
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
 			ip = request.getHeader("Proxy-Client-IP");
 		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
 			ip = request.getHeader("WL-Proxy-Client-IP");
 		}
-		if (ip == null || ip.length() == 0 || "X-Real-IP".equalsIgnoreCase(ip)) {
+		if (ip == null || ip.isEmpty() || "X-Real-IP".equalsIgnoreCase(ip)) {
 			ip = request.getHeader("X-Real-IP");
 		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
 			ip = request.getRemoteAddr();
 		}
 		if (StringUtils.isNotBlank(ip) && ip.contains(",")) {

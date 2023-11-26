@@ -7,6 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Author Martin
  * @Date 2019/8/27
  */
+@Component
 public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	private final AtomicBoolean inited = new AtomicBoolean(false);
 	

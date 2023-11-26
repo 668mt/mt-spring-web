@@ -2,12 +2,10 @@ package mt.common.paramcheck;
 
 import mt.common.config.CommonProperties;
 import org.aopalliance.intercept.MethodInterceptor;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.MethodBeforeAdvice;
 import org.springframework.aop.aspectj.AspectJExpressionPointcutAdvisor;
 import org.springframework.aop.framework.adapter.MethodBeforeAdviceInterceptor;
-import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,10 +31,7 @@ public class AssertAspectConfiguration {
 	
 	static {
 		//默认注册
-		register(new ParameterCheckers.NotNullChecker1());
-		register(new ParameterCheckers.NotNullChecker2());
-		register(new ParameterCheckers.NotBlankChecker());
-		register(new ParameterCheckers.NotEmptyChecker());
+		register(new ParameterCheckers.NotNullChecker());
 	}
 	
 	/**
@@ -69,7 +64,7 @@ public class AssertAspectConfiguration {
 	public MethodBeforeAdviceInterceptor interceptor() {
 		return new MethodBeforeAdviceInterceptor(new AssertParameterBeforeAdvice());
 	}
-
+	
 	@Bean
 	public AspectJExpressionPointcutAdvisor aspectJExpressionPointcutAdvisor(CommonProperties commonProperties, MethodInterceptor interceptor) {
 		String packageName = commonProperties.getAssertPackageName();
