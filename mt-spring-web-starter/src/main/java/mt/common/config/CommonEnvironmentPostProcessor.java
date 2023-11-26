@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Author Martin
  * @Date 2019/8/27
  */
-@Component
 public class CommonEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	private final AtomicBoolean inited = new AtomicBoolean(false);
 	

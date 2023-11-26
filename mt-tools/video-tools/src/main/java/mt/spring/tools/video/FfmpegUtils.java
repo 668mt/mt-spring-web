@@ -480,7 +480,11 @@ public class FfmpegUtils {
 			frameRate = null;
 			width = null;
 		}
+		if (frameRate != null && frameRate < 1) {
+			frameRate = null;
+		}
 		CutVideoParams finalParams = params;
+		Integer finalFrameRate = frameRate;
 		FfmpegJob.FfmpegWorker worker = ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(srcFile.getAbsolutePath());
@@ -510,9 +514,9 @@ public class FfmpegUtils {
 				ffmpeg.addArgument("-vf");
 				ffmpeg.addArgument("scale=" + width + ":-2");
 			}
-			if (frameRate != null) {
+			if (finalFrameRate != null) {
 				ffmpeg.addArgument("-r");
-				ffmpeg.addArgument(frameRate + "");
+				ffmpeg.addArgument(finalFrameRate + "");
 			}
 			ffmpeg.addArgument("-q:v");
 			ffmpeg.addArgument("1");
