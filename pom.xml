@@ -14,6 +14,7 @@
         <module>mt-spring-web-starter</module>
         <module>utils</module>
         <module>mt-tools</module>
+        <module>mt-spring-jwt-starter</module>
     </modules>
 
     <!--    <parent>-->
