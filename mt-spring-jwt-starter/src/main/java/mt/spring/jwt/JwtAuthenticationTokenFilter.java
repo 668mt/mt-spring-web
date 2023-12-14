@@ -36,6 +36,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 	}
 	
 	public static final String ATTR_IS_TOKEN = "isToken";
+	public static final String ATTR_IS_TOKEN_PASS = "isTokenPass";
 	
 	/**
 	 * 从请求中获取 JWT 令牌，并根据令牌获取用户信息，最后将用户信息封装到 Authentication 中，方便后续校验（只会执行一次）
@@ -65,6 +66,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 			try {
 				// 从 JWT 令牌中获取用户名
 				UserDetails userDetails = jwtUserService.loadUserByUserDataUseCache(jwtTokenUtil.getUserDataFromToken(authToken));
+				request.setAttribute(ATTR_IS_TOKEN_PASS, true);
 				UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 				// 将请求中的详细信息（即：IP、SessionId 等）封装到 UsernamePasswordAuthenticationToken 对象中方便后续校验
 				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
