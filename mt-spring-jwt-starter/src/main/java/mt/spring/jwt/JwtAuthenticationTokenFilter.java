@@ -71,8 +71,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 				// 将请求中的详细信息（即：IP、SessionId 等）封装到 UsernamePasswordAuthenticationToken 对象中方便后续校验
 				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authentication);
-			} catch (Exception e) {
-				LOGGER.error("token校验失败：{}，{}", authToken, e.getMessage());
+			} catch (Exception ignored) {
 			}
 		} else {
 			request.setAttribute(ATTR_IS_TOKEN, false);

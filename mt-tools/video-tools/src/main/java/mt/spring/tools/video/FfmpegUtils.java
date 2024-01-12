@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import mt.spring.tools.video.ffmpeg.params.CutVideoParams;
 import mt.utils.common.Assert;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +19,10 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author Martin
@@ -173,11 +177,15 @@ public class FfmpegUtils {
 	 * @throws Exception 异常
 	 */
 	public static void screenShot(File srcFile, File desFile, int width, int seconds, long timeout, TimeUnit timeUnit) throws Exception {
-		screenShot(srcFile.getAbsolutePath(), desFile, width, seconds, timeout, timeUnit);
+		mt.spring.tools.video.entity.VideoInfo videoInfo = getVideoInfo(srcFile, 2, TimeUnit.MINUTES);
+		if (videoInfo.getWidth() < width) {
+			width = videoInfo.getWidth();
+		}
+		imageScale(srcFile.getAbsolutePath(), desFile, width, -2, seconds, timeout, timeUnit);
 	}
 	
 	/**
-	 * 截图
+	 * 截图或放大
 	 *
 	 * @param pathOrUrl 视频地址或本地路径
 	 * @param desFile   目标文件
@@ -187,8 +195,16 @@ public class FfmpegUtils {
 	 * @param timeUnit  超时单位
 	 * @throws Exception 异常
 	 */
-	public static void screenShot(String pathOrUrl, File desFile, int width, int seconds, long timeout, TimeUnit timeUnit) throws Exception {
+	public static void imageScale(String pathOrUrl, File desFile, int width, int height, int seconds, long timeout, TimeUnit timeUnit) throws Exception {
 		//ffmpeg -i input.mp4 -ss 00:00:10 -f image2 -vframes 1 -vf "scale=400:-2" -qscale 1 -an -y test.jpg
+		if (width <= 0) {
+			width = -2;
+		}
+		if (height <= 0) {
+			height = -2;
+		}
+		int finalHeight = height;
+		int finalWidth = width;
 		FfmpegJob.FfmpegWorker ffmpegWorker = ffmpeg -> {
 			ffmpeg.addArgument("-i");
 			ffmpeg.addArgument(pathOrUrl);
@@ -198,9 +214,9 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("image2");
 			ffmpeg.addArgument("-vframes");
 			ffmpeg.addArgument("1");
-			ffmpeg.addArgument("-vf");
-			if (width > 0) {
-				ffmpeg.addArgument("scale=" + width + ":-2");
+			if (finalWidth > 0 && finalHeight > 0) {
+				ffmpeg.addArgument("-vf");
+				ffmpeg.addArgument("scale=" + finalWidth + ":" + finalHeight);
 			}
 			ffmpeg.addArgument("-qscale");
 			ffmpeg.addArgument("1");
@@ -210,57 +226,6 @@ public class FfmpegUtils {
 		};
 		FfmpegJob.execute(ffmpegWorker, timeout, timeUnit);
 	}
-
-//	/**
-//	 * 截图
-//	 *
-//	 * @param object   媒体文件
-//	 * @param desFile  目标文件
-//	 * @param width    宽度
-//	 * @param seconds  第几秒
-//	 * @param timeout  超时
-//	 * @param timeUnit 超时单位
-//	 * @throws Exception 异常
-//	 */
-//	public static void screenShot(MultimediaObject object, File desFile, int width, final int seconds, long timeout, TimeUnit timeUnit) throws Exception {
-//		if (desFile.exists()) {
-//			return;
-//		}
-//		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-//		try {
-//			Future<?> submit = singleThreadExecutor.submit(() -> {
-//				try {
-//					File parentFile = desFile.getParentFile();
-//					if (!parentFile.exists()) {
-//						parentFile.mkdirs();
-//					}
-//					double maxSeconds = 0;
-//					int s = seconds;
-//					if (s > 0) {
-//						try {
-//							long duration = object.getInfo().getDuration();
-//							maxSeconds = Math.floor(duration * 1.0 / 1000) - 5;
-//							if (maxSeconds < 0) {
-//								maxSeconds = 0;
-//							}
-//						} catch (Exception ignored) {
-//							s = 0;
-//						}
-//					}
-//					ScreenExtractor screenExtractor = new ScreenExtractor();
-//					VideoSize size = object.getInfo().getVideo().getSize();
-//					int height = (int) Math.ceil(width * size.getHeight() * 1.0 / size.getWidth());
-//					screenExtractor.render(object, width, height, (int) Math.min(maxSeconds, s), desFile, 1);
-//				} catch (Exception e) {
-//					log.error(e.getMessage(), e);
-//					throw new RuntimeException(e);
-//				}
-//			});
-//			submit.get(timeout, timeUnit);
-//		} finally {
-//			singleThreadExecutor.shutdownNow();
-//		}
-//	}
 	
 	/**
 	 * 连续截图20分钟
