@@ -10,88 +10,91 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @Date 2023/4/5
  */
 public class BufferedProgress implements Progress {
-	private final Progress delegate;
+	private final ProgressStore progressStore;
 	private final double bufferPercent;
+	private final String key;
+	private final ProgressListener progressListener;
 	private double lastPercent = 0;
 	private double currPercent = 0;
-	private ProgressListener progressListener;
 	
-	public BufferedProgress(@NotNull Progress delegate, double bufferPercent) {
-		this(delegate, bufferPercent, null);
+	public BufferedProgress(@NotNull String key, @NotNull ProgressStore progressStore, double bufferPercent) {
+		this(key, progressStore, bufferPercent, null);
 	}
 	
-	public BufferedProgress(@NotNull Progress delegate, double bufferPercent, @Nullable ProgressListener progressListener) {
-		this.delegate = delegate;
+	public BufferedProgress(@NotNull String key, @NotNull ProgressStore progressStore, double bufferPercent, @Nullable ProgressListener progressListener) {
+		this.key = key;
+		this.progressStore = progressStore;
 		this.bufferPercent = bufferPercent;
 		this.progressListener = progressListener;
 	}
 	
-	private void listen(@NotNull String key) {
+	private void listen() {
 		if (progressListener != null) {
-			progressListener.listen(key, getPercent(key));
+			progressListener.listen(getPercent());
 		}
 	}
 	
 	@Override
-	public void init(@NotNull String key) {
-		delegate.init(key);
+	public void init() {
+		progressStore.init(key);
 		lastPercent = 0d;
-		listen(key);
+		currPercent = 0d;
+		listen();
 	}
 	
 	@Override
-	public void update(@NotNull String key, double percent) {
+	public void update(double percent) {
 		if (percent - lastPercent >= bufferPercent || percent >= 0.9999) {
-			delegate.update(key, percent);
+			progressStore.update(key, percent);
 			lastPercent = percent;
-			listen(key);
+			listen();
 		}
 		currPercent = percent;
 	}
 	
 	@Override
-	public void add(@NotNull String key, double addPercent) {
+	public void add(double addPercent) {
 		currPercent += addPercent;
 		if (currPercent - lastPercent >= bufferPercent || currPercent >= 0.9999) {
-			delegate.add(key, currPercent - lastPercent);
+			progressStore.add(key, currPercent - lastPercent);
 			lastPercent = currPercent;
-			listen(key);
+			listen();
 		}
 	}
 	
 	@Override
-	public void remove(@NotNull String key) {
-		delegate.remove(key);
+	public void remove() {
+		progressStore.remove(key);
 		lastPercent = 0;
 		currPercent = 0;
 	}
 	
 	@Override
-	public double getPercent(@NotNull String key) {
-		return delegate.getPercent(key);
+	public double getPercent() {
+		return progressStore.getPercent(key);
 	}
 	
 	@Override
-	public void finish(@NotNull String key) {
-		delegate.finish(key);
+	public void finish() {
+		progressStore.finish(key);
 	}
 	
 	public static void main(String[] args) {
-		LocalProgress localProgress = new LocalProgress();
+		LocalProgressStore localProgress = new LocalProgressStore();
 		AtomicInteger count = new AtomicInteger(0);
-		BufferedProgress bufferedProgress = new BufferedProgress(localProgress, 0.01, (key, percent) -> {
+		String key = "test";
+		BufferedProgress bufferedProgress = new BufferedProgress(key, localProgress, 0.01, (percent) -> {
 			System.out.println(percent);
 		});
-		String key = "test";
 		PartProgress part1 = PartProgress.createPart(bufferedProgress, 0.5);
 		PartProgress part2 = PartProgress.createPart(bufferedProgress, 0.5);
 		for (int i = 0; i < 10000; i++) {
-			part1.add(key, 0.0001);
+			part1.add(0.0001);
 		}
 		for (int i = 0; i < 10000; i++) {
-			part2.add(key, 0.0001);
+			part2.add(0.0001);
 		}
 		System.out.println(count.get());
-		System.out.println("result:" + bufferedProgress.getPercent(key));
+		System.out.println("result:" + bufferedProgress.getPercent());
 	}
 }

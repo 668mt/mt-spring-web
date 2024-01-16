@@ -2,9 +2,6 @@ package mt.common.progress;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
 /**
  * @Author Martin
  * @Date 2023/4/5
@@ -31,39 +28,36 @@ public class PartProgress implements Progress {
 	}
 	
 	@Override
-	public void update(@NotNull String key, double percent) {
+	public void update(double percent) {
 		double addPercent = percent - lastPercent;
-		delegate.add(key, addPercent * partPercent);
+		delegate.add(addPercent * partPercent);
 		this.lastPercent = percent;
 	}
 	
-	private double scale(double value) {
-		return new BigDecimal(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
+	@Override
+	public void add(double percent) {
+		delegate.add(percent * partPercent);
 	}
 	
 	@Override
-	public void add(@NotNull String key, double percent) {
-		delegate.add(key, percent * partPercent);
-	}
-	
-	@Override
-	public void remove(@NotNull String key) {
+	public void remove() {
 		//不支持移除
 	}
 	
 	@Override
-	public double getPercent(@NotNull String key) {
+	public double getPercent() {
 		//不支持获取
 		return 0d;
 	}
 	
 	public static void main(String[] args) {
 		String key = "test";
-		LocalProgress progress = new LocalProgress();
-		PartProgress part1 = PartProgress.createPart(progress, 0.5);
-		PartProgress part2 = PartProgress.createPart(progress, 0.5);
+		LocalProgressStore progress = new LocalProgressStore();
+		BufferedProgress bufferedProgress = new BufferedProgress(key, progress, 0.01);
+		PartProgress part1 = PartProgress.createPart(bufferedProgress, 0.5);
+		PartProgress part2 = PartProgress.createPart(bufferedProgress, 0.5);
 		for (double percent = 0; percent <= 1; percent += 0.01) {
-			part1.update(key, percent);
+			part1.update(percent);
 		}
 		System.out.println(progress.getPercent(key));
 	}

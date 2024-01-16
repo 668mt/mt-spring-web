@@ -11,7 +11,7 @@ import java.util.Map;
  * @Author Martin
  * @Date 2023/4/5
  */
-public class LocalProgress implements Progress {
+public class LocalProgressStore implements ProgressStore {
 	private final Map<String, Double> progressMap = new HashMap<>(16);
 	
 	@Override

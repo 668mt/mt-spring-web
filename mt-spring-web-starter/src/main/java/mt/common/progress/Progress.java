@@ -1,7 +1,5 @@
 package mt.common.progress;
 
-import org.jetbrains.annotations.NotNull;
-
 /**
  * 进度
  *
@@ -12,50 +10,41 @@ public interface Progress {
 	
 	/**
 	 * 初始化
-	 *
-	 * @param key 进度key
 	 */
-	default void init(@NotNull String key) {
-		update(key, 0);
+	default void init() {
+		update(0);
 	}
 	
 	/**
 	 * 更新进度
 	 *
-	 * @param key     进度key
 	 * @param percent 进度百分比
 	 */
-	void update(@NotNull String key, double percent);
+	void update(double percent);
 	
 	/**
 	 * 新增进度
 	 *
-	 * @param key     进度key
 	 * @param percent 进度百分比
 	 */
-	void add(@NotNull String key, double percent);
+	void add(double percent);
 	
 	/**
 	 * 完成
-	 *
-	 * @param key
 	 */
-	default void finish(@NotNull String key) {
-		update(key, 1);
+	default void finish() {
+		update(1);
 	}
 	
 	/**
 	 * 移除进度
-	 *
-	 * @param key 进度key
 	 */
-	void remove(@NotNull String key);
+	void remove();
 	
 	/**
 	 * 获取进度
 	 *
-	 * @param key 进度key
 	 * @return 进度百分比
 	 */
-	double getPercent(@NotNull String key);
+	double getPercent();
 }

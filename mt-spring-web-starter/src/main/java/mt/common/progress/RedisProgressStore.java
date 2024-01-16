@@ -11,16 +11,16 @@ import java.util.concurrent.TimeUnit;
  * @Author Martin
  * @Date 2023/4/5
  */
-public class RedisProgress implements Progress {
+public class RedisProgressStore implements ProgressStore {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final String keyPrefix;
 	
-	public RedisProgress(@NotNull RedisTemplate<String, Object> redisTemplate, @NotNull String keyPrefix) {
+	public RedisProgressStore(@NotNull RedisTemplate<String, Object> redisTemplate, @NotNull String keyPrefix) {
 		this.redisTemplate = redisTemplate;
 		this.keyPrefix = keyPrefix;
 	}
 	
-	public RedisProgress(@NotNull RedisTemplate<String, Object> redisTemplate) {
+	public RedisProgressStore(@NotNull RedisTemplate<String, Object> redisTemplate) {
 		this(redisTemplate, "");
 	}
 	
