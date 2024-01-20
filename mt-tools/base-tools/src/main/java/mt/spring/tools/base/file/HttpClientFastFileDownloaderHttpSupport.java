@@ -29,12 +29,13 @@ public class HttpClientFastFileDownloaderHttpSupport implements FastFileDownload
 	
 	@Override
 	public long getFileLength(@NotNull String url) throws IOException {
-		CloseableHttpResponse response = serviceClient.get(url);
-		long length = 0;
-		if (response.containsHeader("content-length")) {
-			length = Long.parseLong(response.getFirstHeader("content-length").getValue());
+		try (CloseableHttpResponse response = serviceClient.get(url)) {
+			long length = 0;
+			if (response.containsHeader("content-length")) {
+				length = Long.parseLong(response.getFirstHeader("content-length").getValue());
+			}
+			return length;
 		}
-		return length;
 	}
 	
 	@Override

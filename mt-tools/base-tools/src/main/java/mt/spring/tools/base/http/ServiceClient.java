@@ -257,13 +257,15 @@ public class ServiceClient {
 	}
 	
 	public String getAsString(String url, Header... headers) throws IOException {
-		CloseableHttpResponse response = get(url, headers);
-		return EntityUtils.toString(response.getEntity());
+		try(CloseableHttpResponse response = get(url, headers)){
+			return EntityUtils.toString(response.getEntity());
+		}
 	}
 	
 	public InputStream getAsStream(String url, Header... headers) throws IOException {
-		CloseableHttpResponse response = get(url, headers);
-		return response.getEntity().getContent();
+		try(CloseableHttpResponse response = get(url, headers)){
+			return response.getEntity().getContent();
+		}
 	}
 	
 	/**
