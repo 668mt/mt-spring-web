@@ -209,14 +209,17 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					realOrderBy = StringUtils.join(orderBys, ",");
 				}
 			}
-			if (StringUtils.isNotBlank(realOrderBy) && page != null) {
+			if (StringUtils.isNotBlank(realOrderBy)) {
+				if (page == null) {
+					page = new Page<>();
+					page.setOrderByOnly(true);
+					PageHelper.setLocalPage(page);
+				}
 				page.setUnsafeOrderBy(realOrderBy);
 			}
 			return new PageInfo<>(getList.getList());
 		} finally {
-			if (page != null) {
-				page.close();
-			}
+			PageHelper.clearPage();
 		}
 	}
 	
@@ -228,7 +231,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	@SuppressWarnings("deprecation")
 	@Override
 	public int count(List<mt.common.tkmapper.Filter> filters) {
-		Assert.notNull(filters);
+		Assert.notNull(filters, "filters不能为空");
 		return getBaseMapper().selectCountByExample(MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
@@ -305,6 +308,20 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 			throw new RuntimeException("findOneByFilters 查询出多个结果！");
 		}
 		return findByFilters.get(0);
+	}
+	
+	@Override
+	public T findFirstByFilters(List<mt.common.tkmapper.Filter> filters) {
+		List<T> list = findByFilters(filters);
+		if (CollectionUtils.isNotEmpty(list)) {
+			return list.get(0);
+		}
+		return null;
+	}
+	
+	@Override
+	public T findFirstByFilter(mt.common.tkmapper.Filter filter) {
+		return findFirstByFilters(Collections.singletonList(filter));
 	}
 	
 	@Override

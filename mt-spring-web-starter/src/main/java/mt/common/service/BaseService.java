@@ -76,6 +76,10 @@ public interface BaseService<T> {
 	 */
 	List<T> findByFilters(List<Filter> filters, boolean forUpdate);
 	
+	T findFirstByFilters(List<Filter> filters);
+	
+	T findFirstByFilter(Filter filter);
+	
 	/**
 	 * 查询一个，多个抛出异常
 	 *
