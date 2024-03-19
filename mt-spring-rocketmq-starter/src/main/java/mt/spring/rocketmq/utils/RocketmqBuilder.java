@@ -4,10 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import mt.spring.rocketmq.config.RocketmqListener;
 import mt.spring.rocketmq.properties.RocketmqProperties;
 import org.apache.rocketmq.client.apis.*;
-import org.apache.rocketmq.client.apis.consumer.FilterExpression;
-import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
-import org.apache.rocketmq.client.apis.consumer.MessageListener;
-import org.apache.rocketmq.client.apis.consumer.PushConsumer;
+import org.apache.rocketmq.client.apis.consumer.*;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.message.MessageBuilder;
 import org.apache.rocketmq.client.apis.producer.Producer;
@@ -82,6 +79,7 @@ public class RocketmqBuilder {
 		boolean useGlobalPrefix = rocketmqListener.useGlobalPrefix();
 		String topicPrefix = useGlobalPrefix && StringUtils.isNotBlank(rocketmqProperties.getTopicPrefix()) ? rocketmqProperties.getTopicPrefix() : "";
 		String topic = environment.resolvePlaceholders(topicPrefix + rocketmqListener.topic()).replace(":", "");
+		String consumerGroup = environment.resolvePlaceholders(topicPrefix + rocketmqListener.consumerGroup()).replace(":","");
 		log.info("createConsumer,topic:{}", topic);
 		boolean enabled = toBoolean(rocketmqListener.enabled());
 		if (!enabled) {
@@ -93,7 +91,7 @@ public class RocketmqBuilder {
 			.setMaxCacheMessageCount(toInt(rocketmqListener.maxCacheMessageCount()))
 			.setClientConfiguration(createClientConfiguration())
 			.setConsumptionThreadCount(toInt(rocketmqListener.consumptionThreadCount()))
-			.setConsumerGroup(environment.resolvePlaceholders(rocketmqListener.consumerGroup()))
+			.setConsumerGroup(consumerGroup)
 			.setSubscriptionExpressions(Collections.singletonMap(topic, filterExpression))
 			.setMessageListener(messageListener)
 			.build();
