@@ -80,7 +80,7 @@ public class RocketmqBuilder {
 		String topicPrefix = useGlobalPrefix && StringUtils.isNotBlank(rocketmqProperties.getTopicPrefix()) ? rocketmqProperties.getTopicPrefix() : "";
 		String topic = environment.resolvePlaceholders(topicPrefix + rocketmqListener.topic()).replace(":", "");
 		String consumerGroup = environment.resolvePlaceholders(topicPrefix + rocketmqListener.consumerGroup()).replace(":","");
-		log.info("createConsumer,topic:{}", topic);
+		log.info("createConsumer,topic:{},consumerGroup:{}", topic,consumerGroup);
 		boolean enabled = toBoolean(rocketmqListener.enabled());
 		if (!enabled) {
 			log.info("listener is disabled,topic:{}", topic);

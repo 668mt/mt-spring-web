@@ -16,6 +16,8 @@
         <module>mt-tools</module>
         <module>mt-spring-jwt-starter</module>
         <module>mt-spring-rocketmq-starter</module>
+        <module>mt-processor</module>
+        <module>test-processor</module>
     </modules>
 
     <!--    <parent>-->

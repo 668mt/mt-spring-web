@@ -2,6 +2,7 @@ package mt.common.tkmapper;
 
 import lombok.Data;
 import mt.common.mybatis.utils.MapperColumnUtils;
+import mt.common.tkmapper.builder.FilterBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +21,10 @@ import java.util.*;
 @Data
 public class Filter {
 	public Filter() {
+	}
+	
+	public static FilterBuilder builder() {
+		return new FilterBuilder();
 	}
 	
 	private String property;
@@ -187,7 +192,7 @@ public class Filter {
 		Filter filter = this;
 		Assert.notNull(filter, "参数不能为空");
 		Object value = "#{" + paramName + "}";
-		alias = alias == null ? "" : alias + ".";
+		alias = StringUtils.isBlank(alias) ? "" : alias + ".";
 		String column;
 		String filterProperty = filter.getProperty();
 		Assert.notNull(filterProperty, "filter property不能为空");

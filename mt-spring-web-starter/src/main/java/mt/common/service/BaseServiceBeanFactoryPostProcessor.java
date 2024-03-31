@@ -3,16 +3,21 @@ package mt.common.service;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
+import mt.common.annotation.Datasource;
 import mt.common.mybatis.mapper.BaseMapper;
 import mt.utils.common.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Config;
@@ -87,6 +92,18 @@ public class BaseServiceBeanFactoryPostProcessor implements InitializingBean {
 			}
 			definition.getPropertyValues().add("mapperHelper", this.mapperHelper);
 			definition.getPropertyValues().add("addToConfig", true);
+			Datasource datasource = AnnotatedElementUtils.findMergedAnnotation(baseService.getClass(), Datasource.class);
+			if (datasource != null) {
+				String sqlSessionFactoryRef = datasource.sqlSessionFactoryRef();
+				String sqlSessionTemplateRef = datasource.sqlSessionTemplateRef();
+				if (StringUtils.isNotBlank(sqlSessionFactoryRef)) {
+					definition.getPropertyValues().add("sqlSessionFactory", new RuntimeBeanReference(sqlSessionFactoryRef));
+				}
+				if (StringUtils.isNotBlank(sqlSessionTemplateRef)) {
+					definition.getPropertyValues().add("sqlSessionTemplate", new RuntimeBeanReference(sqlSessionTemplateRef));
+				}
+			}
+			
 			definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
 			defaultbf.registerBeanDefinition(simpleName, definition);
 		}
