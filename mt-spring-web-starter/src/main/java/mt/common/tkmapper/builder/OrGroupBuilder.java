@@ -12,11 +12,11 @@ import java.util.List;
  * @Date 2024/3/31
  */
 public class OrGroupBuilder {
-	private final FilterBuilder filterBuilder;
+	private final FiltersBuilder filtersBuilder;
 	private final List<Filter> filters = new ArrayList<>();
 	
-	public OrGroupBuilder(FilterBuilder filterBuilder) {
-		this.filterBuilder = filterBuilder;
+	public OrGroupBuilder(FiltersBuilder filtersBuilder) {
+		this.filtersBuilder = filtersBuilder;
 	}
 	
 	public OrGroupBuilder addOr(String property, Filter.Operator operator, Object value) {
@@ -29,10 +29,10 @@ public class OrGroupBuilder {
 	 *
 	 * @return
 	 */
-	public FilterBuilder endOrGroup() {
+	public FiltersBuilder endOrGroup() {
 		if (CollectionUtils.isNotEmpty(filters)) {
-			filterBuilder.filters.add(new OrFilter(filters.toArray(new Filter[0])));
+			filtersBuilder.filters.add(new OrFilter(filters.toArray(new Filter[0])));
 		}
-		return filterBuilder;
+		return filtersBuilder;
 	}
 }

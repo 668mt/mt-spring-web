@@ -2,7 +2,7 @@ package mt.common.tkmapper;
 
 import lombok.Data;
 import mt.common.mybatis.utils.MapperColumnUtils;
-import mt.common.tkmapper.builder.FilterBuilder;
+import mt.common.tkmapper.builder.FiltersBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +23,8 @@ public class Filter {
 	public Filter() {
 	}
 	
-	public static FilterBuilder builder() {
-		return new FilterBuilder();
+	public static FiltersBuilder builds() {
+		return new FiltersBuilder();
 	}
 	
 	private String property;
