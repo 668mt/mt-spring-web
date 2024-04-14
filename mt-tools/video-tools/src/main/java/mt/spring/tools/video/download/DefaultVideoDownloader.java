@@ -6,7 +6,6 @@ import mt.spring.tools.base.file.FastFileDownloader;
 import mt.spring.tools.base.file.FileDownloader;
 import mt.spring.tools.base.file.HttpClientFastFileDownloaderHttpSupport;
 import mt.spring.tools.base.http.ServiceClient;
-import mt.spring.tools.video.FfmpegUtils;
 import mt.spring.tools.video.ffmpeg.FfmpegJob;
 import mt.utils.RegexUtils;
 import mt.utils.common.Assert;
@@ -15,14 +14,12 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -111,7 +108,8 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		});
 	}
 	
-	private M3u8Info requestM3u8Info(@NotNull String url) throws IOException {
+	@Override
+	public M3u8Info getM3u8Info(@NotNull String url) throws IOException {
 		String result = serviceClient.getAsString(url);
 		Assert.notNull(result, "请求失败");
 		List<String> lines = Arrays.stream(result.split("\n")).collect(Collectors.toList());
@@ -121,7 +119,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 		Optional<String> m3u8Url = lines.stream().filter(s -> s.contains(".m3u8")).findFirst();
 		String siteUrl = getSiteUrl(url);
 		if (m3u8Url.isPresent()) {
-			return requestM3u8Info(siteUrl + m3u8Url.get());
+			return getM3u8Info(siteUrl + m3u8Url.get());
 		} else {
 			List<String> tsUrls = Arrays.stream(result.split("\n"))
 				.filter(s -> !s.startsWith("#"))
@@ -152,7 +150,7 @@ public class DefaultVideoDownloader implements VideoDownloader {
 	@Override
 	public M3u8Info downloadM3u8Files(@NotNull String m3u8Url, @NotNull File path, @Nullable DownloaderMessageListener downloaderMessageListener) throws IOException {
 		log.info("下载{}到{}", m3u8Url, path);
-		M3u8Info m3u8Info = requestM3u8Info(m3u8Url);
+		M3u8Info m3u8Info = getM3u8Info(m3u8Url);
 		Assert.notNull(m3u8Info, "解析失败");
 		List<String> tsUrls = m3u8Info.getTsUrls();
 		Assert.notEmpty(tsUrls, "获取tsUrls失败");
