@@ -59,7 +59,7 @@ public class RocketmqAutoConfiguration {
 	}
 	
 	@Bean
-	public Producer rocketmqBuilder() throws ClientException {
+	public Producer producer() throws ClientException {
 		return rocketmqBuilder.createProducer();
 	}
 }
