@@ -2,6 +2,7 @@ package mt.common.service;
 
 
 import com.github.pagehelper.PageInfo;
+import mt.common.entity.PageCondition;
 import mt.common.tkmapper.Filter;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +31,8 @@ public interface BaseService<T> {
 	
 	<T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList);
 	
+	<T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList, boolean allowSelectAll);
+	
 	/**
 	 * 查询所有
 	 *
@@ -38,6 +41,8 @@ public interface BaseService<T> {
 	List<T> findAll();
 	
 	PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition);
+	
+	PageInfo<T> findPage(@Nullable PageCondition pageCondition);
 	
 	/**
 	 * 通过id查询

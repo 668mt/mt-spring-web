@@ -54,6 +54,8 @@ public class TokenService {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		// 生成 token
 		String userData = jwtUserService.getUserData(userDetails);
+		//清空用户缓存
+		jwtUserService.clearUserCache(userDetails);
 		return jwtTokenUtil.generateToken(userData);
 	}
 	

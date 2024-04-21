@@ -40,4 +40,6 @@ public interface JwtUserService {
 	 */
 	String getUserData(@NotNull UserDetails userDetails);
 	
+	void clearUserCache(UserDetails userDetails);
+	
 }

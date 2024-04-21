@@ -6,6 +6,7 @@ import com.github.pagehelper.PageInfo;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
+import mt.common.entity.PageCondition;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.MyBatisUtils;
 import mt.common.starter.message.utils.MessageUtils;
@@ -78,7 +79,17 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 		}
 		Class<T> entityClass = getEntityClass();
 		List<mt.common.tkmapper.Filter> filters = parseCondition(condition);
-		return doPage(pageNum, pageSize, orderBy, () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)));
+		return doPage(pageNum, pageSize, orderBy, () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), true);
+	}
+	
+	@Override
+	public PageInfo<T> findPage(@Nullable PageCondition pageCondition) {
+		if (pageCondition == null) {
+			pageCondition = new PageCondition();
+		}
+		Class<T> entityClass = getEntityClass();
+		List<mt.common.tkmapper.Filter> filters = parseCondition(pageCondition);
+		return doPage(pageCondition.getPageNum(), pageCondition.getPageSize(), pageCondition.getOrderBy(), () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), pageCondition.isAllowSelectAll());
 	}
 	
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -180,13 +191,26 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 		return filters;
 	}
 	
-	
 	@Override
 	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList) {
+		return doPage(pageNum, pageSize, orderBy, getList, true);
+	}
+	
+	@Override
+	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList, boolean allowSelectAll) {
 		Class<T> entityClass = getEntityClass();
 		//分页
 		Page<T2> page = null;
 		try {
+			if (!allowSelectAll) {
+				if (pageNum == null || pageNum < 1) {
+					pageNum = 1;
+				}
+				if (pageSize == null || pageSize < 1) {
+					pageSize = 10;
+				}
+				pageSize = Math.min(pageSize, 5000);
+			}
 			if (pageNum != null && pageSize != null && pageNum > 0 && pageSize > 0) {
 				page = PageHelper.startPage(pageNum, pageSize);
 			}

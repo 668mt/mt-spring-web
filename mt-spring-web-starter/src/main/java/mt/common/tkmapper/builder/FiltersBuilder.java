@@ -54,6 +54,13 @@ public class FiltersBuilder {
 		return this;
 	}
 	
+	public FiltersBuilder addIf(boolean condition, String property, Filter.Operator operator, Object value) {
+		if (condition) {
+			this.filters.add(new Filter(property, operator, value));
+		}
+		return this;
+	}
+	
 	public OrGroupBuilder addOrGroup() {
 		return new OrGroupBuilder(this);
 	}
