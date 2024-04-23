@@ -46,11 +46,11 @@ public class JwtTokenUtil {
 	/**
 	 * 生成过期时间
 	 *
-	 * @param expireHours 过期时间（单位：小时）
+	 * @param expireMinutes 过期时间（单位：分钟）
 	 * @return 过期时间
 	 */
-	private Date generateExpirationDate(int expireHours) {
-		return new Date(System.currentTimeMillis() + expireHours * 3600_000L);
+	private Date generateExpirationDate(int expireMinutes) {
+		return new Date(System.currentTimeMillis() + expireMinutes * 60_000L);
 	}
 	
 	/**
@@ -142,10 +142,8 @@ public class JwtTokenUtil {
 		refreshMap.put(CLAM_KEY_TYPE, CLAM_KEY_TYPE_REFRESH);
 		
 		// 根据负载生成 token
-//		Date expire = new Date(System.currentTimeMillis() + 60_000L);
-//		Date refreshTokenExpire = new Date(System.currentTimeMillis() + 60_000L * 2);
-		Date expire = generateExpirationDate(jwtProperties.getExpirationHours());
-		Date refreshTokenExpire = generateExpirationDate(jwtProperties.getRefreshExpirationDays() * 24);
+		Date expire = generateExpirationDate(jwtProperties.getExpirationMinutes());
+		Date refreshTokenExpire = generateExpirationDate(jwtProperties.getRefreshExpirationMinutes());
 		String accessTokenString = generateToken(accessMap, expire);
 		String refreshTokenString = generateToken(refreshMap, refreshTokenExpire);
 		TokenResult tokenResult = new TokenResult();
