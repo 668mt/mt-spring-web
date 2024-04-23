@@ -2,10 +2,12 @@ package mt.spring.jwt;
 
 import cn.hutool.core.date.DateUtil;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import mt.spring.jwt.dto.Token;
 import mt.spring.jwt.dto.TokenResult;
+import mt.spring.jwt.exception.TokenIsExpiredException;
 import mt.utils.common.Assert;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,7 +61,7 @@ public class JwtTokenUtil {
 	 * @param token JWT 的 token
 	 * @return JWT 中的负载
 	 */
-	private Claims getClaimsFromToken(String token) {
+	private Claims getClaimsFromToken(String token) throws ExpiredJwtException {
 		return Jwts.parser() // 解析 JWT 的 token
 			.setSigningKey(jwtProperties.getSecret()) // 指定签名使用的密钥（会自动推断签名的算法）
 			.parseClaimsJws(token) // 解析 JWT 的 token
@@ -159,7 +161,7 @@ public class JwtTokenUtil {
 	 * @return token 刷新后的token，如果不可以刷新则返回 null
 	 */
 	@NotNull
-	public TokenResult refreshToken(@NotNull String oldRefreshToken) {
+	public TokenResult refreshToken(@NotNull String oldRefreshToken) throws TokenIsExpiredException {
 		Assert.notBlank(oldRefreshToken, "token不能为空");
 		String token = oldRefreshToken.substring(jwtProperties.getTokenHead().length());
 		Assert.notBlank(token, "token格式错误");

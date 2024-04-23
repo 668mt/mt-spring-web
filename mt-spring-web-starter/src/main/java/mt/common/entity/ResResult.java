@@ -14,6 +14,7 @@ public class ResResult<T> {
 	private Status status;
 	private String message;
 	private T result;
+	private String code;
 	
 	@JsonIgnore
 	public boolean isSuccess() {
@@ -25,6 +26,12 @@ public class ResResult<T> {
 	}
 	
 	public ResResult(Status status, String message) {
+		this.status = status;
+		this.message = message;
+	}
+	
+	public ResResult(Status status, String code, String message) {
+		this.code = code;
 		this.status = status;
 		this.message = message;
 	}
@@ -44,5 +51,9 @@ public class ResResult<T> {
 	
 	public static <T> ResResult<T> error(String message) {
 		return new ResResult<>(Status.error, message);
+	}
+	
+	public static <T> ResResult<T> error(String code, String message) {
+		return new ResResult<>(Status.error, code, message);
 	}
 }

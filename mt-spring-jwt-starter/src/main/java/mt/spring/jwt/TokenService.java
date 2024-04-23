@@ -3,6 +3,7 @@ package mt.spring.jwt;
 import mt.spring.jwt.dto.TokenDTO;
 import mt.spring.jwt.dto.TokenRefreshDTO;
 import mt.spring.jwt.dto.TokenResult;
+import mt.spring.jwt.exception.TokenIsExpiredException;
 import mt.spring.jwt.service.JwtUserService;
 import mt.utils.common.Assert;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +60,7 @@ public class TokenService {
 		return jwtTokenUtil.generateToken(userData);
 	}
 	
-	public TokenResult refreshToken(@NotNull TokenRefreshDTO tokenRefreshDTO) {
+	public TokenResult refreshToken(@NotNull TokenRefreshDTO tokenRefreshDTO) throws TokenIsExpiredException {
 		String refreshToken = tokenRefreshDTO.getRefreshToken();
 		Assert.notBlank(refreshToken, "refreshToken不能为空");
 		String userData = jwtTokenUtil.getUserDataFromToken(refreshToken);
