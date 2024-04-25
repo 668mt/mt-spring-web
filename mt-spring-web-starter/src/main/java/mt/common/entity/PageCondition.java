@@ -12,7 +12,7 @@ public class PageCondition {
 	private Integer pageSize;
 	
 	public String getOrderBy() {
-		return null;
+		return "id desc";
 	}
 	
 	/**
