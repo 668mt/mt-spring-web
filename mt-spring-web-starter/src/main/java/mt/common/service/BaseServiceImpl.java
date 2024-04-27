@@ -18,9 +18,10 @@ import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
@@ -34,12 +35,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static mt.common.utils.EntityUtils.getIdFilters;
+
 /**
  * @author Martin
  */
-public abstract class BaseServiceImpl<T> implements BaseService<T> {
-	private mt.common.mybatis.mapper.BaseMapper<T> baseMapper;
-	@Autowired
+public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationContextAware {
+	private volatile mt.common.mybatis.mapper.BaseMapper<T> baseMapper;
 	private ApplicationContext applicationContext;
 	
 	@Override
@@ -47,11 +49,15 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 		return !exists(columnName, value);
 	}
 	
+	@Override
+	public void setApplicationContext(@NotNull ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
+	
 	/**
 	 * 获取数据库Dao
-	 *
-	 * @return
 	 */
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public mt.common.mybatis.mapper.BaseMapper<T> getBaseMapper() {
 		if (baseMapper == null) {
 			synchronized (this) {
@@ -135,23 +141,13 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 					continue;
 				}
 				
-				if (value != null && !"".equals((value + "").trim())) {
+				if (value != null && !(value + "").trim().isEmpty()) {
 					//获取注解
 					String column = StringUtils.isNotBlank(annotation.column()) ? annotation.column() : MapperColumnUtils.parseColumn(field.getName());
 					Operator operator = annotation.operator();
 					String prefix = annotation.prefix();
 					String suffix = annotation.suffix();
 					Class<? extends Converter<?>> converterClass = annotation.converter();
-//					String conditionScript = annotation.condition();
-//					conditionScript = MessageUtils.replaceVariable(conditionScript, condition, false);
-//					try {
-//						Boolean conditionResult = JsUtils.eval(conditionScript);
-//						if (!conditionResult) {
-//							continue;
-//						}
-//					} catch (ScriptException e) {
-//						throw new RuntimeException(e);
-//					}
 					
 					switch (operator) {
 						case condition:
@@ -166,7 +162,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 						default:
 							Map<String, ? extends Converter<?>> beansOfType = SpringUtils.getBeansOfType(converterClass);
 							Converter converter;
-							if (beansOfType.size() > 0) {
+							if (!beansOfType.isEmpty()) {
 								converter = beansOfType.values().iterator().next();
 							} else {
 								try {
@@ -249,10 +245,9 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public List<T> findAll() {
-		return getBaseMapper().selectAll();
+		return findByFilters(new ArrayList<>());
 	}
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public int count(List<mt.common.tkmapper.Filter> filters) {
 		Assert.notNull(filters, "filters不能为空");
@@ -260,6 +255,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
+	@Override
 	public Class<T> getEntityClass() {
 		return (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 	}
@@ -277,7 +273,8 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public boolean existsId(Object record) {
-		return getBaseMapper().existsWithPrimaryKey(record);
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return existsByFilters(idFilters);
 	}
 	
 	@Override
@@ -294,7 +291,8 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public T findById(Object record) {
-		return getBaseMapper().selectByPrimaryKey(record);
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return findOneByFilters(idFilters);
 	}
 	
 	@Override
@@ -377,12 +375,14 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public int updateById(T record) {
-		return getBaseMapper().updateByPrimaryKey(record);
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return getBaseMapper().updateByExample(record, MyBatisUtils.createExample(getEntityClass(), idFilters));
 	}
 	
 	@Override
 	public int updateByIdSelective(T record) {
-		return getBaseMapper().updateByPrimaryKeySelective(record);
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return getBaseMapper().updateByExampleSelective(record, MyBatisUtils.createExample(getEntityClass(), idFilters));
 	}
 	
 	@Override
@@ -407,14 +407,15 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
 	
 	@Override
 	public int deleteById(Object record) {
-		return getBaseMapper().deleteByPrimaryKey(record);
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return deleteByFilters(idFilters);
 	}
 	
 	@Override
 	public int deleteByIds(Object[] records) {
 		int update = 0;
 		for (Object id : records) {
-			update += getBaseMapper().deleteByPrimaryKey(id);
+			update += deleteById(id);
 		}
 		return update;
 	}

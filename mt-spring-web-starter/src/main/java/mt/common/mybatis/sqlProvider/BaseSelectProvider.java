@@ -25,21 +25,6 @@ public class BaseSelectProvider extends MapperTemplate {
 	 * @param ms
 	 * @return
 	 */
-	public String exists(MappedStatement ms) {
-		Class<?> entityClass = getEntityClass(ms);
-		StringBuilder sql = new StringBuilder();
-		sql.append(SqlHelper.selectCountExists(entityClass));
-		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
-		sql.append(SqlHelper.whereAllIfColumns(entityClass, true));
-		return sql.toString();
-	}
-	
-	/**
-	 * 是否存在
-	 *
-	 * @param ms
-	 * @return
-	 */
 	public String existsKeyValue(MappedStatement ms) {
 		Class<?> entityClass = getEntityClass(ms);
 		StringBuilder sql = new StringBuilder();

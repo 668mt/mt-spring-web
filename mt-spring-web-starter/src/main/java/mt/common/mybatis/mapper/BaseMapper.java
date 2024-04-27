@@ -10,24 +10,9 @@ import java.util.List;
 
 /**
  * 自定义通用mapper
- *
- * @param <T> 对象
- * @author Martin
- * @ClassName: BaseMapper
- * @Description:
- * @date 2017-10-9 上午9:54:34
  */
 @RegisterMapper
 public interface BaseMapper<T> extends Mapper<T> {
-	
-	/**
-	 * 是否存在，对象不为null和不为空的字段会作为条件
-	 *
-	 * @param record
-	 * @return
-	 */
-	@SelectProvider(type = BaseSelectProvider.class, method = "dynamicSQL")
-	boolean exists(T record);
 	
 	/**
 	 * 是否存在
@@ -37,6 +22,7 @@ public interface BaseMapper<T> extends Mapper<T> {
 	 * @return
 	 */
 	@SelectProvider(type = BaseSelectProvider.class, method = "dynamicSQL")
+	@Deprecated
 	boolean existsKeyValue(@Param("columnName") String columnName, @Param("value") Object value);
 	
 	/**
@@ -47,6 +33,7 @@ public interface BaseMapper<T> extends Mapper<T> {
 	 * @return 返回结果
 	 */
 	@SelectProvider(type = BaseSelectProvider.class, method = "dynamicSQL")
+	@Deprecated
 	T findOne(@Param("columnName") String columnName, @Param("value") Object value);
 	
 	/**
@@ -57,6 +44,7 @@ public interface BaseMapper<T> extends Mapper<T> {
 	 * @return 返回结果列表
 	 */
 	@SelectProvider(type = BaseSelectProvider.class, method = "dynamicSQL")
+	@Deprecated
 	List<T> findList(@Param("columnName") String columnName, @Param("value") Object value);
 	
 }

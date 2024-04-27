@@ -1,5 +1,6 @@
 package mt.common.mybatis.utils;
 
+import mt.common.context.FilterContextUtils;
 import mt.common.mybatis.exception.NotSupportException;
 import mt.common.tkmapper.Filter;
 import mt.common.tkmapper.OrFilter;
@@ -96,12 +97,15 @@ public class MyBatisUtils {
 	}
 	
 	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate) {
+		if (filters == null) {
+			filters = new ArrayList<>();
+		}
+		FilterContextUtils.addFilters(entityClass, filters);
 		Example example = new Example(entityClass);
 		example.setForUpdate(forUpdate);
 		if (CollectionUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
-				if (filterInterface instanceof OrFilter) {
-					OrFilter orFilter = (OrFilter) filterInterface;
+				if (filterInterface instanceof OrFilter orFilter) {
 					Filter[] andFilters = orFilter.getFilters();
 					Criteria criteria = example.and();
 					for (Filter filter : andFilters) {

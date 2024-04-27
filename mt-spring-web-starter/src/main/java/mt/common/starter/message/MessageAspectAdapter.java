@@ -38,7 +38,7 @@ public class MessageAspectAdapter {
 		Signature signature = proceedingJoinPoint.getSignature();
 		MethodSignature methodSignature = (MethodSignature) signature;
 		Method targetMethod = methodSignature.getMethod();
-		Class<?> targetClass = proceedingJoinPoint.getThis().getClass();
+		Class<?> targetClass = proceedingJoinPoint.getTarget().getClass();
 		Object result = proceedingJoinPoint.proceed();
 		if (result == null || result instanceof String) {
 			return result;

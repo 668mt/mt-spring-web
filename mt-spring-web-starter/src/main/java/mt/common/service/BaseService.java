@@ -174,6 +174,9 @@ public interface BaseService<T> {
 	 */
 	boolean existsId(Object record);
 	
+	@SuppressWarnings("unchecked")
+	Class<T> getEntityClass();
+	
 	/**
 	 * 是否存在
 	 *
