@@ -68,6 +68,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationC
 					BaseMapper baseMapper = beansOfType.values()
 						.stream()
 						.filter(baseMapper1 -> entityClass.equals(BaseMapperHelper.getBaseMapperGenericType(baseMapper1)))
+						.filter(baseMapper1 -> baseMapper1 instanceof mt.common.mybatis.mapper.BaseMapper<?>)
 						.findFirst()
 						.orElse(null);
 					Assert.notNull(baseMapper, entityClass.getSimpleName() + "的BaseMapper还未初始化完成，请避免在init方法调用jdbc操作或复写getBaseMapper方法");
