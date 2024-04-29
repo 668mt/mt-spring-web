@@ -100,7 +100,7 @@ public class MyBatisUtils {
 		if (filters == null) {
 			filters = new ArrayList<>();
 		}
-		FilterContextUtils.addFilters(entityClass, filters);
+		filters = FilterContextUtils.addFilters(entityClass, filters);
 		Example example = new Example(entityClass);
 		example.setForUpdate(forUpdate);
 		if (CollectionUtils.isNotEmpty(filters)) {
