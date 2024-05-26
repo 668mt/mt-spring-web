@@ -1,6 +1,8 @@
 package mt.spring.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.jwt.dto.ResResult;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @ResponseBody
 @RestController
 @Slf4j
+@Tag(name = "Token服务")
 public class TokenController {
 	private final TokenService tokenService;
 	
@@ -27,17 +30,8 @@ public class TokenController {
 	}
 	
 	@PostMapping("/apply")
-	public TokenResult applyV1(@RequestBody @Validated TokenDTO tokenDTO) {
-		return tokenService.applyToken(tokenDTO);
-	}
-	
-	@PostMapping("/refresh")
-	public TokenResult refreshV1(@RequestBody @Validated TokenRefreshDTO tokenRefreshDTO) throws TokenIsExpiredException {
-		return tokenService.refreshToken(tokenRefreshDTO);
-	}
-	
-	@PostMapping("/v2/apply")
-	public ResResult<TokenResult> applyV2(@RequestBody @Validated TokenDTO tokenDTO) {
+	@Operation(summary = "申请Token")
+	public ResResult<TokenResult> apply(@RequestBody @Validated TokenDTO tokenDTO) {
 		try {
 			return ResResult.success(tokenService.applyToken(tokenDTO));
 		} catch (Exception e) {
@@ -46,8 +40,9 @@ public class TokenController {
 		}
 	}
 	
-	@PostMapping("/v2/refresh")
-	public ResResult<TokenResult> refreshV2(@RequestBody @Validated TokenRefreshDTO tokenRefreshDTO, HttpServletResponse response) {
+	@PostMapping("/refresh")
+	@Operation(summary = "刷新Token")
+	public ResResult<TokenResult> refresh(@RequestBody @Validated TokenRefreshDTO tokenRefreshDTO, HttpServletResponse response) {
 		try {
 			return ResResult.success(tokenService.refreshToken(tokenRefreshDTO));
 		} catch (Exception e) {

@@ -53,11 +53,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 		String authHeader = request.getHeader(jwtProperties.getTokenHeader());
 		String tokenHead = jwtProperties.getTokenHead();
 		String accessToken = request.getParameter("accessToken");
+		String requestURI = request.getRequestURI();
 		
 		if (StringUtils.isBlank(authHeader) && StringUtils.isNotBlank(accessToken)) {
 			authHeader = tokenHead + " " + accessToken;
 		}
 		
+		boolean hasUserDetails = false;
 		// 如果请求头不为空，并且以 JWT 令牌前缀（即：Bearer）开头
 		if (authHeader != null && authHeader.startsWith(tokenHead)) {
 			request.setAttribute(ATTR_IS_TOKEN, true);
@@ -71,11 +73,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 				// 将请求中的详细信息（即：IP、SessionId 等）封装到 UsernamePasswordAuthenticationToken 对象中方便后续校验
 				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authentication);
+				hasUserDetails = true;
 			} catch (Exception ignored) {
 			}
 		} else {
 			request.setAttribute(ATTR_IS_TOKEN, false);
 		}
+		LOGGER.debug("request uri: {}, hasUserDetails: {}", requestURI, hasUserDetails);
 		// 放行，执行下一个过滤器
 		filterChain.doFilter(request, response);
 	}

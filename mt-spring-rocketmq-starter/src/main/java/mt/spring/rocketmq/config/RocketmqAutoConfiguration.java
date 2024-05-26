@@ -10,6 +10,7 @@ import org.apache.rocketmq.client.apis.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @ComponentScan(basePackages = "mt.spring.rocketmq")
 @Slf4j
 @ConditionalOnBean(MessageListener.class)
+@ConditionalOnProperty(name = "rocketmq.enabled", matchIfMissing = true)
 public class RocketmqAutoConfiguration {
 	@Autowired
 	private RocketmqBuilder rocketmqBuilder;

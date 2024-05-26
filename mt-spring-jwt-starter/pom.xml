@@ -9,6 +9,7 @@
         <version>3.0</version>
     </parent>
     <artifactId>mt-spring-jwt-starter</artifactId>
+    <version>${mt.jwt.version}</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -17,6 +18,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>mt.spring.mtools</groupId>
             <artifactId>base-tools</artifactId>

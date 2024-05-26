@@ -1,6 +1,5 @@
 package mt.common.starter.message.utils;
 
-import com.github.pagehelper.PageInfo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import mt.common.annotation.Filter;
@@ -10,7 +9,10 @@ import mt.common.starter.message.annotation.BatchMessage;
 import mt.common.starter.message.annotation.BatchMultipleMessage;
 import mt.common.starter.message.annotation.Message;
 import mt.common.starter.message.exception.FieldNotFoundException;
-import mt.common.starter.message.messagehandler.*;
+import mt.common.starter.message.messagehandler.BatchMessageHandler;
+import mt.common.starter.message.messagehandler.DefaultMessageHandler;
+import mt.common.starter.message.messagehandler.MessageHandler;
+import mt.common.starter.message.messagehandler.MultipleFieldValue;
 import mt.common.utils.SpringUtils;
 import mt.utils.JsonUtils;
 import mt.utils.ReflectUtils;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 public class MessageUtils {
 	
 	private Map<String, MessageHandler> messageHandlers;
-	
+	private final ThreadLocal<String> jsonThreadLocal = new ThreadLocal<>();
 	private final CommonProperties commonProperties;
 	
 	public MessageUtils(CommonProperties commonProperties, Map<String, MessageHandler> messageHandlers) {
@@ -95,6 +97,14 @@ public class MessageUtils {
 		return messageWithGroup(object, null, includeFields);
 	}
 	
+	/**
+	 * 入口
+	 *
+	 * @param object        对象
+	 * @param group         分组
+	 * @param includeFields 包含的字段，为空则全部
+	 * @return 处理后的对象
+	 */
 	public Object messageWithGroup(@Nullable Object object, @Nullable String[] group, @Nullable String... includeFields) {
 		//初始化所有messageHandler
 		for (Map.Entry<String, MessageHandler> messageHandlerEntry : messageHandlers.entrySet()) {
@@ -104,48 +114,70 @@ public class MessageUtils {
 		if (group != null) {
 			groupList = Arrays.stream(group).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 		}
-		if (object instanceof Collection || object instanceof PageInfo || object instanceof Map) {
-			return messageRecursive(object, groupList, includeFields);
-		} else {
-			List<Object> list = new ArrayList<>();
-			list.add(object);
-			dealWithCollection(list, groupList, includeFields);
-			return list.get(0);
+		Map<BatchMessageKey, List<BatchHandleTarget>> batchHandleTargetMap = new HashMap<>();
+		try {
+			MessageRecursiveParams params = new MessageRecursiveParams(object);
+			params.setGroup(groupList);
+			params.setBatchHandleTarget(batchHandleTargetMap);
+			Object value = messageRecursive(params, includeFields);
+			for (Map.Entry<BatchMessageKey, List<BatchHandleTarget>> batchMessageKeyListEntry : batchHandleTargetMap.entrySet()) {
+				dealBatchMessage(batchMessageKeyListEntry.getKey(), batchMessageKeyListEntry.getValue());
+			}
+			return value;
+		} finally {
+			jsonThreadLocal.remove();
 		}
 	}
 	
 	/**
 	 * 处理一个对象
 	 *
-	 * @param object
+	 * @param params
 	 * @param includeFields
 	 * @return
 	 */
-	public Object messageRecursive(@Nullable Object object, Set<String> group, @Nullable String... includeFields) {
+	private Object messageRecursive(@NotNull MessageRecursiveParams params, @Nullable String... includeFields) {
+		Object object = params.getTarget();
+		Set<String> group = params.getGroup();
+		Map<BatchMessageKey, List<BatchHandleTarget>> batchHandleTargetMap = params.getBatchHandleTarget();
 		if (object == null) {
 			return null;
 		}
-		if (object instanceof Collection) {
-			return dealWithCollection((Collection) object, group, includeFields);
+		if (object instanceof Collection collection) {
+			for (Object o : collection) {
+				messageRecursive(params.copy(o), includeFields);
+			}
+			return object;
 		}
-		if (object instanceof PageInfo) {
-			return dealWithPageInfo((PageInfo) object, group, includeFields);
+		if (object instanceof Object[] array) {
+			for (Object o : array) {
+				messageRecursive(params.copy(o), includeFields);
+			}
+			return object;
 		}
-		if (object instanceof Map) {
-			Map map = (Map) object;
-			return dealWithMap(map, group, includeFields);
+		if (object instanceof Map map) {
+			for (Object o : map.entrySet()) {
+				messageRecursive(params.copy(((Map.Entry) o).getValue()), includeFields);
+			}
+			return object;
 		}
 		
 		List<String> includeList = null;
 		if (includeFields != null && includeFields.length > 0) {
 			includeList = Arrays.asList(includeFields);
 		}
-		//拉出mybatis缓存
-		JsonUtils.toJson(object);
+		if (jsonThreadLocal.get() == null) {
+			//拉出缓存，有可能被hibernate代理
+			jsonThreadLocal.set(JsonUtils.toJson(object));
+		}
 		//查找实体类所有字段
 		List<Field> fields = ReflectUtils.findAllFields(object.getClass());
 		if (CollectionUtils.isEmpty(fields)) {
 			return object;
+		}
+		Map<String, Field> fieldMap = new HashMap<>();
+		for (Field field : fields) {
+			fieldMap.put(field.getName(), field);
 		}
 		
 		for (Field field : fields) {
@@ -159,27 +191,45 @@ public class MessageUtils {
 				field.setAccessible(true);
 				//获取注解
 				Message message = AnnotatedElementUtils.findMergedAnnotation(field, Message.class);
+				BatchMessage batchMessage = AnnotatedElementUtils.findMergedAnnotation(field, BatchMessage.class);
+				BatchMultipleMessage batchMultipleMessage = AnnotatedElementUtils.findMergedAnnotation(field, BatchMultipleMessage.class);
 				if (message != null) {
 					if (!inGroup(group, message)) {
 						continue;
 					}
 					doWithMessage(message, field, object);
+				} else if (batchMessage != null) {
+					String column = batchMessage.column();
+					Field srcField = fieldMap.get(column);
+					Assert.notNull(srcField, "找不到字段" + column);
+					srcField.setAccessible(true);
+					Object value = srcField.get(object);
+					BatchMessageKey batchMessageKey = new BatchMessageKey(batchMessage.handlerClass(), batchMessage.params());
+					batchHandleTargetMap.computeIfAbsent(batchMessageKey, k -> new ArrayList<>()).add(new BatchHandleTarget(field, object, value));
+				} else if (batchMultipleMessage != null) {
+					String[] columns = batchMultipleMessage.columns();
+					MultipleFieldValue multipleFieldValue = new MultipleFieldValue();
+					Object[] values = new Object[columns.length];
+					for (int i = 0; i < columns.length; i++) {
+						Field srcField = fieldMap.get(columns[i]);
+						Assert.notNull(srcField, "找不到字段" + columns[i]);
+						srcField.setAccessible(true);
+						values[i] = srcField.get(object);
+					}
+					multipleFieldValue.setValues(values);
+					BatchMessageKey multipleBatchMessageKey = new BatchMessageKey(batchMultipleMessage.handlerClass(), batchMultipleMessage.params());
+					BatchHandleTarget multipleBatchHandleTarget = new BatchHandleTarget(field, object, multipleFieldValue);
+					batchHandleTargetMap.computeIfAbsent(multipleBatchMessageKey, k -> new ArrayList<>()).add(multipleBatchHandleTarget);
 				} else {
 					//内嵌集合
-					if (Collection.class.isAssignableFrom(field.getType())) {
-						Object value = field.get(object);
-						if (value == null) {
-							continue;
-						}
-						Collection collection = (Collection) value;
-						dealBatchMessage(collection, group, includeFields);
+					if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+						continue;
 					}
-					//处理其它类型
-					if (isContinueMessage(field) && !Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
-						if (field.get(object) == null) {
-							continue;
-						}
-						messageRecursive(field.get(object), group);
+					if (Collection.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType()) || field.getType().isArray()) {
+						messageRecursive(params.copy(field.get(object)), includeFields);
+					} else if (isContinueMessage(field)) {
+						//处理其它类型
+						messageRecursive(params.copy(field.get(object)), includeFields);
 					}
 				}
 			} catch (Exception e) {
@@ -206,18 +256,6 @@ public class MessageUtils {
 	}
 	
 	private void doWithMessage(Message message, Field field, Object object) throws Exception {
-//		//条件
-//		String condition = message.condition();
-//		if (StringUtils.isNotBlank(condition)) {
-//			//替换变量
-//			condition = replaceVariable(condition, object);
-//			//解析js条件表达式
-//			Boolean result = JsUtils.eval(condition, Boolean.class);
-//			//不满足条件
-//			if (result == null || !result) {
-//				return;
-//			}
-//		}
 		//替换变量值
 		Object[] params = parseParams(field, message.params(), object);
 		//计算出结果
@@ -232,14 +270,11 @@ public class MessageUtils {
 		}
 	}
 	
+	@SneakyThrows
 	public Object[] parseParams(@NotNull Field field, @NotNull String[] params, @NotNull Object object) {
 		if (params.length == 0) {
 			field.setAccessible(true);
-			try {
-				return new Object[]{field.get(object)};
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			}
+			return new Object[]{field.get(object)};
 		}
 		
 		Object[] afterParams = new Object[params.length];
@@ -257,25 +292,22 @@ public class MessageUtils {
 	 * @param object 实体对象
 	 * @return 解析后的值
 	 */
-	public Object parseParam(@NotNull Field field, @NotNull String param, @NotNull Object object) {
-		try {
-			if (StringUtils.isBlank(param)) {
-				field.setAccessible(true);
-				return field.get(object);
-			}
-			if (!param.contains("#")) {
-				return param;
-			}
-			String fieldName = RegexUtils.findFirst(param, "#(\\w+)", 1);
-			Field field1 = ReflectUtils.findField(object.getClass(), fieldName);
-			if (field1 == null) {
-				throw new FieldNotFoundException("找不到字段：" + fieldName);
-			}
-			field1.setAccessible(true);
-			return field1.get(object);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+	@SneakyThrows
+	private Object parseParam(@NotNull Field field, @NotNull String param, @NotNull Object object) {
+		if (StringUtils.isBlank(param)) {
+			field.setAccessible(true);
+			return field.get(object);
 		}
+		if (!param.contains("#")) {
+			return param;
+		}
+		String fieldName = RegexUtils.findFirst(param, "#(\\w+)", 1);
+		Field field1 = ReflectUtils.findField(object.getClass(), fieldName);
+		if (field1 == null) {
+			throw new FieldNotFoundException("找不到字段：" + fieldName);
+		}
+		field1.setAccessible(true);
+		return field1.get(object);
 	}
 	
 	public static String replaceVariable(String param, Object object) {
@@ -326,153 +358,40 @@ public class MessageUtils {
 				//进行替换
 				param = param.replace("#" + fieldName, value);
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error("replaceVariable error:{}", e.getMessage(), e);
 			}
 		}
 		return param;
 	}
 	
-	/**
-	 * message注解处理pageBean模型
-	 *
-	 * @param <T>
-	 * @param pageInfo
-	 * @return
-	 */
-	public <T> PageInfo<T> dealWithPageInfo(PageInfo<T> pageInfo, Set<String> group, String... includeFields) {
-		if (pageInfo != null && CollectionUtils.isNotEmpty(pageInfo.getList())) {
-			List<T> list = pageInfo.getList();
-			dealWithCollection(list, group, includeFields);
-		}
-		return pageInfo;
-	}
-	
 	@SneakyThrows
-	public <T> Collection<T> dealBatchMessage(Collection<T> list, Set<String> group, String... includeFields) {
-		if (CollectionUtils.isEmpty(list)) {
-			return list;
+	private void dealBatchMessage(BatchMessageKey batchMessageKey, List<BatchHandleTarget> batchHandleTargets) {
+		Class<? extends BatchMessageHandler<?, ?>> handlerClass = batchMessageKey.getHandlerClass();
+		String[] params = batchMessageKey.getParams();
+		Set set = new HashSet<>();
+		Collection collection = new ArrayList<>();
+		for (BatchHandleTarget batchHandleTarget : batchHandleTargets) {
+			Object target = batchHandleTarget.getTarget();
+			collection.add(target);
+			set.add(batchHandleTarget.getFromFieldValue());
 		}
-		T first = list.iterator().next();
-		Class<?> itemClass = first.getClass();
-		List<Field> fields = ReflectUtils.findAllFields(itemClass, BatchMessage.class);
-		if (CollectionUtils.isNotEmpty(fields)) {
-			for (Field dstField : fields) {
-				BatchMessage batchMessage = dstField.getAnnotation(BatchMessage.class);
-				String column = batchMessage.column();
-				Field srcField = ReflectUtils.findField(itemClass, column);
-				Assert.notNull(srcField, "找不到字段" + column);
-				srcField.setAccessible(true);
-				Set<Object> values = list.stream().map(t -> {
-					try {
-						return srcField.get(t);
-					} catch (IllegalAccessException e) {
-						throw new RuntimeException(e);
-					}
-				}).filter(Objects::nonNull).collect(Collectors.toSet());
-				
-				Class<? extends BatchMessageHandler<?, ?>> aClass = batchMessage.handlerClass();
-				MessageHandler messageHandler = getMessageHandler(aClass);
-				Assert.state(messageHandler instanceof BatchMessageHandler, "请使用BatchMessageHandler");
-				BatchMessageHandler batchMessageHandler = (BatchMessageHandler) messageHandler;
-				Map map = batchMessageHandler.handle(list, values, batchMessage.params());
-				if (map == null) {
+		MessageHandler messageHandler = getMessageHandler(handlerClass);
+		Map map;
+		if (messageHandler instanceof BatchMessageHandler batchMessageHandler) {
+			map = batchMessageHandler.handle(collection, set, params);
+		} else {
+			throw new IllegalStateException("找不到messageHandler：" + handlerClass.getSimpleName());
+		}
+		if (map != null) {
+			for (BatchHandleTarget batchHandleTarget : batchHandleTargets) {
+				Object value = map.get(batchHandleTarget.getFromFieldValue());
+				if (value == null) {
 					continue;
 				}
-				dstField.setAccessible(true);
-				List<Object> effectValues = new ArrayList<>();
-				for (T t : list) {
-					Object key = srcField.get(t);
-					if (key == null) {
-						continue;
-					}
-					Object value = map.get(key);
-					if (value == null) {
-						continue;
-					}
-					effectValues.add(value);
-					dstField.set(t, value);
-				}
-				dealBatchMessage(effectValues, group, includeFields);
+				Field field = batchHandleTarget.getField();
+				field.setAccessible(true);
+				field.set(batchHandleTarget.getTarget(), value);
 			}
 		}
-		List<Field> multipleMessageFields = ReflectUtils.findAllFields(itemClass, BatchMultipleMessage.class);
-		if (CollectionUtils.isNotEmpty(multipleMessageFields)) {
-			for (Field dstField : multipleMessageFields) {
-				BatchMultipleMessage batchMultipleMessage = dstField.getAnnotation(BatchMultipleMessage.class);
-				String[] columns = batchMultipleMessage.columns();
-				Field[] srcFields = new Field[columns.length];
-				for (int i = 0; i < columns.length; i++) {
-					String column = columns[i];
-					Field srcField = ReflectUtils.findField(itemClass, column);
-					Assert.notNull(srcField, "找不到字段" + column);
-					srcField.setAccessible(true);
-					srcFields[i] = srcField;
-				}
-				
-				Set<MultipleFieldValue> values = list.stream().map(t -> {
-					try {
-						MultipleFieldValue multipleFieldValue = new MultipleFieldValue();
-						Object[] columnValues = new Object[columns.length];
-						for (int i = 0; i < columns.length; i++) {
-							columnValues[i] = srcFields[i].get(t);
-						}
-						multipleFieldValue.setValues(columnValues);
-						return multipleFieldValue;
-					} catch (IllegalAccessException e) {
-						throw new RuntimeException(e);
-					}
-				}).collect(Collectors.toSet());
-				
-				Class<? extends BatchMultipleMessageHandler<?>> aClass = batchMultipleMessage.handlerClass();
-				MessageHandler messageHandler = getMessageHandler(aClass);
-				Assert.state(messageHandler instanceof BatchMessageHandler, "请使用BatchMultipleMessageHandler");
-				BatchMultipleMessageHandler batchMessageHandler = (BatchMultipleMessageHandler) messageHandler;
-				Map map = batchMessageHandler.handle(list, values, batchMultipleMessage.params());
-				if (map == null) {
-					continue;
-				}
-				dstField.setAccessible(true);
-				List<Object> effectValues = new ArrayList<>();
-				for (T t : list) {
-					MultipleFieldValue key = new MultipleFieldValue();
-					Object[] columnValues = new Object[columns.length];
-					for (int i = 0; i < srcFields.length; i++) {
-						columnValues[i] = srcFields[i].get(t);
-					}
-					key.setValues(columnValues);
-					
-					Object value = map.get(key);
-					if (value == null) {
-						continue;
-					}
-					effectValues.add(value);
-					dstField.set(t, value);
-				}
-				dealBatchMessage(effectValues, group, includeFields);
-			}
-		}
-		for (T t : list) {
-			messageRecursive(t, group, includeFields);
-		}
-		return list;
 	}
-	
-	@SneakyThrows
-	public <T> Collection<T> dealWithCollection(Collection<T> list, Set<String> group, String... includeFields) {
-		if (CollectionUtils.isNotEmpty(list)) {
-			dealBatchMessage(list, group, includeFields);
-			for (T t : list) {
-				messageRecursive(t, group, includeFields);
-			}
-		}
-		return list;
-	}
-	
-	public Map dealWithMap(@NotNull Map map, Set<String> group, String[] includeFields) {
-		for (Object entry : map.entrySet()) {
-			messageRecursive(((Map.Entry) entry).getValue(), group, includeFields);
-		}
-		return map;
-	}
-	
 }
