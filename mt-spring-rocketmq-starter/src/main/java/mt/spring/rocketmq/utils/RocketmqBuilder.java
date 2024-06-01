@@ -78,9 +78,9 @@ public class RocketmqBuilder {
 	public PushConsumer createConsumer(@NotNull RocketmqListener rocketmqListener, @NotNull MessageListener messageListener) throws ClientException {
 		boolean useGlobalPrefix = rocketmqListener.useGlobalPrefix();
 		String topicPrefix = useGlobalPrefix && StringUtils.isNotBlank(rocketmqProperties.getTopicPrefix()) ? rocketmqProperties.getTopicPrefix() : "";
-		String topic = environment.resolvePlaceholders(topicPrefix + rocketmqListener.topic()).replace(":", "");
-		String consumerGroup = environment.resolvePlaceholders(topicPrefix + rocketmqListener.consumerGroup()).replace(":","");
-		log.info("createConsumer,topic:{},consumerGroup:{}", topic,consumerGroup);
+		String topic = TopicNameUtils.getSafetyTopicName(environment.resolvePlaceholders(topicPrefix + rocketmqListener.topic()));
+		String consumerGroup = TopicNameUtils.getSafetyTopicName(environment.resolvePlaceholders(topicPrefix + rocketmqListener.consumerGroup()));
+		log.info("createConsumer,topic:{},consumerGroup:{}", topic, consumerGroup);
 		boolean enabled = toBoolean(rocketmqListener.enabled());
 		if (!enabled) {
 			log.info("listener is disabled,topic:{}", topic);

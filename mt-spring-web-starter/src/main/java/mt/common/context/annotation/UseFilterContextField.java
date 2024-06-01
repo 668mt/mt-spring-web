@@ -9,7 +9,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = ElementType.FIELD)
 public @interface UseFilterContextField {
-	String contextName() default "";
-	
-	String useField() default "";
+	/**
+	 * 上下文名称
+	 *
+	 * @return 上下文名称
+	 */
+	String contextName();
 }

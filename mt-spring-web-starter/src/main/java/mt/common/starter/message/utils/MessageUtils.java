@@ -121,9 +121,12 @@ public class MessageUtils {
 			params.setBatchHandleTarget(batchHandleTargetMap);
 			Object value = messageRecursive(params, includeFields);
 			for (Map.Entry<BatchMessageKey, List<BatchHandleTarget>> batchMessageKeyListEntry : batchHandleTargetMap.entrySet()) {
-				dealBatchMessage(batchMessageKeyListEntry.getKey(), batchMessageKeyListEntry.getValue());
+				dealBatchMessage(params, batchMessageKeyListEntry.getKey(), batchMessageKeyListEntry.getValue());
 			}
 			return value;
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+			return object;
 		} finally {
 			jsonThreadLocal.remove();
 		}
@@ -188,7 +191,6 @@ public class MessageUtils {
 				if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
 					continue;
 				}
-				field.setAccessible(true);
 				//获取注解
 				Message message = AnnotatedElementUtils.findMergedAnnotation(field, Message.class);
 				BatchMessage batchMessage = AnnotatedElementUtils.findMergedAnnotation(field, BatchMessage.class);
@@ -226,9 +228,11 @@ public class MessageUtils {
 						continue;
 					}
 					if (Collection.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType()) || field.getType().isArray()) {
+						field.setAccessible(true);
 						messageRecursive(params.copy(field.get(object)), includeFields);
 					} else if (isContinueMessage(field)) {
 						//处理其它类型
+						field.setAccessible(true);
 						messageRecursive(params.copy(field.get(object)), includeFields);
 					}
 				}
@@ -256,6 +260,7 @@ public class MessageUtils {
 	}
 	
 	private void doWithMessage(Message message, Field field, Object object) throws Exception {
+		field.setAccessible(true);
 		//替换变量值
 		Object[] params = parseParams(field, message.params(), object);
 		//计算出结果
@@ -365,7 +370,7 @@ public class MessageUtils {
 	}
 	
 	@SneakyThrows
-	private void dealBatchMessage(BatchMessageKey batchMessageKey, List<BatchHandleTarget> batchHandleTargets) {
+	private void dealBatchMessage(MessageRecursiveParams messageRecursiveParams, BatchMessageKey batchMessageKey, List<BatchHandleTarget> batchHandleTargets) {
 		Class<? extends BatchMessageHandler<?, ?>> handlerClass = batchMessageKey.getHandlerClass();
 		String[] params = batchMessageKey.getParams();
 		Set set = new HashSet<>();
@@ -390,7 +395,7 @@ public class MessageUtils {
 				}
 				Field field = batchHandleTarget.getField();
 				field.setAccessible(true);
-				field.set(batchHandleTarget.getTarget(), value);
+				field.set(batchHandleTarget.getTarget(), messageRecursive(messageRecursiveParams.copy(value)));
 			}
 		}
 	}

@@ -18,9 +18,11 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @Author Martin
@@ -51,23 +53,36 @@ public class FilterContextAspect implements InitializingBean {
 		if (useFilterContext == null) {
 			return proceedingJoinPoint.proceed();
 		}
-		String name = useFilterContext.value();
-		FilterContext filterContext = filterContextMap.get(name);
-		Assert.notNull(filterContext, "FilterContext not found:" + name);
+		IgnoreFilterContext ignoreFilterContext = AnnotatedElementUtils.getMergedAnnotation(targetMethod, IgnoreFilterContext.class);
+		if (ignoreFilterContext != null) {
+			return proceedingJoinPoint.proceed();
+		}
+		
+		String[] contextNames = useFilterContext.contextNames();
+		List<FilterContext> filterContexts = getFilterContexts(contextNames);
 		try {
-			IgnoreFilterContext ignoreFilterContext = AnnotatedElementUtils.getMergedAnnotation(targetMethod, IgnoreFilterContext.class);
-			if (ignoreFilterContext == null) {
-				ServletRequestAttributes attributes = getRequestContext();
-				Assert.notNull(attributes, "ServletRequestAttributes not found");
-				HttpServletRequest request = attributes.getRequest();
-				FilterContextHolder.set(filterContext);
+			ServletRequestAttributes attributes = getRequestContext();
+			Assert.notNull(attributes, "ServletRequestAttributes not found");
+			HttpServletRequest request = attributes.getRequest();
+			FilterContextHolder.set(filterContexts);
+			for (FilterContext filterContext : filterContexts) {
 				filterContext.prepareContext(request);
 			}
 			return proceedingJoinPoint.proceed();
 		} finally {
-			filterContext.clearContext();
+			for (FilterContext filterContext : filterContexts) {
+				filterContext.clearContext();
+			}
 			FilterContextHolder.remove();
 		}
+	}
+	
+	private List<FilterContext> getFilterContexts(String[] contextNames) {
+		return Arrays.stream(contextNames).map(s -> {
+			FilterContext filterContext = filterContextMap.get(s);
+			Assert.notNull(filterContext, "FilterContext not found:" + s);
+			return filterContext;
+		}).collect(Collectors.toList());
 	}
 	
 	public ServletRequestAttributes getRequestContext() {

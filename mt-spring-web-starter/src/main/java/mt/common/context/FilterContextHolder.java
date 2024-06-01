@@ -2,6 +2,10 @@ package mt.common.context;
 
 import lombok.extern.slf4j.Slf4j;
 import mt.utils.common.Assert;
+import org.apache.commons.collections.CollectionUtils;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Author Martin
@@ -9,18 +13,19 @@ import mt.utils.common.Assert;
  */
 @Slf4j
 public class FilterContextHolder {
-	private static final ThreadLocal<FilterContext> filterContextThreadLocal = new ThreadLocal<>();
+	private static final ThreadLocal<List<FilterContext>> filterContextThreadLocal = new ThreadLocal<>();
 	
-	public static FilterContext get() {
+	public static List<FilterContext> get() {
 		return filterContextThreadLocal.get();
 	}
 	
-	public static void set(FilterContext filterContext) {
-		if (filterContextThreadLocal.get() != null) {
-			FilterContext existsContext = filterContextThreadLocal.get();
-			log.error("FilterContext已存在[" + existsContext.name() + "]，将会被覆盖！");
+	public static void set(List<FilterContext> filterContexts) {
+		if (CollectionUtils.isNotEmpty(filterContextThreadLocal.get())) {
+			List<FilterContext> existsContexts = filterContextThreadLocal.get();
+			String contextNames = existsContexts.stream().map(FilterContext::name).collect(Collectors.joining(","));
+			log.error("FilterContext已存在[" + contextNames + "]，将会被覆盖！");
 		}
-		filterContextThreadLocal.set(filterContext);
+		filterContextThreadLocal.set(filterContexts);
 	}
 	
 	public static void remove() {
