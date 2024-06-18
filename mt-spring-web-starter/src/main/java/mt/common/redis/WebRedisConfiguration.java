@@ -1,11 +1,13 @@
-package mt.common.config.redis;
+package mt.common.redis;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mt.common.fragment.RedisTaskFragment;
 import mt.common.fragment.TaskFragment;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
@@ -56,5 +58,17 @@ public class WebRedisConfiguration {
 	public RedisTaskFragment redisTaskFragment(@Value("${spring.application.name:default}") String applicationName, ServerProperties serverProperties, RedisTemplate<String, Object> redisTemplate) {
 		Integer port = serverProperties.getPort();
 		return new RedisTaskFragment(applicationName, redisTemplate, RedisTaskFragment.getHostIp(null) + ":" + port);
+	}
+	
+	@Bean
+	@ConditionalOnBean(RedissonClient.class)
+	public LockService lockService(RedissonClient redissonClient) {
+		return new LockService(redissonClient);
+	}
+	
+	@Bean
+	@ConditionalOnBean(LockService.class)
+	public RedisService redisService(RedisTemplate<String, Object> redisTemplate, LockService lockService) {
+		return new RedisServiceImpl(redisTemplate, lockService);
 	}
 }

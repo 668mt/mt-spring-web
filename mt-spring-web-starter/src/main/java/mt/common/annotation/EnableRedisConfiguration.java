@@ -1,6 +1,6 @@
 package mt.common.annotation;
 
-import mt.common.config.redis.WebRedisConfiguration;
+import mt.common.redis.WebRedisConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;

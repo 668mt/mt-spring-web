@@ -1,4 +1,4 @@
-package mt.common.config.redis;
+package mt.common.redis;
 
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 
