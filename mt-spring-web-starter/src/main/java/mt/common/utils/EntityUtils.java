@@ -19,13 +19,14 @@ public class EntityUtils {
 	@SneakyThrows
 	@NotNull
 	public static List<Filter> getIdFilters(@NotNull Class<?> entityClass, @NotNull Object record) {
-		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
+		Assert.notNull(record, "record不能为空");
 		List<Field> fields = ReflectUtils.findAllFields(entityClass, Id.class);
-		boolean isEntity = entityClass.isAssignableFrom(record.getClass());
 		Assert.notEmpty(fields, "未找到@Id字段");
+		boolean isEntity = entityClass.isAssignableFrom(record.getClass());
 		if (!isEntity && fields.size() > 1) {
 			throw new IllegalArgumentException("多个@Id字段，但传入的record不是实体类");
 		}
+		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		for (Field field : fields) {
 			Object value;
 			if (isEntity) {

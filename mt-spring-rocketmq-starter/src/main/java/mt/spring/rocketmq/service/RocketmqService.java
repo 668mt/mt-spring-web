@@ -44,8 +44,12 @@ public class RocketmqService {
 		}
 		topic = TopicNameUtils.getSafetyTopicName(topic);
 		MessageBuilder messageBuilder = rocketmqBuilder.messageBuilder(topic, body);
-		messageBuilder.setTag(tag);
-		messageBuilder.setKeys(keys);
+		if (StringUtils.isNotBlank(tag)) {
+			messageBuilder.setTag(tag);
+		}
+		if (keys != null && keys.length > 0) {
+			messageBuilder.setKeys(keys);
+		}
 		messageBuilder.build();
 		producer.send(messageBuilder.build());
 	}
