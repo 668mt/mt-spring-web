@@ -1,6 +1,6 @@
 package test.hits;
 
-import mt.common.hits.LocalHitsRecorder;
+import mt.spring.core.hits.LocalHitsRecorder;
 
 import java.util.ArrayList;
 import java.util.List;

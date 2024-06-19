@@ -18,6 +18,8 @@
         <module>mt-spring-rocketmq-starter</module>
         <module>mt-processor</module>
         <module>test-processor</module>
+        <module>mt-spring-core</module>
+        <module>mt-spring-redis-starter</module>
     </modules>
 
     <!--    <parent>-->
