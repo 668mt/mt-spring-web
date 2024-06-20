@@ -3,8 +3,7 @@ package mt.spring.redis.config;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
+import mt.spring.redis.config.properties.RedisConfigProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
@@ -24,9 +23,6 @@ import java.util.Map;
 @ConditionalOnMissingBean(CachingConfigurerSupport.class)
 public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 	
-	@Value("${spring.application.name:default}")
-	private String applicationName;
-	
 	@Override
 	public KeyGenerator keyGenerator() {
 		return (target, method, params) -> {
@@ -41,7 +37,7 @@ public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 	@Bean
 	@ConditionalOnBean({RedisCacheSupport.class})
 	@ConditionalOnMissingBean(RedisCacheManager.class)
-	public RedisCacheManager cacheManager(@Value("${spring.profiles.active:}") String profiles, RedisConnectionFactory factory, RedisCacheProperties redisCacheProperties, RedisCacheSupport redisCacheSupport) {
+	public RedisCacheManager cacheManager(RedisKeyService redisKeyService, RedisConnectionFactory factory, RedisConfigProperties redisConfigProperties, RedisCacheSupport redisCacheSupport) {
 		
 		RedisSerializer<String> redisSerializer = new StringRedisSerializer();
 		Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
@@ -53,13 +49,7 @@ public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 		jackson2JsonRedisSerializer.setObjectMapper(om);
 		
 		//配置序列化(解决乱码的问题)
-		String prefix = redisCacheProperties.getPrefix();
-		if (StringUtils.isBlank(prefix)) {
-			prefix = applicationName;
-			if (StringUtils.isNotBlank(profiles)) {
-				prefix = prefix + "-" + profiles;
-			}
-		}
+		String prefix = redisKeyService.getPrefix();
 		RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
 			.defaultCacheConfig()
 			.entryTtl(Duration.ofHours(1))

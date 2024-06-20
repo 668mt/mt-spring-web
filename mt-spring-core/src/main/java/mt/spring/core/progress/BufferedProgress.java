@@ -10,20 +10,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @Date 2023/4/5
  */
 public class BufferedProgress implements Progress {
-	private final ProgressStore progressStore;
+	private final ProgressService progressService;
 	private final double bufferPercent;
 	private final String key;
 	private final ProgressListener progressListener;
 	private double lastPercent = 0;
 	private double currPercent = 0;
 	
-	public BufferedProgress(@NotNull String key, @NotNull ProgressStore progressStore, double bufferPercent) {
-		this(key, progressStore, bufferPercent, null);
+	public BufferedProgress(@NotNull String key, @NotNull ProgressService progressService, double bufferPercent) {
+		this(key, progressService, bufferPercent, null);
 	}
 	
-	public BufferedProgress(@NotNull String key, @NotNull ProgressStore progressStore, double bufferPercent, @Nullable ProgressListener progressListener) {
+	public BufferedProgress(@NotNull String key, @NotNull ProgressService progressService, double bufferPercent, @Nullable ProgressListener progressListener) {
 		this.key = key;
-		this.progressStore = progressStore;
+		this.progressService = progressService;
 		this.bufferPercent = bufferPercent;
 		this.progressListener = progressListener;
 	}
@@ -36,7 +36,7 @@ public class BufferedProgress implements Progress {
 	
 	@Override
 	public void init() {
-		progressStore.init(key);
+		progressService.init(key);
 		lastPercent = 0d;
 		currPercent = 0d;
 		listen();
@@ -45,7 +45,7 @@ public class BufferedProgress implements Progress {
 	@Override
 	public void update(double percent) {
 		if (percent - lastPercent >= bufferPercent || percent >= 0.9999) {
-			progressStore.update(key, percent);
+			progressService.update(key, percent);
 			lastPercent = percent;
 			listen();
 		}
@@ -56,7 +56,7 @@ public class BufferedProgress implements Progress {
 	public void add(double addPercent) {
 		currPercent += addPercent;
 		if (currPercent - lastPercent >= bufferPercent || currPercent >= 0.9999) {
-			progressStore.add(key, currPercent - lastPercent);
+			progressService.add(key, currPercent - lastPercent);
 			lastPercent = currPercent;
 			listen();
 		}
@@ -64,23 +64,23 @@ public class BufferedProgress implements Progress {
 	
 	@Override
 	public void remove() {
-		progressStore.remove(key);
+		progressService.remove(key);
 		lastPercent = 0;
 		currPercent = 0;
 	}
 	
 	@Override
 	public double getPercent() {
-		return progressStore.getPercent(key);
+		return progressService.getPercent(key);
 	}
 	
 	@Override
 	public void finish() {
-		progressStore.finish(key);
+		progressService.finish(key);
 	}
 	
 	public static void main(String[] args) {
-		LocalProgressStore localProgress = new LocalProgressStore();
+		LocalProgressService localProgress = new LocalProgressService();
 		AtomicInteger count = new AtomicInteger(0);
 		String key = "test";
 		BufferedProgress bufferedProgress = new BufferedProgress(key, localProgress, 0.01, (percent) -> {

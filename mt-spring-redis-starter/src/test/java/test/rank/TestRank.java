@@ -20,7 +20,7 @@ public class TestRank extends AbstractRedisTest {
 	
 	@Before
 	public void before() {
-		rankService = new RedisRankService("test", redisService, 2);
+		rankService = new RedisRankService(redisService, "test", 2);
 		rankService.clear(rankKey);
 	}
 	

@@ -1,15 +1,16 @@
 package mt.spring.redis.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import mt.spring.core.fragment.TaskFragment;
-import mt.spring.redis.service.LockService;
-import mt.spring.redis.service.RedisTaskFragment;
+import mt.spring.core.progress.ProgressService;
+import mt.spring.redis.service.*;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
@@ -30,50 +31,53 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class WebRedisConfiguration {
 	
 	@Bean
-	public RedisCacheProperties redisCacheProperties() {
-		return new RedisCacheProperties();
-	}
-	
-	@Bean
 	@ConditionalOnMissingBean(RedisTemplate.class)
-	@SuppressWarnings("all")
 	public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
 		RedisTemplate<String, Object> template = new RedisTemplate<>();
 		template.setConnectionFactory(factory);
-		Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
-		ObjectMapper om = new ObjectMapper();
-		om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-		om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-		jackson2JsonRedisSerializer.setObjectMapper(om);
 		StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
 		// key采用String的序列化方式
 		template.setKeySerializer(stringRedisSerializer);
 		// hash的key也采用String的序列化方式
 		template.setHashKeySerializer(stringRedisSerializer);
 		// value序列化方式采用jackson
-		template.setValueSerializer(jackson2JsonRedisSerializer);
+		template.setValueSerializer(createJacksonSerializer());
 		// hash的value序列化方式采用jackson
-		template.setHashValueSerializer(jackson2JsonRedisSerializer);
+		template.setHashValueSerializer(createJacksonSerializer());
 		template.afterPropertiesSet();
 		return template;
 	}
 	
-	@Bean
-	@ConditionalOnMissingBean(TaskFragment.class)
-	public RedisTaskFragment redisTaskFragment(@Value("${spring.application.name:default}") String applicationName, ServerProperties serverProperties, RedisTemplate<String, Object> redisTemplate) {
-		Integer port = serverProperties.getPort();
-		return new RedisTaskFragment(applicationName, redisTemplate, RedisTaskFragment.getHostIp(null) + ":" + port);
+	private Jackson2JsonRedisSerializer<Object> createJacksonSerializer() {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+		objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		return new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 	}
 	
 	@Bean
-	@ConditionalOnBean(RedissonClient.class)
+	@ConditionalOnMissingBean(TaskFragment.class)
+	public RedisTaskFragment redisTaskFragment(RedisKeyService redisKeyService, ServerProperties serverProperties, RedisTemplate<String, Object> redisTemplate) {
+		Integer port = serverProperties.getPort();
+		return new RedisTaskFragment(redisKeyService.getPrefix(), redisTemplate, RedisTaskFragment.getHostIp(null) + ":" + port);
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean(LockService.class)
 	public LockService lockService(RedissonClient redissonClient) {
 		return new LockService(redissonClient);
 	}
 	
 	@Bean
-	@ConditionalOnBean(LockService.class)
-	public RedisService redisService(RedisTemplate<String, Object> redisTemplate, LockService lockService) {
-		return new RedisServiceImpl(redisTemplate, lockService);
+	@ConditionalOnMissingBean(RedisService.class)
+	public RedisService redisService(RedisKeyService redisKeyService, RedisTemplate<String, Object> redisTemplate, LockService lockService) {
+		return new RedisServiceImpl(redisTemplate, lockService, redisKeyService.getPrefix());
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean(ProgressService.class)
+	public ProgressService progress(RedisService redisService) {
+		return new RedisProgressService(redisService);
 	}
 }

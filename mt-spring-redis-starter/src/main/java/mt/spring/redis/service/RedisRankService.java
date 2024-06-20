@@ -5,7 +5,6 @@ import com.github.pagehelper.PageInfo;
 import lombok.Getter;
 import mt.spring.core.rank.RankMember;
 import mt.spring.core.rank.RankService;
-import mt.spring.redis.config.RedisService;
 import mt.utils.common.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -26,10 +25,10 @@ public class RedisRankService implements RankService {
 	@Getter
 	private final RedisDelayExecutor redisDelayExecutor;
 	
-	public RedisRankService(String name, RedisService redisService, int expireSeconds) {
+	public RedisRankService(RedisService redisService, String name, int expireSeconds) {
 		this.redisService = redisService;
 		this.expireSeconds = expireSeconds;
-		redisDelayExecutor = new RedisDelayExecutor(redisService, "rank-delay-exe:" + name, json -> {
+		redisDelayExecutor = new RedisDelayExecutor(redisService, "rank-delay-exe-" + name, json -> {
 			JSONObject params = JSONObject.parseObject(json);
 			String key = params.getString("key");
 			String member = params.getString("member");
@@ -40,13 +39,17 @@ public class RedisRankService implements RankService {
 		});
 	}
 	
+	private String getKey(String key) {
+		return redisService.getRedisPrefix() + ":" + key;
+	}
+	
 	@Override
 	public double addScore(@NotNull String key, @NotNull String member, double score) {
-		Double r = redisService.getRedisTemplate().opsForZSet().incrementScore(key, member, score);
+		Double r = redisService.getRedisTemplate().opsForZSet().incrementScore(getKey(key), member, score);
 		//一段时间内的排行榜
 		//延迟执行
 		JSONObject params = new JSONObject();
-		params.put("key", key);
+		params.put("key", getKey(key));
 		params.put("member", member);
 		params.put("uid", UUID.randomUUID().toString());
 		redisDelayExecutor.register(params.toJSONString(), System.currentTimeMillis() + expireSeconds * 1000L);
@@ -55,13 +58,13 @@ public class RedisRankService implements RankService {
 	
 	@Override
 	public long getTotalMembers(@NotNull String key) {
-		Long size = redisService.getRedisTemplate().opsForZSet().size(key);
+		Long size = redisService.getRedisTemplate().opsForZSet().size(getKey(key));
 		return size == null ? 0 : size;
 	}
 	
 	@Override
 	public long getRank(@NotNull String key, @NotNull String member) {
-		Long rank = redisService.getRedisTemplate().opsForZSet().rank(key, member);
+		Long rank = redisService.getRedisTemplate().opsForZSet().rank(getKey(key), member);
 		return rank == null ? -1 : rank;
 	}
 	
@@ -77,6 +80,7 @@ public class RedisRankService implements RankService {
 	}
 	
 	private PageInfo<RankMember> getMembersPage(@NotNull String key, int pageNum, int pageSize, boolean reverse, boolean getTotal) {
+		key = getKey(key);
 		int start = (pageNum - 1) * pageSize;
 		int end = start + pageSize - 1;
 		Set<ZSetOperations.TypedTuple<Object>> typedTuples;
@@ -115,7 +119,7 @@ public class RedisRankService implements RankService {
 	@Override
 	public void clear(@NotNull String key) {
 		redisDelayExecutor.clear();
-		redisService.getRedisTemplate().delete(key);
+		redisService.getRedisTemplate().delete(getKey(key));
 	}
 	
 }

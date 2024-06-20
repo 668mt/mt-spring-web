@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * @Author Martin
  * @Date 2023/4/5
  */
-public interface ProgressStore {
+public interface ProgressService {
 	
 	/**
 	 * 初始化

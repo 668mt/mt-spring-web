@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import mt.spring.core.delayexecute.AbstractDelayExecutor;
 import mt.spring.core.thread.NamePrefixThreadFactory;
-import mt.spring.redis.config.RedisService;
+import mt.spring.redis.service.RedisService;
 import mt.utils.common.CollectionUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -25,12 +25,12 @@ public class RedisDelayExecutor extends AbstractDelayExecutor {
 	private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 	private final RedisService redisService;
 	
-	public RedisDelayExecutor(RedisService redisService, String redisKey, Consumer<String> consumer) {
+	public RedisDelayExecutor(RedisService redisService, String key, Consumer<String> consumer) {
 		super(consumer);
-		this.key = redisKey;
-		log.info("RedisDelayExecutor init,redisKey: {}", redisKey);
+		this.key = redisService.getRedisPrefix() + ":" + key;
+		log.info("RedisDelayExecutor init,redisKey: {}", key);
 		this.redisService = redisService;
-		scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1, new NamePrefixThreadFactory("delay-exe-" + redisKey + "-"));
+		scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1, new NamePrefixThreadFactory("delay-exe-" + key + "-"));
 		scheduledThreadPoolExecutor.scheduleWithFixedDelay(this::tryPull, 0, 10, TimeUnit.SECONDS);
 	}
 	

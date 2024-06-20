@@ -52,7 +52,7 @@ public class PartProgress implements Progress {
 	
 	public static void main(String[] args) {
 		String key = "test";
-		LocalProgressStore progress = new LocalProgressStore();
+		LocalProgressService progress = new LocalProgressService();
 		BufferedProgress bufferedProgress = new BufferedProgress(key, progress, 0.01);
 		PartProgress part1 = PartProgress.createPart(bufferedProgress, 0.5);
 		PartProgress part2 = PartProgress.createPart(bufferedProgress, 0.5);
