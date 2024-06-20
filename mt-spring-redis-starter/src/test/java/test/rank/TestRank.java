@@ -42,7 +42,7 @@ public class TestRank extends AbstractRedisTest {
 		Assert.assertEquals(top, topMembers.size());
 		Assert.assertEquals(topMembers.get(0).getMember(), "张三");
 		Assert.assertEquals(0, topMembers.get(0).getScore().compareTo(3.0));
-		System.out.println(rankService.getMembers(rankKey, 2, top));
+		System.out.println(rankService.getMembersPage(rankKey, 2, top));
 		Thread.sleep(2000);
 		rankService.getRedisDelayExecutor().pull();
 		System.out.println(rankService.getTopMembers(rankKey, top));

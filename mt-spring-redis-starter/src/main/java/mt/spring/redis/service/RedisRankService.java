@@ -1,6 +1,7 @@
 package mt.spring.redis.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.PageInfo;
 import lombok.Getter;
 import mt.spring.core.rank.RankMember;
 import mt.spring.core.rank.RankService;
@@ -66,21 +67,49 @@ public class RedisRankService implements RankService {
 	
 	@Override
 	public List<RankMember> getTopMembers(@NotNull String key, int top) {
-		return getMembers(key, 1, top);
+		PageInfo<RankMember> page = getMembersPage(key, 1, top, false, false);
+		return page.getList();
 	}
 	
 	@Override
-	public List<RankMember> getMembers(@NotNull String key, int pageNum, int pageSize) {
+	public PageInfo<RankMember> getMembersPage(@NotNull String key, int pageNum, int pageSize, boolean reverse) {
+		return getMembersPage(key, pageNum, pageSize, reverse, true);
+	}
+	
+	private PageInfo<RankMember> getMembersPage(@NotNull String key, int pageNum, int pageSize, boolean reverse, boolean getTotal) {
 		int start = (pageNum - 1) * pageSize;
 		int end = start + pageSize - 1;
-		Set<ZSetOperations.TypedTuple<Object>> typedTuples = redisService.getRedisTemplate().opsForZSet().reverseRangeWithScores(key, start, end);
-		if (CollectionUtils.isEmpty(typedTuples)) {
-			return new ArrayList<>();
+		Set<ZSetOperations.TypedTuple<Object>> typedTuples;
+		if (reverse) {
+			//分数从低到高
+			typedTuples = redisService.getRedisTemplate().opsForZSet().rangeWithScores(key, start, end);
+		} else {
+			//分数从高到低
+			typedTuples = redisService.getRedisTemplate().opsForZSet().reverseRangeWithScores(key, start, end);
 		}
-		return typedTuples.stream()
-			.filter(objectTypedTuple -> objectTypedTuple.getValue() != null)
-			.map(typedTuple -> new RankMember(typedTuple.getValue().toString(), typedTuple.getScore()))
-			.collect(Collectors.toList());
+		PageInfo<RankMember> pageInfo = new PageInfo<>();
+		List<RankMember> list;
+		long total;
+		if (CollectionUtils.isEmpty(typedTuples)) {
+			total = 0L;
+			list = new ArrayList<>();
+		} else {
+			list = typedTuples.stream()
+				.filter(objectTypedTuple -> objectTypedTuple.getValue() != null)
+				.map(typedTuple -> new RankMember(typedTuple.getValue().toString(), typedTuple.getScore()))
+				.collect(Collectors.toList());
+			if (getTotal) {
+				total = getTotalMembers(key);
+			} else {
+				total = list.size();
+			}
+		}
+		pageInfo.setPageNum(pageNum);
+		pageInfo.setPageSize(pageSize);
+		pageInfo.setList(list);
+		pageInfo.setTotal(total);
+		pageInfo.calcByNavigatePages(8);
+		return pageInfo;
 	}
 	
 	@Override
