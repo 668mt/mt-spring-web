@@ -1,12 +1,14 @@
 package mt.spring.redis.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import mt.spring.redis.config.properties.RedisConfigProperties;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -20,8 +22,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 import java.util.Map;
 
-@ConditionalOnMissingBean(CachingConfigurerSupport.class)
-public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
+@ConditionalOnMissingBean(CachingConfigurer.class)
+public class WebRedisCacheConfiguration implements CachingConfigurer {
 	
 	@Override
 	public KeyGenerator keyGenerator() {
@@ -34,20 +36,19 @@ public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 		};
 	}
 	
+	private Jackson2JsonRedisSerializer<Object> createJacksonSerializer() {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+		objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		return new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+	}
+	
 	@Bean
 	@ConditionalOnBean({RedisCacheSupport.class})
 	@ConditionalOnMissingBean(RedisCacheManager.class)
-	public RedisCacheManager cacheManager(RedisKeyService redisKeyService, RedisConnectionFactory factory, RedisConfigProperties redisConfigProperties, RedisCacheSupport redisCacheSupport) {
-		
+	public RedisCacheManager cacheManager(RedisKeyService redisKeyService, RedisConnectionFactory factory, RedisCacheSupport redisCacheSupport) {
 		RedisSerializer<String> redisSerializer = new StringRedisSerializer();
-		Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
-		
-		//解决查询缓存转换异常的问题
-		ObjectMapper om = new ObjectMapper();
-		om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-		om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-		jackson2JsonRedisSerializer.setObjectMapper(om);
-		
 		//配置序列化(解决乱码的问题)
 		String prefix = redisKeyService.getPrefix();
 		RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
@@ -55,14 +56,16 @@ public class WebRedisCacheConfiguration extends CachingConfigurerSupport {
 			.entryTtl(Duration.ofHours(1))
 			.prefixCacheNameWith(prefix + ":")
 			.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
-			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
+			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(createJacksonSerializer()))
 //				.disableCachingNullValues()
 			;
 		
 		// 对每个缓存空间应用不同的配置
 		Map<String, RedisCacheConfiguration> configMap = redisCacheSupport.getConfigurations(defaultConfig);
 		
-		return RedisCacheManager.builder(factory).cacheDefaults(defaultConfig).initialCacheNames(configMap.keySet())// 注意这两句的调用顺序，一定要先调用该方法设置初始化的缓存名，再初始化相关的配置
+		return RedisCacheManager.builder(factory)
+			.cacheDefaults(defaultConfig)
+			.initialCacheNames(configMap.keySet())// 注意这两句的调用顺序，一定要先调用该方法设置初始化的缓存名，再初始化相关的配置
 			.withInitialCacheConfigurations(configMap).build();
 	}
 	
