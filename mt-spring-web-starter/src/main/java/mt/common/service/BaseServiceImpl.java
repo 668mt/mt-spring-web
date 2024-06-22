@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static mt.common.utils.EntityUtils.getIdFilters;
 
@@ -462,5 +463,21 @@ public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationC
 	@Override
 	public boolean notExistsByFilter(mt.common.tkmapper.Filter filter) {
 		return !existsByFilter(filter);
+	}
+	
+	@Override
+	public void batchConsume(@NotNull List<mt.common.tkmapper.Filter> filters, int batchSize, @Nullable String orderBy, @NotNull Consumer<List<T>> consumer) {
+		int pageNum = 1;
+		while (true) {
+			PageInfo<T> pageInfo = doPage(pageNum++, batchSize, orderBy, () -> findByFilters(filters));
+			List<T> list = pageInfo.getList();
+			if (CollectionUtils.isEmpty(list)) {
+				break;
+			}
+			consumer.accept(list);
+			if (!pageInfo.isHasNextPage() || list.size() < batchSize) {
+				break;
+			}
+		}
 	}
 }

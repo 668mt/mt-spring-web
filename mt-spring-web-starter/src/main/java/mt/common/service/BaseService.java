@@ -4,9 +4,11 @@ package mt.common.service;
 import com.github.pagehelper.PageInfo;
 import mt.common.entity.PageCondition;
 import mt.common.tkmapper.Filter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author Martin
@@ -198,4 +200,13 @@ public interface BaseService<T> {
 	
 	boolean notExistsByFilter(Filter filter);
 	
+	/**
+	 * 分批消费
+	 *
+	 * @param filters   过滤
+	 * @param batchSize 批次大小
+	 * @param orderBy   排序
+	 * @param consumer  消费回调
+	 */
+	void batchConsume(@NotNull List<Filter> filters, int batchSize, @Nullable String orderBy, @NotNull Consumer<List<T>> consumer);
 }
