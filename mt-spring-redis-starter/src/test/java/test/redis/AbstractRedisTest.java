@@ -41,7 +41,7 @@ public class AbstractRedisTest {
 		RedissonConnectionFactory redissonConnectionFactory = new RedissonConnectionFactory(redissonClient);
 		redisTemplate = redisTemplate(redissonConnectionFactory);
 		redisTemplate.setConnectionFactory(redissonConnectionFactory);
-		redisService = new RedisServiceImpl(redisTemplate, lockService);
+		redisService = new RedisServiceImpl(redisTemplate, lockService, "test-prefix");
 	}
 	
 	public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {

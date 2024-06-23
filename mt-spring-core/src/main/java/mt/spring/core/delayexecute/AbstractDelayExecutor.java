@@ -1,25 +1,27 @@
 package mt.spring.core.delayexecute;
 
+import mt.utils.common.Assert;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
  * @Author Martin
  * @Date 2024/6/18
  */
-public abstract class AbstractDelayExecutor {
-	protected final Consumer<String> consumer;
+public abstract class AbstractDelayExecutor implements DelayExecutor {
+	protected final Map<String, Consumer<String>> taskConsumerMap = new HashMap<>();
 	
-	public AbstractDelayExecutor(Consumer<String> consumer) {
-		this.consumer = consumer;
+	@Override
+	public void register(@NotNull String taskId, @NotNull Consumer<String> runnable) {
+		Consumer<String> existsRunnable = taskConsumerMap.get(taskId);
+		Assert.isNull(existsRunnable, "taskId已存在:" + taskId);
+		taskConsumerMap.put(taskId, runnable);
 	}
 	
-	/**
-	 * 注册延迟执行
-	 *
-	 * @param member      任务标识
-	 * @param expiredTime 过期时间
-	 */
-	public abstract void register(String member, long expiredTime);
-	
-	public abstract void clear();
+	protected Consumer<String> getTaskConsumer(String taskId) {
+		return taskConsumerMap.get(taskId);
+	}
 }

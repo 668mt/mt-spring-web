@@ -18,6 +18,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.7.13</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.668mt.web</groupId>
             <artifactId>mt-spring-core</artifactId>
             <version>${parent.version}</version>
