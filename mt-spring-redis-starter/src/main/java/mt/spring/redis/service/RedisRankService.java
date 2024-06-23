@@ -3,7 +3,7 @@ package mt.spring.redis.service;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
 import lombok.Getter;
-import mt.spring.core.delayexecute.DelayExecutor;
+import mt.spring.core.delayexecute.DelayExecuteService;
 import mt.spring.core.rank.RankMember;
 import mt.spring.core.rank.RankService;
 import mt.utils.common.CollectionUtils;
@@ -26,21 +26,21 @@ public class RedisRankService implements RankService {
 	private final RedisService redisService;
 	private final long expireSeconds;
 	@Getter
-	private final DelayExecutor delayExecutor;
+	private final DelayExecuteService delayExecuteService;
 	private final String delayExecuteTaskId;
 	
 	public RedisRankService(@NotNull String name, @NotNull RedisService redisService) {
 		this(name, redisService, null, 0, null);
 	}
 	
-	public RedisRankService(@NotNull String name, @NotNull RedisService redisService, @Nullable DelayExecutor delayExecutor, long duration, @Nullable TimeUnit timeUnit) {
+	public RedisRankService(@NotNull String name, @NotNull RedisService redisService, @Nullable DelayExecuteService delayExecuteService, long duration, @Nullable TimeUnit timeUnit) {
 		this.redisService = redisService;
-		this.delayExecutor = delayExecutor;
+		this.delayExecuteService = delayExecuteService;
 		String delayExecuteTaskId = "rank-delay-exe-" + name;
 		this.delayExecuteTaskId = delayExecuteTaskId;
-		if (duration > 0 && timeUnit != null && delayExecutor != null) {
+		if (duration > 0 && timeUnit != null && delayExecuteService != null) {
 			this.expireSeconds = timeUnit.toSeconds(duration);
-			delayExecutor.register(delayExecuteTaskId, json -> {
+			delayExecuteService.register(delayExecuteTaskId, json -> {
 				JSONObject params = JSONObject.parseObject(json);
 				String key = params.getString("key");
 				String member = params.getString("member");
@@ -67,8 +67,8 @@ public class RedisRankService implements RankService {
 		params.put("key", getKey(key));
 		params.put("member", member);
 		params.put("uid", UUID.randomUUID().toString());
-		if (delayExecutor != null) {
-			delayExecutor.addTask(delayExecuteTaskId, params.toJSONString(), System.currentTimeMillis() + expireSeconds * 1000L);
+		if (delayExecuteService != null) {
+			delayExecuteService.addTask(delayExecuteTaskId, params.toJSONString(), System.currentTimeMillis() + expireSeconds * 1000L);
 		}
 		return r == null ? -1 : r;
 	}

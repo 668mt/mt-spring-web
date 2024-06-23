@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import mt.spring.core.delayexecute.AbstractDelayExecutor;
+import mt.spring.core.delayexecute.AbstractDelayExecuteService;
 import mt.utils.common.Assert;
 import mt.utils.common.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -22,13 +22,13 @@ import java.util.function.Consumer;
  * @Date 2024/6/18
  */
 @Slf4j
-public class RedisDelayExecutor extends AbstractDelayExecutor {
+public class RedisDelayExecuteService extends AbstractDelayExecuteService {
 	@Getter
 	private final String key;
 	private final RedisService redisService;
 	private final String cronKey;
 	
-	public RedisDelayExecutor(RedisService redisService) {
+	public RedisDelayExecuteService(RedisService redisService) {
 		String key = redisService.getRedisPrefix() + ":delay-execute";
 		this.key = key;
 		log.info("RedisDelayExecutor init,redisKey: {}", key);

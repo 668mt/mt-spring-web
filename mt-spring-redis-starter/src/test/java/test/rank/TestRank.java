@@ -1,8 +1,7 @@
 package test.rank;
 
-import mt.spring.core.delayexecute.DelayExecutor;
 import mt.spring.core.rank.RankMember;
-import mt.spring.redis.service.RedisDelayExecutor;
+import mt.spring.redis.service.RedisDelayExecuteService;
 import mt.spring.redis.service.RedisRankService;
 import org.junit.After;
 import org.junit.Assert;
@@ -23,7 +22,7 @@ public class TestRank extends AbstractRedisTest {
 	
 	@Before
 	public void before() {
-		RedisDelayExecutor redisDelayExecutor = new RedisDelayExecutor(redisService);
+		RedisDelayExecuteService redisDelayExecutor = new RedisDelayExecuteService(redisService);
 		rankService = new RedisRankService("test", redisService, redisDelayExecutor, 2, TimeUnit.SECONDS);
 		rankService.clear(rankKey);
 	}
@@ -48,7 +47,7 @@ public class TestRank extends AbstractRedisTest {
 		Assert.assertEquals(0, topMembers.get(0).getScore().compareTo(3.0));
 		System.out.println(rankService.getMembersPage(rankKey, 2, top));
 		Thread.sleep(2000);
-		RedisDelayExecutor delayExecutor = (RedisDelayExecutor) rankService.getDelayExecutor();
+		RedisDelayExecuteService delayExecutor = (RedisDelayExecuteService) rankService.getDelayExecuteService();
 		delayExecutor.pull();
 		System.out.println(rankService.getTopMembers(rankKey, top));
 	}

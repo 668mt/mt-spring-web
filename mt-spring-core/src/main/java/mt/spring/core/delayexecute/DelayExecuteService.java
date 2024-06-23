@@ -8,7 +8,7 @@ import java.util.function.Consumer;
  * @Author Martin
  * @Date 2024/6/23
  */
-public interface DelayExecutor {
+public interface DelayExecuteService {
 	/**
 	 * 注册延迟执行
 	 *

@@ -1,6 +1,6 @@
 package test.delayexecute;
 
-import mt.spring.redis.service.RedisDelayExecutor;
+import mt.spring.redis.service.RedisDelayExecuteService;
 import org.junit.Test;
 import test.redis.AbstractRedisTest;
 
@@ -12,7 +12,7 @@ public class TestDelayExecute extends AbstractRedisTest {
 	
 	@Test
 	public void test() throws InterruptedException {
-		RedisDelayExecutor redisDelayExecutor = new RedisDelayExecutor(redisService);
+		RedisDelayExecuteService redisDelayExecutor = new RedisDelayExecuteService(redisService);
 		String taskId = "test";
 		redisDelayExecutor.register(taskId, System.out::println);
 		redisDelayExecutor.addTask(taskId, "test1", System.currentTimeMillis() + 1000);

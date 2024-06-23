@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  * @Author Martin
  * @Date 2024/6/18
  */
-public abstract class AbstractDelayExecutor implements DelayExecutor {
+public abstract class AbstractDelayExecuteService implements DelayExecuteService {
 	protected final Map<String, Consumer<String>> taskConsumerMap = new HashMap<>();
 	
 	@Override
