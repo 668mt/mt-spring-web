@@ -60,6 +60,4 @@ public @interface Filter {
 	String sql() default "";
 	
 	Class<? extends CustomConditionFilterParser<?, ?>> customParserClass() default DefaultCustomConditionFilterParser.class;
-
-//	String condition() default "true";
 }

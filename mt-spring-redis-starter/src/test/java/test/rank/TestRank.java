@@ -40,7 +40,7 @@ public class TestRank extends AbstractRedisTest {
 		rankService.addScore(rankKey, "张三", 1);
 		rankService.addScore(rankKey, "刘五", 1);
 		rankService.addScore(rankKey, "刘五", 1);
-		List<RankMember> topMembers = rankService.getTopMembers(rankKey, top);
+		List<RankMember> topMembers = rankService.getTopMembersWithRank(rankKey, top);
 		System.out.println(topMembers);
 		Assert.assertEquals(top, topMembers.size());
 		Assert.assertEquals(topMembers.get(0).getMember(), "张三");

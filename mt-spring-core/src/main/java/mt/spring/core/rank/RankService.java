@@ -27,7 +27,9 @@ public interface RankService {
 	 * @param top top
 	 * @return 成员
 	 */
-	List<RankMember> getTopMembers(@NotNull String key, int top);
+	List<String> getTopMembers(@NotNull String key, int top);
+	
+	List<RankMember> getTopMembersWithRank(@NotNull String key, int top);
 	
 	/**
 	 * 分页查询获取排名

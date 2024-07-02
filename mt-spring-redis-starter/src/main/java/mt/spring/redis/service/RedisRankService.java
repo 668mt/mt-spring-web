@@ -86,7 +86,16 @@ public class RedisRankService implements RankService {
 	}
 	
 	@Override
-	public List<RankMember> getTopMembers(@NotNull String key, int top) {
+	public List<String> getTopMembers(@NotNull String key, int top) {
+		List<RankMember> topMembersWithRank = getTopMembersWithRank(key, top);
+		if (CollectionUtils.isEmpty(topMembersWithRank)) {
+			return new ArrayList<>();
+		}
+		return topMembersWithRank.stream().map(RankMember::getMember).collect(Collectors.toList());
+	}
+	
+	@Override
+	public List<RankMember> getTopMembersWithRank(@NotNull String key, int top) {
 		PageInfo<RankMember> page = getMembersPage(key, 1, top, false, false);
 		return page.getList();
 	}
