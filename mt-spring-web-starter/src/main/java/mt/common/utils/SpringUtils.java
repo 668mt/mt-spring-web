@@ -1,7 +1,9 @@
 package mt.common.utils;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Lazy;
@@ -80,6 +82,22 @@ public final class SpringUtils implements ApplicationContextAware, DisposableBea
 	 */
 	public static <T> T getBean(@NotNull Class<T> type) {
 		return applicationContext.getBean(type);
+	}
+	
+	/**
+	 * 获取可选的实例
+	 *
+	 * @param type
+	 * @param <T>
+	 * @return
+	 */
+	@Nullable
+	public static <T> T getOptionalBean(@NotNull Class<T> type) {
+		try {
+			return applicationContext.getBean(type);
+		} catch (NoSuchBeanDefinitionException noSuchBeanDefinitionException) {
+			return null;
+		}
 	}
 	
 	/**

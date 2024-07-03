@@ -9,6 +9,6 @@ import java.util.List;
  * @Author Martin
  * @Date 2021/9/25
  */
-public interface CustomConditionFilterParser<ConditionType, FieldType> {
-	List<Filter> parseFilters(@NotNull ConditionType condition, @Nullable FieldType fieldValue);
+public interface ConditionFilterParser<FieldType> {
+	List<Filter> parseFilters(@NotNull Object condition, @Nullable FieldType fieldValue, @Nullable String[] params);
 }

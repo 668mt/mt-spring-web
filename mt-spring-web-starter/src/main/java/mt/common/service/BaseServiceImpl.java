@@ -3,6 +3,7 @@ package mt.common.service;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import lombok.SneakyThrows;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
@@ -10,8 +11,8 @@ import mt.common.entity.PageCondition;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.MyBatisUtils;
 import mt.common.starter.message.utils.MessageUtils;
-import mt.common.tkmapper.CustomConditionFilterParser;
-import mt.common.tkmapper.DefaultCustomConditionFilterParser;
+import mt.common.tkmapper.ConditionFilterParser;
+import mt.common.tkmapper.DefaultConditionFilterParser;
 import mt.common.tkmapper.Filter.Operator;
 import mt.common.utils.SpringUtils;
 import mt.utils.ReflectUtils;
@@ -28,12 +29,10 @@ import tk.mybatis.mapper.common.BaseMapper;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static mt.common.utils.EntityUtils.getIdFilters;
@@ -100,89 +99,81 @@ public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationC
 		return doPage(pageCondition.getPageNum(), pageCondition.getPageSize(), pageCondition.getOrderBy(), () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), pageCondition.isAllowSelectAll());
 	}
 	
+	@SneakyThrows
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public List<mt.common.tkmapper.Filter> parseCondition(Object condition) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
-		List<String> condition2 = ReflectUtils.getValue(condition, "condition", List.class);
-		if (CollectionUtils.isNotEmpty(condition2)) {
-			for (String sql : condition2) {
-				filters.add(new mt.common.tkmapper.Filter(sql, Operator.condition));
-			}
+		if (condition == null) {
+			return filters;
 		}
-		if (condition != null) {
-			List<Field> fields = ReflectUtils.findAllFields(condition.getClass(), Filter.class);
-			for (Field field : fields) {
-				field.setAccessible(true);
-				//http参数值
-				Object value;
-				try {
-					value = field.get(condition);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException(e);
-				}
-				if (value instanceof List) {
-					if (CollectionUtils.isEmpty((List<?>) value)) {
-						continue;
-					}
-				}
-				if (value instanceof Object[]) {
-					if (ArrayUtils.isEmpty((Object[]) value)) {
-						continue;
-					}
-				}
-				Filter annotation = AnnotatedElementUtils.getMergedAnnotation(field, Filter.class);
-				Assert.notNull(annotation, "filter注解不能为空");
-				Class<? extends CustomConditionFilterParser<?, ?>> customParserClass = annotation.customParserClass();
-				if (!DefaultCustomConditionFilterParser.class.equals(customParserClass)) {
-					CustomConditionFilterParser parser = SpringUtils.getBean(customParserClass);
-					List<mt.common.tkmapper.Filter> list = parser.parseFilters(condition, value);
-					if (CollectionUtils.isNotEmpty(list)) {
-						filters.addAll(list);
-					}
+		List<Field> fields = ReflectUtils.findAllFields(condition.getClass(), Filter.class);
+		for (Field field : fields) {
+			field.setAccessible(true);
+			//http参数值
+			Object value;
+			try {
+				value = field.get(condition);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+			if (value instanceof List) {
+				if (CollectionUtils.isEmpty((List<?>) value)) {
 					continue;
 				}
+			}
+			if (value instanceof Object[]) {
+				if (ArrayUtils.isEmpty((Object[]) value)) {
+					continue;
+				}
+			}
+			Filter annotation = AnnotatedElementUtils.getMergedAnnotation(field, Filter.class);
+			Assert.notNull(annotation, "filter注解不能为空");
+			
+			//自定义解析器
+			Class<? extends ConditionFilterParser<?>> parserClass = annotation.parserClass();
+			if (!DefaultConditionFilterParser.class.equals(parserClass)) {
+				ConditionFilterParser parser = SpringUtils.getOptionalBean(parserClass);
+				if (parser == null) {
+					Constructor<? extends ConditionFilterParser<?>> constructor = parserClass.getConstructor();
+					parser = constructor.newInstance();
+				}
+				List<mt.common.tkmapper.Filter> list = parser.parseFilters(condition, value, annotation.parserParams());
+				if (CollectionUtils.isNotEmpty(list)) {
+					filters.addAll(list);
+				}
+				continue;
+			}
+			
+			if (value != null && !(value + "").trim().isEmpty()) {
+				//获取注解
+				String column = StringUtils.isNotBlank(annotation.column()) ? annotation.column() : MapperColumnUtils.parseColumn(field.getName());
+				Operator operator = annotation.operator();
+				String prefix = annotation.prefix();
+				String suffix = annotation.suffix();
+				Class<? extends Converter<?>> converterClass = annotation.converter();
 				
-				if (value != null && !(value + "").trim().isEmpty()) {
-					//获取注解
-					String column = StringUtils.isNotBlank(annotation.column()) ? annotation.column() : MapperColumnUtils.parseColumn(field.getName());
-					Operator operator = annotation.operator();
-					String prefix = annotation.prefix();
-					String suffix = annotation.suffix();
-					Class<? extends Converter<?>> converterClass = annotation.converter();
-					
-					switch (operator) {
-						case condition:
-							String sql = annotation.sql();
-							if (StringUtils.isNotBlank(sql)) {
-								filters.add(new mt.common.tkmapper.Filter(MessageUtils.replaceVariable(sql, condition), operator));
-							} else {
-								//替换变量
-								filters.add(new mt.common.tkmapper.Filter(MessageUtils.replaceVariable(column, condition), operator, value));
-							}
-							break;
-						default:
-							Map<String, ? extends Converter<?>> beansOfType = SpringUtils.getBeansOfType(converterClass);
-							Converter converter;
-							if (!beansOfType.isEmpty()) {
-								converter = beansOfType.values().iterator().next();
-							} else {
-								try {
-									converter = converterClass.newInstance();
-								} catch (Exception e) {
-									throw new RuntimeException(e);
-								}
-							}
-							value = converter.convert(value);
-							if (StringUtils.isNotBlank(prefix)) {
-								value = prefix + value;
-							}
-							if (StringUtils.isNotBlank(suffix)) {
-								value = value + suffix;
-							}
-							filters.add(new mt.common.tkmapper.Filter(column, operator, value));
-							break;
+				if (operator == Operator.condition) {
+					String sql = annotation.sql();
+					if (StringUtils.isNotBlank(sql)) {
+						filters.add(new mt.common.tkmapper.Filter(MessageUtils.replaceVariable(sql, condition), operator));
+					} else {
+						//替换变量
+						filters.add(new mt.common.tkmapper.Filter(MessageUtils.replaceVariable(column, condition), operator, value));
 					}
+				} else {
+					Converter converter = SpringUtils.getOptionalBean(converterClass);
+					if (converter == null) {
+						converter = converterClass.getConstructor().newInstance();
+					}
+					value = converter.convert(value);
+					if (StringUtils.isNotBlank(prefix)) {
+						value = prefix + value;
+					}
+					if (StringUtils.isNotBlank(suffix)) {
+						value = value + suffix;
+					}
+					filters.add(new mt.common.tkmapper.Filter(column, operator, value));
 				}
 			}
 		}

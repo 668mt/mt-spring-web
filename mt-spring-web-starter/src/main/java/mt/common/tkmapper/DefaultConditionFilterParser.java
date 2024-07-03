@@ -9,9 +9,9 @@ import java.util.List;
  * @Author Martin
  * @Date 2021/9/25
  */
-public class DefaultCustomConditionFilterParser implements CustomConditionFilterParser<Object, Object> {
+public class DefaultConditionFilterParser implements ConditionFilterParser<Object> {
 	@Override
-	public List<Filter> parseFilters(@NotNull Object condition, @Nullable Object fieldValue) {
+	public List<Filter> parseFilters(@NotNull Object condition, @Nullable Object fieldValue, @Nullable String[] params) {
 		return null;
 	}
 }

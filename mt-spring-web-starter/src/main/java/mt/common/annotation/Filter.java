@@ -3,8 +3,8 @@ package mt.common.annotation;
 
 import mt.common.converter.Converter;
 import mt.common.converter.DefaultConverter;
-import mt.common.tkmapper.CustomConditionFilterParser;
-import mt.common.tkmapper.DefaultCustomConditionFilterParser;
+import mt.common.tkmapper.ConditionFilterParser;
+import mt.common.tkmapper.DefaultConditionFilterParser;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -57,7 +57,19 @@ public @interface Filter {
 	 */
 	Class<? extends Converter<?>> converter() default DefaultConverter.class;
 	
+	/**
+	 * 只有当operator为condition时有效
+	 *
+	 * @return sql
+	 */
 	String sql() default "";
 	
-	Class<? extends CustomConditionFilterParser<?, ?>> customParserClass() default DefaultCustomConditionFilterParser.class;
+	Class<? extends ConditionFilterParser<?>> parserClass() default DefaultConditionFilterParser.class;
+	
+	/**
+	 * 解析器入参
+	 *
+	 * @return
+	 */
+	String[] parserParams() default {};
 }
