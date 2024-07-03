@@ -114,14 +114,20 @@ public class MessageUtils {
 		if (group != null) {
 			groupList = Arrays.stream(group).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 		}
+		//待批量处理的字段
 		Map<BatchMessageKey, List<BatchHandleTarget>> batchHandleTargetMap = new HashMap<>();
 		try {
 			MessageRecursiveParams params = new MessageRecursiveParams(object);
 			params.setGroup(groupList);
 			params.setBatchHandleTarget(batchHandleTargetMap);
 			Object value = messageRecursive(params, includeFields);
+			//进行批量处理
 			for (Map.Entry<BatchMessageKey, List<BatchHandleTarget>> batchMessageKeyListEntry : batchHandleTargetMap.entrySet()) {
-				dealBatchMessage(params, batchMessageKeyListEntry.getKey(), batchMessageKeyListEntry.getValue());
+				List<Object> values = dealBatchMessage(batchMessageKeyListEntry.getKey(), batchMessageKeyListEntry.getValue());
+				if (CollectionUtils.isNotEmpty(values)) {
+					//继续处理
+					messageWithGroup(values, group, includeFields);
+				}
 			}
 			return value;
 		} catch (Exception e) {
@@ -370,7 +376,9 @@ public class MessageUtils {
 	}
 	
 	@SneakyThrows
-	private void dealBatchMessage(MessageRecursiveParams messageRecursiveParams, BatchMessageKey batchMessageKey, List<BatchHandleTarget> batchHandleTargets) {
+	private List<Object> dealBatchMessage(BatchMessageKey batchMessageKey, List<BatchHandleTarget> batchHandleTargets) {
+		//所有handler处理的对象
+		List<Object> results = new ArrayList<>();
 		Class<? extends BatchMessageHandler<?, ?>> handlerClass = batchMessageKey.getHandlerClass();
 		String[] params = batchMessageKey.getParams();
 		Set set = new HashSet<>();
@@ -395,8 +403,12 @@ public class MessageUtils {
 				}
 				Field field = batchHandleTarget.getField();
 				field.setAccessible(true);
-				field.set(batchHandleTarget.getTarget(), messageRecursive(messageRecursiveParams.copy(value)));
+				//递归处理
+				results.add(value);
+				//先设置引用，下一步再继续处理
+				field.set(batchHandleTarget.getTarget(), value);
 			}
 		}
+		return results;
 	}
 }
