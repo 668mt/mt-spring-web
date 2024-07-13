@@ -214,11 +214,11 @@ public class FfmpegUtils {
 			ffmpeg.addArgument("image2");
 			ffmpeg.addArgument("-vframes");
 			ffmpeg.addArgument("1");
-			if (finalWidth > 0 && finalHeight > 0) {
+			if (finalWidth > 0 || finalHeight > 0) {
 				ffmpeg.addArgument("-vf");
 				ffmpeg.addArgument("scale=" + finalWidth + ":" + finalHeight);
 			}
-			ffmpeg.addArgument("-qscale");
+			ffmpeg.addArgument("-q:v");
 			ffmpeg.addArgument("1");
 			ffmpeg.addArgument("-an");
 			ffmpeg.addArgument("-y");

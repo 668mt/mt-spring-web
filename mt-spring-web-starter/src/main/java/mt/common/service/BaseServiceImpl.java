@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.common.BaseMapper;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
