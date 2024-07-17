@@ -9,6 +9,7 @@ import mt.utils.ReflectUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -204,51 +205,63 @@ public class InterceptorHelper {
 	
 	@SuppressWarnings("rawtypes")
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
-		if (entity instanceof DefaultSqlSession.StrictMap) {
-			DefaultSqlSession.StrictMap strictMap = (DefaultSqlSession.StrictMap) entity;
+		if (entity instanceof MapperMethod.ParamMap<?> paramMap) {
+			Object list = paramMap.get("list");
+			if (list instanceof Collection<?> collection) {
+				for (Object o : collection) {
+					setFieldsValue(o, annotation, force, valueGenerator);
+				}
+			}
+			return;
+		}
+		
+		if (entity instanceof DefaultSqlSession.StrictMap<?> strictMap) {
 			Object o = strictMap.get("collection");
-			if (o instanceof Collection) {
-				Collection collection = (Collection) o;
+			if (o instanceof Collection<?> collection) {
 				for (Object o1 : collection) {
 					setFieldsValue(o1, annotation, force, valueGenerator);
 				}
 			}
 			Object l = strictMap.get("list");
-			if (l instanceof List) {
-				List list = (List) l;
+			if (l instanceof List list) {
 				for (Object o1 : list) {
 					setFieldsValue(o1, annotation, force, valueGenerator);
 				}
 			}
-		} else if (entity instanceof Collection) {
+			return;
+		}
+		
+		if (entity instanceof Collection) {
 			Collection collection = (Collection) entity;
 			for (Object o : collection) {
 				setFieldsValue(o, annotation, force, valueGenerator);
 			}
-		} else {
-			List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
-			if (CollectionUtils.isEmpty(createdByFields)) {
-				return;
+			return;
+		}
+		
+		//单个对象
+		List<Field> createdByFields = ReflectUtils.findAllFields(entity.getClass(), annotation);
+		if (CollectionUtils.isEmpty(createdByFields)) {
+			return;
+		}
+		//数据库对象
+		for (Field field : createdByFields) {
+			if (!field.getType().isAssignableFrom(valueGenerator.getTClass())) {
+				continue;
 			}
-			//数据库对象
-			for (Field field : createdByFields) {
-				if (!field.getType().isAssignableFrom(valueGenerator.getTClass())) {
-					continue;
-				}
-				field.setAccessible(true);
-				Object fieldValue = field.get(entity);
-				if (!force && fieldValue != null) {
-					continue;
-				}
-				Object value = valueGenerator.getValue(field);
-				if (value == null) {
-					continue;
-				}
-				try {
-					field.set(entity, ConvertUtils.convert(value, field.getType()));
-				} catch (Exception e) {
-					log.error(e.getMessage(), e);
-				}
+			field.setAccessible(true);
+			Object fieldValue = field.get(entity);
+			if (!force && fieldValue != null) {
+				continue;
+			}
+			Object value = valueGenerator.getValue(field);
+			if (value == null) {
+				continue;
+			}
+			try {
+				field.set(entity, ConvertUtils.convert(value, field.getType()));
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
 			}
 		}
 	}
