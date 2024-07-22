@@ -2,6 +2,7 @@ package mt.common.config;
 
 import lombok.extern.slf4j.Slf4j;
 import mt.utils.BasePackageUtils;
+import mt.utils.common.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -16,10 +17,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import tk.mybatis.mapper.util.Assert;
 import tk.mybatis.spring.annotation.MapperScan;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -53,8 +51,9 @@ public class MtWebAutoConfiguration implements InitializingBean {
 			if (StringUtils.isBlank(commonProperties.getBasePackage())) {
 				commonProperties.setBasePackage(basePackage);
 			}
-			if (ArrayUtils.isEmpty(commonProperties.getGenerateEntityPackages())) {
-				commonProperties.setGenerateEntityPackages(new String[]{basePackage + ".entity"});
+			List<String> packages = commonProperties.getGenerator().getPackages();
+			if (CollectionUtils.isEmpty(packages)) {
+				commonProperties.getGenerator().setPackages(List.of(basePackage + ".entity"));
 			}
 			break;
 		}
@@ -95,9 +94,10 @@ public class MtWebAutoConfiguration implements InitializingBean {
 			commonProperties.setDaoPackage(daoPackageList.toArray(new String[0]));
 		}
 		
+		List<String> packages = commonProperties.getGenerator().getPackages();
 		log.info("当前服务basePackage:{}", commonProperties.getBasePackage());
-		if (commonProperties.getGenerateEntityPackages() != null) {
-			log.info("当前服务generateEntityPackages:{}", Arrays.toString(commonProperties.getGenerateEntityPackages()));
+		if (CollectionUtils.isNotEmpty(commonProperties.getGenerator().getPackages())) {
+			log.info("当前服务generateEntityPackages:{}", packages);
 		}
 		if (commonProperties.getDaoPackage() != null) {
 			String[] daoPackage = commonProperties.getDaoPackage();

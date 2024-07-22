@@ -205,15 +205,6 @@ public class InterceptorHelper {
 	
 	@SuppressWarnings("rawtypes")
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
-		if (entity instanceof MapperMethod.ParamMap<?> paramMap) {
-			Object list = paramMap.get("list");
-			if (list instanceof Collection<?> collection) {
-				for (Object o : collection) {
-					setFieldsValue(o, annotation, force, valueGenerator);
-				}
-			}
-			return;
-		}
 		
 		if (entity instanceof DefaultSqlSession.StrictMap<?> strictMap) {
 			Object o = strictMap.get("collection");
@@ -235,6 +226,21 @@ public class InterceptorHelper {
 			Collection collection = (Collection) entity;
 			for (Object o : collection) {
 				setFieldsValue(o, annotation, force, valueGenerator);
+			}
+			return;
+		}
+		
+		if (entity instanceof MapperMethod.ParamMap<?> paramMap) {
+			if (paramMap.containsKey("list")) {
+				Object list = paramMap.get("list");
+				if (list instanceof Collection<?> collection) {
+					for (Object o : collection) {
+						setFieldsValue(o, annotation, force, valueGenerator);
+					}
+				}
+			}else if(paramMap.containsKey("record")){
+				Object record = paramMap.get("record");
+				setFieldsValue(record, annotation, force, valueGenerator);
 			}
 			return;
 		}

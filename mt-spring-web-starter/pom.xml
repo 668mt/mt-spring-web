@@ -9,19 +9,15 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
+    <version>${mt.version.web-starter}</version>
 
     <artifactId>mt-spring-web-starter</artifactId>
-    <dependencyManagement>
-        <dependencies>
-
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>com.github.668mt.web</groupId>
             <artifactId>mt-spring-core</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

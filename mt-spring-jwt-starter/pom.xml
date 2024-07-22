@@ -9,7 +9,7 @@
         <version>3.0</version>
     </parent>
     <artifactId>mt-spring-jwt-starter</artifactId>
-    <version>${mt.jwt.version}</version>
+    <version>${mt.version.jwt}</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>mt.spring.mtools</groupId>
             <artifactId>base-tools</artifactId>
-            <version>${mt-spring-web-starter.version}</version>
+            <version>${mt.version.base-tools}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

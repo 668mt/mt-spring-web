@@ -8,6 +8,7 @@ import mt.common.mybatis.event.BeforeInitEvent;
 import mt.common.service.DataLockService;
 import mt.generator.mybatis.utils.GenerateHelper;
 import mt.generator.mybatis.utils.IParser;
+import mt.utils.common.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import tk.mybatis.mapper.autoconfigure.MybatisProperties;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,7 +51,7 @@ public class Generator {
 		if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
 			return;
 		}
-		if (!commonProperties.getGeneratorEnable()) {
+		if (!Boolean.TRUE.equals(commonProperties.getGenerator().getEnabled())) {
 			return;
 		}
 		if (loaded.get()) {
@@ -66,15 +68,17 @@ public class Generator {
 		driverClass = dataSourceProperties.getDriverClassName();
 		user = dataSourceProperties.getUsername();
 		password = dataSourceProperties.getPassword();
-		entityPackages = commonProperties.getGenerateEntityPackages();
-		if (entityPackages == null || entityPackages.length == 0) {
+		List<String> packages = commonProperties.getGenerator().getPackages();
+		if (CollectionUtils.isEmpty(packages)) {
 			entityPackages = new String[]{mybatisProperties.getTypeAliasesPackage()};
+		} else {
+			entityPackages = packages.toArray(new String[0]);
 		}
 		
 		applicationEventPublisher.publishEvent(new BeforeInitEvent(this));
 		
 		//初始化
-		log.info("初始化...");
+		log.info("Generator初始化，创建表的包名：{}", Arrays.toString(entityPackages));
 		//初始化完成事件
 		AfterInitEvent afterInitEvent = new AfterInitEvent(this);
 		

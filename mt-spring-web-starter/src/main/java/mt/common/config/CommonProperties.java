@@ -1,15 +1,18 @@
 package mt.common.config;
 
 import lombok.Data;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * @Author Martin
  * @Date 2018-9-7
  */
-@ConfigurationProperties(prefix = "project")
+@ConfigurationProperties(prefix = "mt.config")
 @Data
 @Component
 public class CommonProperties {
@@ -17,10 +20,8 @@ public class CommonProperties {
 	private String basePackage;
 	private String[] daoPackage;
 	
-	/**
-	 * 创建表的包名
-	 */
-	private String[] generateEntityPackages;
+	@NestedConfigurationProperty
+	private GeneratorConfig generator = new GeneratorConfig();
 	/**
 	 * 主键管理的表名
 	 */
@@ -33,15 +34,16 @@ public class CommonProperties {
 	private String loggingRedisLevel = "ERROR";
 	
 	/**
-	 * 是否启用生成器
-	 */
-	private Boolean generatorEnable = true;
-	
-	/**
 	 * 信息处理
 	 */
 	@NestedConfigurationProperty
 	private Messager messager = new Messager();
+	
+	@Data
+	public static class GeneratorConfig {
+		private Boolean enabled;
+		private List<String> packages;
+	}
 	
 	@Data
 	public static class Messager {
