@@ -11,14 +11,14 @@ import java.util.List;
  * @Author Martin
  * @Date 2024/4/20
  */
-public interface EntityService<Entity, EntityDTO, EntityCondition> {
+public interface EntityService<EntityDO, EntityVO, EntityDTO, EntityCondition> {
 	@Transactional(rollbackFor = Exception.class)
-	Entity addOrUpdate(@NotNull EntityDTO entityDTO);
+	EntityVO addOrUpdate(@NotNull EntityDTO entityDTO);
 	
-	PageInfo<Entity> findPage(@Nullable EntityCondition condition);
+	PageInfo<EntityVO> findPage(@Nullable EntityCondition condition);
 	
-	Entity findById(Long id);
+	EntityVO findById(@NotNull Long id);
 	
 	@Transactional(rollbackFor = Exception.class)
-	void deletes(List<Long> ids);
+	void deletes(@NotNull List<Long> ids);
 }

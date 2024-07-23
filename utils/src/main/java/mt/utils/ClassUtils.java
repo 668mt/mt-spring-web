@@ -1,8 +1,11 @@
 package mt.utils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -183,9 +186,9 @@ public class ClassUtils {
 			//如果是目录 则继续扫描
 			if (file.isDirectory()) {
 				findAndAddClassesInPackageByFile(packageName + "." + file.getName(),
-						file.getAbsolutePath(),
-						recursive,
-						classes);
+					file.getAbsolutePath(),
+					recursive,
+					classes);
 			} else {
 				//如果是java类文件 去掉后面的.class 只留下类名
 				String className = file.getName().substring(0, file.getName().length() - 6);
@@ -194,4 +197,36 @@ public class ClassUtils {
 			}
 		}
 	}
-}  
+	
+	/**
+	 * 查找指定类的泛型参数
+	 *
+	 * @param clazz                   指定类
+	 * @param targetGenericSuperclass 目标泛型父类
+	 * @return 泛型参数
+	 */
+	public static ParameterizedType findGenericSuperclass(@NotNull Class<?> clazz, @NotNull Class<?> targetGenericSuperclass) {
+		while (clazz != null) {
+			if (targetGenericSuperclass.equals(clazz.getSuperclass()) && clazz.getGenericSuperclass() instanceof ParameterizedType) {
+				return (ParameterizedType) clazz.getGenericSuperclass();
+			}
+			clazz = clazz.getSuperclass();
+		}
+		return null;
+	}
+	
+	public static ParameterizedType findGenericSuperInterface(@NotNull Class<?> clazz, @NotNull Class<?> targetGenericInterfaceClass) {
+		while (clazz != null) {
+			Type[] interfaces = clazz.getGenericInterfaces();
+			for (Type anInterface : interfaces) {
+				if (anInterface instanceof ParameterizedType parameterizedType) {
+					if (targetGenericInterfaceClass.equals(parameterizedType.getRawType())) {
+						return parameterizedType;
+					}
+				}
+			}
+			clazz = clazz.getSuperclass();
+		}
+		return null;
+	}
+}

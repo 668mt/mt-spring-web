@@ -13,29 +13,29 @@ import java.util.List;
  * @Author Martin
  * @Date 2024/4/19
  */
-public abstract class BaseController<Entity, EntityDTO, EntityCondition> {
+public abstract class BaseController<EntityDO, EntityVO, EntityDTO, EntityCondition> {
 	
-	protected final EntityService<Entity, EntityDTO, EntityCondition> entityService;
+	protected final EntityService<EntityDO, EntityVO, EntityDTO, EntityCondition> entityService;
 	
-	public BaseController(EntityService<Entity, EntityDTO, EntityCondition> entityService) {
+	public BaseController(EntityService<EntityDO, EntityVO, EntityDTO, EntityCondition> entityService) {
 		this.entityService = entityService;
 	}
 	
 	@GetMapping
 	@Operation(summary = "获取列表")
-	public ResResult<PageInfo<Entity>> list(EntityCondition condition) {
+	public ResResult<PageInfo<EntityVO>> list(EntityCondition condition) {
 		return ResResult.success(entityService.findPage(condition));
 	}
 	
 	@PostMapping
 	@Operation(summary = "新增或修改", description = "id为空时新增，否则修改")
-	public ResResult<Entity> addOrUpdate(@RequestBody @Validated EntityDTO entityDTO) {
+	public ResResult<EntityVO> addOrUpdate(@RequestBody @Validated EntityDTO entityDTO) {
 		return ResResult.success(entityService.addOrUpdate(entityDTO));
 	}
 	
 	@GetMapping("/{id}")
 	@Operation(summary = "根据id获取")
-	public ResResult<Entity> findById(@PathVariable Long id) {
+	public ResResult<EntityVO> findById(@PathVariable Long id) {
 		return ResResult.success(entityService.findById(id));
 	}
 	
