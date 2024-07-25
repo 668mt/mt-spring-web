@@ -1,10 +1,12 @@
 package mt.common.mybatis.mapper;
 
+import mt.common.mybatis.entity.GroupCount;
 import mt.common.mybatis.sqlProvider.BaseSelectProvider;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.SelectProvider;
 import tk.mybatis.mapper.annotation.RegisterMapper;
 import tk.mybatis.mapper.common.Mapper;
+import tk.mybatis.mapper.entity.Example;
 
 import java.util.List;
 
@@ -47,4 +49,6 @@ public interface BaseMapper<T> extends Mapper<T> {
 	@Deprecated
 	List<T> findList(@Param("columnName") String columnName, @Param("value") Object value);
 	
+	@SelectProvider(type = BaseSelectProvider.class, method = "dynamicSQL")
+	List<GroupCount> findGroupCounts(@Param("example") Example example, @Param("key") String key);
 }

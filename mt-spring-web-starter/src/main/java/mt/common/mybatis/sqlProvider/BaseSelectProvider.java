@@ -1,16 +1,25 @@
 package mt.common.mybatis.sqlProvider;
 
+import mt.common.mybatis.entity.GroupCount;
+import mt.common.mybatis.utils.SqlProviderUtils;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.ResultMap;
+import org.apache.ibatis.reflection.MetaObject;
+import tk.mybatis.mapper.entity.EntityTable;
+import tk.mybatis.mapper.mapperhelper.EntityHelper;
 import tk.mybatis.mapper.mapperhelper.MapperHelper;
 import tk.mybatis.mapper.mapperhelper.MapperTemplate;
 import tk.mybatis.mapper.mapperhelper.SqlHelper;
+import tk.mybatis.mapper.util.MetaObjectUtil;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 自定义公用方法
  *
  * @author Martin
- * @ClassName: MySqlProvider
- * @Description:
  * @date 2017-10-23 下午7:15:59
  */
 public class BaseSelectProvider extends MapperTemplate {
@@ -77,7 +86,19 @@ public class BaseSelectProvider extends MapperTemplate {
 		sql.append("')} = #{value}");
 		sql.append(SqlHelper.orderByDefault(entityClass));
 		return sql.toString();
+	}
+	
+	public String findGroupCounts(MappedStatement ms) {
+		Class<?> entityClass = getEntityClass(ms);
 		
+		return "select ${@mt.common.mybatis.utils.CheckUtils@mustOneField(" +
+			"@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(key,'" + entityClass.getName() + "')" +
+			")} as field, count(0) as value" +
+			SqlHelper.fromTable(entityClass, tableName(entityClass)) +
+			SqlProviderUtils.exampleWhereClause("example") +
+			"group by ${@mt.common.mybatis.utils.CheckUtils@mustOneField(" +
+			"@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(key,'" + entityClass.getName() + "')" +
+			")}";
 	}
 	
 }

@@ -3,6 +3,7 @@ package mt.common.service;
 
 import com.github.pagehelper.PageInfo;
 import mt.common.entity.PageCondition;
+import mt.common.mybatis.entity.GroupCount;
 import mt.common.tkmapper.Filter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -209,4 +210,13 @@ public interface BaseService<T> {
 	 * @param consumer  消费回调
 	 */
 	void batchConsume(@NotNull List<Filter> filters, int batchSize, @Nullable String orderBy, @NotNull Consumer<List<T>> consumer);
+	
+	/**
+	 * 分组统计
+	 *
+	 * @param groupField 分组字段
+	 * @param filters    过滤条件
+	 * @return 统计结果
+	 */
+	List<GroupCount> findGroupCounts(@NotNull String groupField, @Nullable List<Filter> filters);
 }

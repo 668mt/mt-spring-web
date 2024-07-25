@@ -8,6 +8,7 @@ import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.BaseCondition;
 import mt.common.entity.PageCondition;
+import mt.common.mybatis.entity.GroupCount;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.MyBatisUtils;
 import mt.common.starter.message.utils.MessageUtils;
@@ -33,7 +34,10 @@ import javax.persistence.Id;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static mt.common.utils.EntityUtils.getIdFilters;
@@ -471,5 +475,11 @@ public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationC
 				break;
 			}
 		}
+	}
+	
+	@Override
+	public List<GroupCount> findGroupCounts(@NotNull String groupField, @Nullable List<mt.common.tkmapper.Filter> filters) {
+		Example example = MyBatisUtils.createExample(getEntityClass(), filters);
+		return getBaseMapper().findGroupCounts(example, groupField);
 	}
 }
