@@ -54,6 +54,8 @@ public interface BaseService<T> {
 	 */
 	T findById(Object record);
 	
+	T findById(Object record, boolean forUpdate);
+	
 	/**
 	 * 查询一个
 	 *

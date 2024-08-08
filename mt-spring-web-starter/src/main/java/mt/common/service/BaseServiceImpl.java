@@ -294,6 +294,12 @@ public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationC
 	}
 	
 	@Override
+	public T findById(Object record, boolean forUpdate) {
+		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
+		return findOneByFilters(idFilters, forUpdate);
+	}
+	
+	@Override
 	public T findOne(String column, Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(column, Operator.eq, value));
