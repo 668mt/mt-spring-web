@@ -20,7 +20,6 @@
         <!--        <module>test-processor</module>-->
         <module>mt-spring-core</module>
         <module>mt-spring-redis-starter</module>
-        <module>test-module</module>
     </modules>
 
     <parent>
