@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.MDC;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**

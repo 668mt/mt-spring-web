@@ -53,7 +53,9 @@ public class WebRedisConfiguration {
 		objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 		objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		return new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+		Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+		jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+		return jackson2JsonRedisSerializer;
 	}
 	
 	@Bean

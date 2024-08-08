@@ -1,5 +1,6 @@
 package mt.spring.redis.service;
 
+import lombok.Getter;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
@@ -10,10 +11,13 @@ import java.util.concurrent.TimeUnit;
  * @Author Martin
  * @Date 2020/12/17
  */
-public record LockService(RedissonClient redissonClient) {
+@Getter
+public class LockService {
 	
-	public RedissonClient getRedissonClient() {
-		return redissonClient;
+	private final RedissonClient redissonClient;
+	
+	public LockService(RedissonClient redissonClient) {
+		this.redissonClient = redissonClient;
 	}
 	
 	public interface LockCallbackWithResult<T> {

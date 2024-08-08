@@ -26,7 +26,8 @@ public class BatchMessageKey {
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
-		} else if (obj instanceof BatchMessageKey other) {
+		} else if (obj instanceof BatchMessageKey ) {
+			BatchMessageKey other = (BatchMessageKey) obj;
 			String paramsString = params == null ? "" : String.join(",", params);
 			String otherParamsString = other.params == null ? "" : String.join(",", other.params);
 			return Objects.equals(handlerClass, other.handlerClass) && Objects.equals(paramsString, otherParamsString);

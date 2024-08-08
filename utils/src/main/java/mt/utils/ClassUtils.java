@@ -219,7 +219,8 @@ public class ClassUtils {
 		while (clazz != null) {
 			Type[] interfaces = clazz.getGenericInterfaces();
 			for (Type anInterface : interfaces) {
-				if (anInterface instanceof ParameterizedType parameterizedType) {
+				if (anInterface instanceof ParameterizedType) {
+					ParameterizedType parameterizedType = (ParameterizedType) anInterface;
 					if (targetGenericInterfaceClass.equals(parameterizedType.getRawType())) {
 						return parameterizedType;
 					}

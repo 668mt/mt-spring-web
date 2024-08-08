@@ -1,6 +1,6 @@
 package mt.common.context;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import mt.common.tkmapper.Filter;
 import org.jetbrains.annotations.NotNull;
 

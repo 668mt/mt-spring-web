@@ -74,7 +74,7 @@ public class TestMessage {
 		user.setId(1L);
 		UserVo user2 = new UserVo();
 		user2.setId(2L);
-		resResult.setResult(List.of(user, user2));
+		resResult.setResult(Arrays.asList(user, user2));
 		messageUtils.message(resResult);
 		System.out.println(JsonUtils.toPrettyJson(resResult));
 	}

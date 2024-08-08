@@ -48,7 +48,8 @@ public class RocketmqAutoConfiguration {
 		for (Map.Entry<String, Object> stringObjectEntry : beansWithAnnotation.entrySet()) {
 			String beanName = stringObjectEntry.getKey();
 			Object bean = stringObjectEntry.getValue();
-			if (bean instanceof MessageListener messageListener) {
+			if (bean instanceof MessageListener) {
+				MessageListener messageListener = (MessageListener) bean;
 				log.info("初始化RocketmqListener:{}", beanName);
 				RocketmqListener rocketmqListener = bean.getClass().getAnnotation(RocketmqListener.class);
 				PushConsumer consumer = rocketmqBuilder.createConsumer(rocketmqListener, messageListener);

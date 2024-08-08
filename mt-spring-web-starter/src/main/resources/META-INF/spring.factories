@@ -1,1 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=mt.common.config.CommonEnvironmentPostProcessor
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=mt.common.config.MtWebAutoConfiguration

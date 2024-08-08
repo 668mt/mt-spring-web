@@ -152,19 +152,22 @@ public class MessageUtils {
 		if (object == null) {
 			return null;
 		}
-		if (object instanceof Collection collection) {
+		if (object instanceof Collection ) {
+			Collection collection = (Collection) object;
 			for (Object o : collection) {
 				messageRecursive(params.copy(o), includeFields);
 			}
 			return object;
 		}
-		if (object instanceof Object[] array) {
+		if (object instanceof Object[] ) {
+			Object[] array = (Object[]) object;
 			for (Object o : array) {
 				messageRecursive(params.copy(o), includeFields);
 			}
 			return object;
 		}
-		if (object instanceof Map map) {
+		if (object instanceof Map ) {
+			Map map = (Map) object;
 			for (Object o : map.entrySet()) {
 				messageRecursive(params.copy(((Map.Entry) o).getValue()), includeFields);
 			}
@@ -390,7 +393,8 @@ public class MessageUtils {
 		}
 		MessageHandler messageHandler = getMessageHandler(handlerClass);
 		Map map;
-		if (messageHandler instanceof BatchMessageHandler batchMessageHandler) {
+		if (messageHandler instanceof BatchMessageHandler ) {
+			BatchMessageHandler batchMessageHandler = (BatchMessageHandler) messageHandler;
 			map = batchMessageHandler.handle(collection, set, params);
 		} else {
 			throw new IllegalStateException("找不到messageHandler：" + handlerClass.getSimpleName());

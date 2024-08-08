@@ -8,7 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.CacheResolver;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -26,6 +29,16 @@ import java.util.Map;
 public class WebRedisCacheConfiguration implements CachingConfigurer {
 	
 	@Override
+	public CacheManager cacheManager() {
+		return null;
+	}
+	
+	@Override
+	public CacheResolver cacheResolver() {
+		return null;
+	}
+	
+	@Override
 	public KeyGenerator keyGenerator() {
 		return (target, method, params) -> {
 			String path = target.getClass().getName() + "." + method.getName();
@@ -36,12 +49,19 @@ public class WebRedisCacheConfiguration implements CachingConfigurer {
 		};
 	}
 	
+	@Override
+	public CacheErrorHandler errorHandler() {
+		return null;
+	}
+	
 	private Jackson2JsonRedisSerializer<Object> createJacksonSerializer() {
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 		objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		return new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+		Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+		jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+		return jackson2JsonRedisSerializer;
 	}
 	
 	@Bean
@@ -54,7 +74,7 @@ public class WebRedisCacheConfiguration implements CachingConfigurer {
 		RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
 			.defaultCacheConfig()
 			.entryTtl(Duration.ofHours(1))
-			.prefixCacheNameWith(prefix + ":")
+			.prefixKeysWith(prefix + ":")
 			.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
 			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(createJacksonSerializer()))
 //				.disableCachingNullValues()

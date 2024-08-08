@@ -53,7 +53,7 @@ public class MtWebAutoConfiguration implements InitializingBean {
 			}
 			List<String> packages = commonProperties.getGenerator().getPackages();
 			if (CollectionUtils.isEmpty(packages)) {
-				commonProperties.getGenerator().setPackages(List.of(basePackage + ".entity"));
+				commonProperties.getGenerator().setPackages(Arrays.asList(basePackage + ".entity"));
 			}
 			break;
 		}

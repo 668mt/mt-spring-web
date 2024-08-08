@@ -206,15 +206,18 @@ public class InterceptorHelper {
 	@SuppressWarnings("rawtypes")
 	public static void setFieldsValue(Object entity, Class<? extends Annotation> annotation, boolean force, AbstractValueGenerator<?> valueGenerator) throws IllegalAccessException {
 		
-		if (entity instanceof DefaultSqlSession.StrictMap<?> strictMap) {
+		if (entity instanceof DefaultSqlSession.StrictMap<?>) {
+			DefaultSqlSession.StrictMap<?> strictMap = (DefaultSqlSession.StrictMap<?>) entity;
 			Object o = strictMap.get("collection");
-			if (o instanceof Collection<?> collection) {
+			if (o instanceof Collection<?>) {
+				Collection collection = (Collection) o;
 				for (Object o1 : collection) {
 					setFieldsValue(o1, annotation, force, valueGenerator);
 				}
 			}
 			Object l = strictMap.get("list");
-			if (l instanceof List list) {
+			if (l instanceof List) {
+				List list = (List) l;
 				for (Object o1 : list) {
 					setFieldsValue(o1, annotation, force, valueGenerator);
 				}
@@ -230,15 +233,17 @@ public class InterceptorHelper {
 			return;
 		}
 		
-		if (entity instanceof MapperMethod.ParamMap<?> paramMap) {
+		if (entity instanceof MapperMethod.ParamMap<?>) {
+			MapperMethod.ParamMap<?> paramMap = (MapperMethod.ParamMap<?>) entity;
 			if (paramMap.containsKey("list")) {
 				Object list = paramMap.get("list");
-				if (list instanceof Collection<?> collection) {
+				if (list instanceof Collection<?>) {
+					Collection collection = (Collection) list;
 					for (Object o : collection) {
 						setFieldsValue(o, annotation, force, valueGenerator);
 					}
 				}
-			}else if(paramMap.containsKey("record")){
+			} else if (paramMap.containsKey("record")) {
 				Object record = paramMap.get("record");
 				setFieldsValue(record, annotation, force, valueGenerator);
 			}

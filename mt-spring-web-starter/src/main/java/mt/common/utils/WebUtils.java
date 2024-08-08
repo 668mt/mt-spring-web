@@ -1,8 +1,5 @@
 package mt.common.utils;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -10,7 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,10 +28,12 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -120,14 +118,15 @@ public final class WebUtils {
 	 * @param domain   域
 	 * @param secure   是否启用加密
 	 */
+	@SneakyThrows
 	public static void addCookie(HttpServletRequest request, HttpServletResponse response, String name, String value, Integer maxAge, String path, String domain, Boolean secure) {
 		assert request != null;
 		assert response != null;
 		Assert.hasText(name, "name不能为空");
 		Assert.hasText(value, "value不能为空");
 		
-		name = URLEncoder.encode(name, StandardCharsets.UTF_8);
-		value = URLEncoder.encode(value, StandardCharsets.UTF_8);
+		name = URLEncoder.encode(name, "UTF-8");
+		value = URLEncoder.encode(value, "UTF-8");
 		Cookie cookie = new Cookie(name, value);
 		if (maxAge != null) {
 			cookie.setMaxAge(maxAge);
@@ -184,15 +183,16 @@ public final class WebUtils {
 	 * @param name    Cookie名称
 	 * @return Cookie值，若不存在则返回null
 	 */
+	@SneakyThrows
 	public static String getCookie(HttpServletRequest request, String name) {
 		assert request != null;
 		Assert.hasText(name, "name不能为空");
 		Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
-			name = URLEncoder.encode(name, StandardCharsets.UTF_8);
+			name = URLEncoder.encode(name, "UTF-8");
 			for (Cookie cookie : cookies) {
 				if (name.equals(cookie.getName())) {
-					return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
+					return URLDecoder.decode(cookie.getValue(), "UTF-8");
 				}
 			}
 		}
@@ -208,12 +208,13 @@ public final class WebUtils {
 	 * @param path     路径
 	 * @param domain   域
 	 */
+	@SneakyThrows
 	public static void removeCookie(HttpServletRequest request, HttpServletResponse response, String name, String path, String domain) {
 		assert request != null;
 		assert response != null;
 		Assert.hasText(name, "name不能为空");
 		
-		name = URLEncoder.encode(name, StandardCharsets.UTF_8);
+		name = URLEncoder.encode(name, "UTF-8");
 		Cookie cookie = new Cookie(name, null);
 		cookie.setMaxAge(0);
 		if (StringUtils.isNotEmpty(path)) {
@@ -427,7 +428,7 @@ public final class WebUtils {
 	 */
 	@SneakyThrows
 	public static String getContent(HttpServletRequest request) {
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8))) {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"))) {
 			StringBuilder sb = new StringBuilder();
 			String buffer;
 			while ((buffer = br.readLine()) != null) {
@@ -455,7 +456,7 @@ public final class WebUtils {
 		StringBuilder sb = new StringBuilder();
 		for (Entry<String, String> entry : entrySet) {
 			if (URLEncode) {
-				sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8)).append("=").append(URLEncoder.encode(entry.getValue(), "UTF-8")).append(sign);
+				sb.append(URLEncoder.encode(entry.getKey(), "UTF-8")).append("=").append(URLEncoder.encode(entry.getValue(), "UTF-8")).append(sign);
 			} else {
 				sb.append(entry.getKey()).append("=").append(entry.getValue()).append(sign);
 			}

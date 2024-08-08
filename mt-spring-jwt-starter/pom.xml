@@ -6,24 +6,20 @@
     <parent>
         <groupId>io.github.668mt</groupId>
         <artifactId>mt-spring-starter-parent</artifactId>
-        <version>3.0</version>
+        <version>2.0</version>
     </parent>
     <artifactId>mt-spring-jwt-starter</artifactId>
     <version>${mt.version.jwt}</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>mt.spring.mtools</groupId>
+            <groupId>io.github.668mt</groupId>
             <artifactId>base-tools</artifactId>
             <version>${mt.version.base-tools}</version>
         </dependency>

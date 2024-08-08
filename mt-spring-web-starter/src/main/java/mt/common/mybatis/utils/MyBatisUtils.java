@@ -105,7 +105,8 @@ public class MyBatisUtils {
 		example.setForUpdate(forUpdate);
 		if (CollectionUtils.isNotEmpty(filters)) {
 			for (Filter filterInterface : filters) {
-				if (filterInterface instanceof OrFilter orFilter) {
+				if (filterInterface instanceof OrFilter) {
+					OrFilter orFilter = (OrFilter) filterInterface;
 					Filter[] andFilters = orFilter.getFilters();
 					Criteria criteria = example.and();
 					for (Filter filter : andFilters) {
