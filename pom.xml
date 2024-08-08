@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.668mt.web</groupId>
+    <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-starter-parent</artifactId>
     <version>3.0</version>
     <packaging>pom</packaging>
@@ -16,8 +16,8 @@
         <module>mt-tools</module>
         <module>mt-spring-jwt-starter</module>
         <module>mt-spring-rocketmq-starter</module>
-<!--        <module>mt-processor</module>-->
-<!--        <module>test-processor</module>-->
+        <!--        <module>mt-processor</module>-->
+        <!--        <module>test-processor</module>-->
         <module>mt-spring-core</module>
         <module>mt-spring-redis-starter</module>
     </modules>
@@ -236,9 +236,9 @@
             <version>${mapstruct.version}</version>
         </dependency>
         <dependency>
-        <groupId>org.mapstruct</groupId>
-        <artifactId>mapstruct-processor</artifactId>
-        <version>${mapstruct.version}</version>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.persistence</groupId>
@@ -494,6 +494,17 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.4.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <!-- 这里的serverId是之前在settings.xml中配置的 -->
+                            <publishingServerId>rdc-releases</publishingServerId>
+                            <tokenAuth>true</tokenAuth>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

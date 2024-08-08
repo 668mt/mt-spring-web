@@ -5,7 +5,7 @@
 ## 添加依赖
 ```xml
 <dependency>
-    <groupId>com.github.668mt.web</groupId>
+    <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-web-starter</artifactId>
     <version>${latest.version}</version>
 </dependency>

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.github.668mt.web</groupId>
+        <groupId>io.github.668mt</groupId>
         <artifactId>mt-spring-starter-parent</artifactId>
         <version>3.0</version>
     </parent>
@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.668mt.web</groupId>
+            <groupId>io.github.668mt</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
