@@ -23,9 +23,9 @@
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>mt.spring.mtools</groupId>
+            <groupId>io.github.668mt</groupId>
             <artifactId>base-tools</artifactId>
-            <version>${mt.version.base-tools}</version>
+            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
