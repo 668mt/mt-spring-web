@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Bean;
 public class DataLockConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(DataLockService.class)
-	public DataLockService dataLockService() {
+	public DataLockService dataLockService(CommonProperties commonProperties) {
 		SystemEntity.register(DataLock.class);
-		return new DataLockService();
+		return new DataLockService(commonProperties);
 	}
 }

@@ -1,6 +1,7 @@
 package mt.common.tkmapper.builder;
 
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import mt.common.tkmapper.OrFilter;
 import mt.utils.common.CollectionUtils;
 
@@ -19,7 +20,7 @@ public class OrGroupBuilder {
 		this.filtersBuilder = filtersBuilder;
 	}
 	
-	public OrGroupBuilder addOr(String property, Filter.Operator operator, Object value) {
+	public OrGroupBuilder addOr(String property, Operator operator, Object value) {
 		filters.add(new Filter(property, operator, value));
 		return this;
 	}

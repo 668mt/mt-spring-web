@@ -12,7 +12,8 @@ import java.lang.reflect.ParameterizedType;
  * @Author Martin
  * @Date 2024/7/23
  */
-public abstract class AbstractSimpleEntityService<EntityDO extends BaseEntity, EntityDTO extends BaseDTO, EntityCondition extends PageCondition> extends AbstractEntityService<EntityDO, EntityDO, EntityDTO, EntityCondition> {
+@SuppressWarnings("rawtypes")
+public abstract class AbstractSimpleEntityService<EntityDO extends EntityId, EntityDTO extends EntityId, EntityCondition extends PageCondition> extends AbstractEntityService<EntityDO, EntityDO, EntityDTO, EntityCondition> {
 	public AbstractSimpleEntityService(ApplicationEventPublisher applicationEventPublisher) {
 		super(applicationEventPublisher);
 	}

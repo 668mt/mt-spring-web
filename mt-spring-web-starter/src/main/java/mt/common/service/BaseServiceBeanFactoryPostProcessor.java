@@ -17,7 +17,6 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Config;
@@ -43,7 +42,7 @@ public class BaseServiceBeanFactoryPostProcessor implements InitializingBean {
 	@Autowired
 	private Environment environment;
 	@Autowired(required = false)
-	private final List<BaseServiceImpl> services = new ArrayList<>();
+	private final List<BaseRepositoryImpl> services = new ArrayList<>();
 	private final AtomicBoolean inited = new AtomicBoolean(false);
 	
 	@Override
@@ -64,7 +63,7 @@ public class BaseServiceBeanFactoryPostProcessor implements InitializingBean {
 		//转换为子类，因为父类没有添加beanDefintion对象的api
 		DefaultListableBeanFactory defaultbf = (DefaultListableBeanFactory) beanFactory;
 		
-		for (BaseServiceImpl baseService : services) {
+		for (BaseRepositoryImpl baseService : services) {
 			Class entityClass = baseService.getEntityClass();
 			String simpleName = entityClass.getSimpleName() + "AutoMapper";
 			String mapperName = "mt.common.dao." + simpleName;

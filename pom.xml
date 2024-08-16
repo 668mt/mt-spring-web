@@ -6,7 +6,7 @@
 
     <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-starter-parent</artifactId>
-    <version>3.0</version>
+    <version>3.1.1</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -16,17 +16,10 @@
         <module>mt-tools</module>
         <module>mt-spring-jwt-starter</module>
         <module>mt-spring-rocketmq-starter</module>
-        <!--        <module>mt-processor</module>-->
-        <!--        <module>test-processor</module>-->
         <module>mt-spring-core</module>
         <module>mt-spring-redis-starter</module>
     </modules>
 
-    <!--    <parent>-->
-    <!--        <groupId>org.springframework.boot</groupId>-->
-    <!--        <artifactId>spring-boot-starter-parent</artifactId>-->
-    <!--        <version>2.2.1.RELEASE</version>-->
-    <!--    </parent>-->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -37,19 +30,16 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!--        <java.version>1.8</java.version>-->
         <java.version>17</java.version>
-        <!--        <spring-cloud.version>Hoxton.RELEASE</spring-cloud.version>-->
         <nacos-spring-cloud.version>2022.0.0.0-RC2</nacos-spring-cloud.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <lombok.version>1.18.24</lombok.version>
-        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        <mapstruct.version>1.5.5.final</mapstruct.version>
-        <mt.version.web-starter>3.1.0</mt.version.web-starter>
-        <mt.version.jwt>3.1.1</mt.version.jwt>
-        <mt.version.generator>3.1.0</mt.version.generator>
-        <mt.version.base-tools>3.0</mt.version.base-tools>
+        <mt.version.web-starter>3.1.1</mt.version.web-starter>
+        <mt.version.jwt>3.1.2</mt.version.jwt>
+        <mt.version.generator>3.1.1</mt.version.generator>
+        <mt.version.base-tools>3.1.1</mt.version.base-tools>
+        <utils.version>3.1.1</utils.version>
     </properties>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-web</name>
@@ -229,17 +219,6 @@
             <version>${lombok.version}</version>
         </dependency>
 
-        <!-- MapStruct -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>${mapstruct.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>${mapstruct.version}</version>
-        </dependency>
         <dependency>
             <groupId>javax.persistence</groupId>
             <artifactId>persistence-api</artifactId>
@@ -296,23 +275,6 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <release>${java.version}</release>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok-mapstruct-binding</artifactId>
-                            <version>${lombok-mapstruct-binding.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 

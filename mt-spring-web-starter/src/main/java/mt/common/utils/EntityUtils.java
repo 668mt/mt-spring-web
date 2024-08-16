@@ -2,6 +2,7 @@ package mt.common.utils;
 
 import lombok.SneakyThrows;
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import mt.utils.ReflectUtils;
 import mt.utils.common.Assert;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public class EntityUtils {
 			}
 			String fieldName = field.getName();
 			Assert.notNull(value, "Id字段值不能为空:" + fieldName);
-			filters.add(new mt.common.tkmapper.Filter(fieldName, mt.common.tkmapper.Filter.Operator.eq, value));
+			filters.add(new mt.common.tkmapper.Filter(fieldName, Operator.eq, value));
 		}
 		return filters;
 	}

@@ -6,7 +6,7 @@
     <groupId>io.github.668mt</groupId>
     <artifactId>mtools</artifactId>
     <packaging>pom</packaging>
-    <version>3.0</version>
+    <version>3.1.1</version>
     <modules>
         <module>base-tools</module>
         <module>video-tools</module>

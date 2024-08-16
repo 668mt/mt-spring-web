@@ -3,6 +3,7 @@ package mt.common.mybatis.utils;
 import mt.common.context.FilterContextUtils;
 import mt.common.mybatis.exception.NotSupportException;
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import mt.common.tkmapper.OrFilter;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -109,7 +110,7 @@ public class MyBatisUtils {
 					Filter[] andFilters = orFilter.getFilters();
 					Criteria criteria = example.and();
 					for (Filter filter : andFilters) {
-						Filter.Operator operator = filter.getOperator();
+						Operator operator = filter.getOperator();
 						String property = getField(entityClass, filter.getProperty());
 						Object value = filter.getValue();
 						Object value2 = filter.getValue2();
@@ -185,7 +186,7 @@ public class MyBatisUtils {
 						}
 					}
 				} else {
-					Filter.Operator operator = filterInterface.getOperator();
+					Operator operator = filterInterface.getOperator();
 					String property = getField(entityClass, filterInterface.getProperty());
 					Object value = filterInterface.getValue();
 					Object value2 = filterInterface.getValue2();

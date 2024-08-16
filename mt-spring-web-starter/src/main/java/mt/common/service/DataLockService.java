@@ -25,8 +25,11 @@ import java.util.UUID;
  */
 public class DataLockService {
 	
-	@Autowired
-	private CommonProperties commonProperties;
+	private final CommonProperties commonProperties;
+	
+	public DataLockService(CommonProperties commonProperties) {
+		this.commonProperties = commonProperties;
+	}
 	
 	public int deleteByPrimaryKey(String id, JdbcTemplate jdbcTemplate) {
 		return jdbcTemplate.update("delete from " + commonProperties.getDataLockTableName() + " where id = ?", id);

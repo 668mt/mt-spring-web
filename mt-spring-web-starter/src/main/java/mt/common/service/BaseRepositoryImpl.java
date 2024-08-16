@@ -14,7 +14,7 @@ import mt.common.mybatis.utils.MyBatisUtils;
 import mt.common.starter.message.utils.MessageUtils;
 import mt.common.tkmapper.ConditionFilterParser;
 import mt.common.tkmapper.DefaultConditionFilterParser;
-import mt.common.tkmapper.Filter.Operator;
+import mt.common.tkmapper.Operator;
 import mt.common.utils.SpringUtils;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -45,7 +45,7 @@ import static mt.common.utils.EntityUtils.getIdFilters;
 /**
  * @author Martin
  */
-public abstract class BaseServiceImpl<T> implements BaseService<T>, ApplicationContextAware {
+public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, ApplicationContextAware {
 	private volatile mt.common.mybatis.mapper.BaseMapper<T> baseMapper;
 	private ApplicationContext applicationContext;
 	
