@@ -1,7 +1,8 @@
 package mt.common.starter.message.messagehandler;
 
-import mt.common.service.BaseService;
+import mt.common.service.BaseRepository;
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
@@ -11,7 +12,7 @@ import java.util.*;
  * @Date 2024/4/27
  */
 public abstract class AbstractCodeNameBatchMessageHandler<Entity, CodeType, NameType> implements BatchMessageHandler<CodeType, NameType> {
-	protected abstract BaseService<Entity> getRepository();
+	protected abstract BaseRepository<Entity> getRepository();
 	
 	protected abstract NameType getName(Entity entity);
 	
@@ -23,7 +24,7 @@ public abstract class AbstractCodeNameBatchMessageHandler<Entity, CodeType, Name
 	public Map<CodeType, NameType> handle(Collection<?> collection, Set<CodeType> codes, String[] params) {
 		Map<CodeType, NameType> map = new HashMap<>();
 		if (CollectionUtils.isNotEmpty(codes)) {
-			List<Entity> list = getRepository().findByFilter(new Filter(getCodeField(), Filter.Operator.in, codes));
+			List<Entity> list = getRepository().findByFilter(new Filter(getCodeField(), Operator.in, codes));
 			if (CollectionUtils.isNotEmpty(list)) {
 				for (Entity t : list) {
 					map.put(getCode(t), getName(t));

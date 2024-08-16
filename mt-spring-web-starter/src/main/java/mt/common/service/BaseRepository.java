@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 /**
  * @author Martin
  */
-public interface BaseService<T> {
+public interface BaseRepository<T> {
 	
 	interface GetList<T2> {
 		List<T2> getList();

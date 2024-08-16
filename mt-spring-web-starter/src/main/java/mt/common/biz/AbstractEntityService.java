@@ -2,10 +2,9 @@ package mt.common.biz;
 
 import com.github.pagehelper.PageInfo;
 import mt.common.entity.PageCondition;
-import mt.common.entity.dto.BaseDTO;
-import mt.common.entity.po.BaseEntity;
-import mt.common.service.BaseService;
+import mt.common.service.BaseRepository;
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import mt.common.utils.BeanUtils;
 import mt.utils.ClassUtils;
 import mt.utils.common.CollectionUtils;
@@ -22,12 +21,13 @@ import java.util.List;
  * @Author Martin
  * @Date 2024/4/27
  */
-public abstract class AbstractEntityService<EntityDO extends BaseEntity, EntityVO, EntityDTO extends BaseDTO, EntityCondition extends PageCondition> implements EntityService<EntityDO, EntityVO, EntityDTO, EntityCondition> {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public abstract class AbstractEntityService<EntityDO extends EntityId, EntityVO, EntityDTO extends EntityId, EntityCondition extends PageCondition> implements EntityService<EntityDO, EntityVO, EntityDTO, EntityCondition> {
 	private final ApplicationEventPublisher applicationEventPublisher;
 	
-	public abstract BaseService<EntityDO> getBaseService();
+	public abstract BaseRepository<EntityDO> getBaseService();
 	
-	public void beforeAddOrUpdate(@NotNull EntityDO entityDO) {
+	public void beforeAddOrUpdate(@NotNull EntityDTO entityDTO, @NotNull EntityDO entityDO) {
 	
 	}
 	
@@ -53,10 +53,10 @@ public abstract class AbstractEntityService<EntityDO extends BaseEntity, EntityV
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public EntityVO addOrUpdate(@NotNull EntityDTO entityDTO) {
-		Long id = entityDTO.getId();
+		Object id = entityDTO.getId();
 		Class<EntityDO> entityClass = getBaseService().getEntityClass();
 		EntityDO entityDO = BeanUtils.transform(entityDTO, entityClass);
-		beforeAddOrUpdate(entityDO);
+		beforeAddOrUpdate(entityDTO, entityDO);
 		if (id == null) {
 			getBaseService().save(entityDO);
 		} else {
@@ -89,7 +89,7 @@ public abstract class AbstractEntityService<EntityDO extends BaseEntity, EntityV
 		if (CollectionUtils.isEmpty(ids)) {
 			return;
 		}
-		Filter idsFilter = new Filter("id", Filter.Operator.in, ids);
+		Filter idsFilter = new Filter("id", Operator.in, ids);
 		List<EntityDO> list = getBaseService().findByFilter(idsFilter);
 		if (CollectionUtils.isNotEmpty(list)) {
 			for (EntityDO entityDO : list) {

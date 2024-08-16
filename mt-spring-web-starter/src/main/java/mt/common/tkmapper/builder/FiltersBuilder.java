@@ -1,6 +1,7 @@
 package mt.common.tkmapper.builder;
 
 import mt.common.tkmapper.Filter;
+import mt.common.tkmapper.Operator;
 import mt.utils.common.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,17 +17,17 @@ import java.util.function.Supplier;
 public class FiltersBuilder {
 	final List<Filter> filters = new ArrayList<>();
 	
-	public FiltersBuilder add(@NotNull String property, @NotNull Filter.Operator operator) {
+	public FiltersBuilder add(@NotNull String property, @NotNull Operator operator) {
 		filters.add(new Filter(property, operator));
 		return this;
 	}
 	
-	public FiltersBuilder add(@NotNull String property, @NotNull Filter.Operator operator, @NotNull Object value) {
+	public FiltersBuilder add(@NotNull String property, @NotNull Operator operator, @NotNull Object value) {
 		filters.add(new Filter(property, operator, value));
 		return this;
 	}
 	
-	public FiltersBuilder add(@NotNull String property, @NotNull Filter.Operator operator, @NotNull Object value1, @NotNull Object value2) {
+	public FiltersBuilder add(@NotNull String property, @NotNull Operator operator, @NotNull Object value1, @NotNull Object value2) {
 		filters.add(new Filter(property, operator, value1, value2));
 		return this;
 	}
@@ -54,7 +55,7 @@ public class FiltersBuilder {
 		return this;
 	}
 	
-	public FiltersBuilder addIf(boolean condition, String property, Filter.Operator operator, Object value) {
+	public FiltersBuilder addIf(boolean condition, String property, Operator operator, Object value) {
 		if (condition) {
 			this.filters.add(new Filter(property, operator, value));
 		}

@@ -5,6 +5,7 @@ import mt.common.converter.Converter;
 import mt.common.converter.DefaultConverter;
 import mt.common.tkmapper.ConditionFilterParser;
 import mt.common.tkmapper.DefaultConditionFilterParser;
+import mt.common.tkmapper.Operator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -34,7 +35,7 @@ public @interface Filter {
 	 *
 	 * @return
 	 */
-	mt.common.tkmapper.Filter.Operator operator() default mt.common.tkmapper.Filter.Operator.eq;
+	Operator operator() default Operator.eq;
 	
 	/**
 	 * 参数内容前缀

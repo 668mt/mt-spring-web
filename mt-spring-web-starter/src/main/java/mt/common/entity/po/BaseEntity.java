@@ -5,6 +5,7 @@ import mt.common.annotation.CreatedByUserName;
 import mt.common.annotation.CreatedDate;
 import mt.common.annotation.UpdatedByUserName;
 import mt.common.annotation.UpdatedDate;
+import mt.common.biz.EntityId;
 import tk.mybatis.mapper.annotation.KeySql;
 
 import javax.persistence.Column;
@@ -16,7 +17,7 @@ import java.util.Date;
  * @Date 2024/4/18
  */
 @Data
-public class BaseEntity {
+public class BaseEntity implements EntityId<Long> {
 	@Id
 	@KeySql(useGeneratedKeys = true)
 	@Column(updatable = false)

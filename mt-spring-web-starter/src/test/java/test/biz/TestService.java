@@ -5,7 +5,7 @@ import mt.common.biz.AbstractSimpleEntityService;
 import mt.common.entity.PageCondition;
 import mt.common.entity.dto.BaseDTO;
 import mt.common.entity.po.BaseEntity;
-import mt.common.service.BaseService;
+import mt.common.service.BaseRepository;
 
 /**
  * @Author Martin
@@ -17,30 +17,30 @@ public class TestService {
 		private String name;
 		private Integer age;
 	}
-
+	
 	@Data
 	public static class UserDTO extends BaseDTO {
 		private String name;
 		private Integer age;
 	}
-
+	
 	@Data
 	public static class UserCondition extends PageCondition {
 		private String name;
 		private Integer age;
 	}
-
+	
 	public static class UserService extends AbstractSimpleEntityService<User, UserDTO, UserCondition> {
 		public UserService() {
 			super(null);
 		}
-
+		
 		@Override
-		public BaseService<User> getBaseService() {
+		public BaseRepository<User> getBaseService() {
 			return null;
 		}
 	}
-
+	
 	public static void main(String[] args) {
 		UserService userService = new UserService();
 		System.out.println(userService.getEntityVOClass());
