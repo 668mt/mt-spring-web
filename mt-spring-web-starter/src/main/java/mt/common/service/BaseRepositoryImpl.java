@@ -34,10 +34,7 @@ import javax.persistence.Id;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static mt.common.utils.EntityUtils.getIdFilters;
@@ -487,5 +484,49 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	public List<GroupCount> findGroupCounts(@NotNull String groupField, @Nullable List<mt.common.tkmapper.Filter> filters) {
 		Example example = MyBatisUtils.createExample(getEntityClass(), filters);
 		return getBaseMapper().findGroupCounts(example, groupField);
+	}
+	
+	@Override
+	public <ResultType> ResultType findMax(@NotNull String fieldName, @NotNull List<mt.common.tkmapper.Filter> filters) {
+		return findAggregation(fieldName, filters, "max");
+	}
+	
+	@Override
+	public <ResultType> ResultType findMin(@NotNull String fieldName, @NotNull List<mt.common.tkmapper.Filter> filters) {
+		return findAggregation(fieldName, filters, "min");
+	}
+	
+	@Override
+	public <ResultType> ResultType findAvg(@NotNull String fieldName, @NotNull List<mt.common.tkmapper.Filter> filters) {
+		return findAggregation(fieldName, filters, "avg");
+	}
+	
+	@SuppressWarnings("unchecked")
+	@SneakyThrows
+	private <ResultType> ResultType findAggregation(@NotNull String fieldName, List<mt.common.tkmapper.Filter> filters, String aggregation) {
+		Field field = assertFieldExists(fieldName);
+		Example example = MyBatisUtils.createExample(getEntityClass(), filters);
+		List<T> listWithFields = getBaseMapper().findListWithFields(Arrays.asList(aggregation + "(" + fieldName + ") as " + fieldName), example);
+		if (CollectionUtils.isEmpty(listWithFields)) {
+			return null;
+		}
+		T entity = listWithFields.get(0);
+		field.setAccessible(true);
+		return (ResultType) field.get(entity);
+	}
+	
+	private Field assertFieldExists(@NotNull String fieldName) {
+		Field field = ReflectUtils.findField(getEntityClass(), fieldName);
+		Assert.notNull(field, "字段" + fieldName + "不存在");
+		return field;
+	}
+	
+	@Override
+	public int add(@NotNull String column, int value, @NotNull List<mt.common.tkmapper.Filter> filters) {
+		return getBaseMapper().addField(column, value, MyBatisUtils.createExample(getEntityClass(), filters));
+	}
+	
+	public int add(@NotNull String column, int value, @NotNull mt.common.tkmapper.Filter filter) {
+		return add(column, value, Collections.singletonList(filter));
 	}
 }

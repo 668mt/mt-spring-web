@@ -221,4 +221,21 @@ public interface BaseRepository<T> {
 	 * @return 统计结果
 	 */
 	List<GroupCount> findGroupCounts(@NotNull String groupField, @Nullable List<Filter> filters);
+	
+	<ResultType> ResultType findMax(@NotNull String fieldName, @NotNull List<Filter> filters);
+	
+	<ResultType> ResultType findMin(@NotNull String fieldName, @NotNull List<Filter> filters);
+	
+	<ResultType> ResultType findAvg(@NotNull String fieldName, @NotNull List<Filter> filters);
+	
+	/**
+	 * 新增
+	 *
+	 * @param column 字段名
+	 * @param value  值
+	 * @return 修改数
+	 */
+	int add(@NotNull String column, int value, @NotNull List<Filter> filters);
+	
+	int add(@NotNull String column, int value, @NotNull Filter filter);
 }

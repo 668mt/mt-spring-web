@@ -35,7 +35,7 @@
         <spring-cloud.version>2022.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <lombok.version>1.18.24</lombok.version>
-        <mt.version.web-starter>3.1.1</mt.version.web-starter>
+        <mt.version.web-starter>3.1.2</mt.version.web-starter>
         <mt.version.jwt>3.1.2</mt.version.jwt>
         <mt.version.generator>3.1.1</mt.version.generator>
         <mt.version.base-tools>3.1.1</mt.version.base-tools>

@@ -1,6 +1,5 @@
 package mt.common.mybatis.sqlProvider;
 
-import mt.common.mybatis.entity.GroupCount;
 import mt.common.mybatis.utils.SqlProviderUtils;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.ResultMap;
@@ -15,6 +14,8 @@ import tk.mybatis.mapper.util.MetaObjectUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static tk.mybatis.mapper.mapperhelper.SqlHelper.getDynamicTableName;
 
 /**
  * 自定义公用方法
@@ -99,6 +100,26 @@ public class BaseSelectProvider extends MapperTemplate {
 			"group by ${@mt.common.mybatis.utils.CheckUtils@mustOneField(" +
 			"@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(key,'" + entityClass.getName() + "')" +
 			")}";
+	}
+	
+	public String findListWithFields(MappedStatement ms) {
+		Class<?> entityClass = getEntityClass(ms);
+		//修改返回值类型为实体类型
+		setResultType(ms, entityClass);
+		
+		return "select <foreach collection=\"fields\" item=\"item\" open=\"(\" close=\" ) \" separator=\",\">\n" +
+			"            ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(item,'" + entityClass.getName() + "')\"}\n" +
+			"        </foreach>" +
+			SqlHelper.fromTable(entityClass, tableName(entityClass)) +
+			SqlProviderUtils.exampleWhereClause("example");
+	}
+	
+	public String addField(MappedStatement ms) {
+		Class<?> entityClass = getEntityClass(ms);
+		
+		String tableName = getDynamicTableName(entityClass, tableName(entityClass));
+		return "update " + tableName + " set ${field} = ${field} + #{value}" +
+			SqlProviderUtils.exampleWhereClause("example");
 	}
 	
 }
