@@ -2,7 +2,7 @@ package mt.common.service;
 
 
 import com.github.pagehelper.PageInfo;
-import mt.common.entity.PageCondition;
+import mt.common.entity.Pageable;
 import mt.common.mybatis.entity.GroupCount;
 import mt.common.tkmapper.Filter;
 import org.jetbrains.annotations.NotNull;
@@ -16,45 +16,38 @@ import java.util.function.Consumer;
  */
 public interface BaseRepository<T> {
 	
-	interface GetList<T2> {
-		List<T2> getList();
-	}
-	
 	/**
 	 * 返回行数
-	 *
-	 * @param filters
-	 * @return
 	 */
-	int count(List<Filter> filters);
+	int count(@Nullable List<Filter> filters);
 	
-	int delete(String columnName, Object value);
+	int delete(@NotNull String columnName, @NotNull Object value);
 	
-	List<Filter> parseCondition(Object condition);
+	List<Filter> parseCondition(@Nullable Object condition);
 	
-	<T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList);
-	
-	<T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList, boolean allowSelectAll);
+	<T2> PageInfo<T2> doPage(@NotNull QueryHandler<T2> queryHandler, @Nullable Pageable pageable);
 	
 	/**
 	 * 查询所有
-	 *
-	 * @return
 	 */
 	List<T> findAll();
 	
-	PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition);
+	PageInfo<T> findPage(@Nullable Pageable pageable);
 	
-	PageInfo<T> findPage(@Nullable PageCondition pageCondition);
+	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable List<Filter> filters);
+	
+	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable Filter filter);
+	
+	<Result> PageInfo<Result> findAdvancedPage(@NotNull Class<Result> resultClass, @Nullable Pageable pageable);
 	
 	/**
 	 * 通过id查询
 	 *
 	 * @return 对象
 	 */
-	T findById(Object record);
+	T findById(@NotNull Object record);
 	
-	T findById(Object record, boolean forUpdate);
+	T findById(@NotNull Object record, boolean forUpdate);
 	
 	/**
 	 * 查询一个
@@ -63,11 +56,11 @@ public interface BaseRepository<T> {
 	 * @param value
 	 * @return 对象
 	 */
-	T findOne(String column, Object value);
+	T findOne(@NotNull String column, @NotNull Object value);
 	
-	List<T> findByFilter(Filter filter);
+	List<T> findByFilter(@NotNull Filter filter);
 	
-	List<T> findByFilter(Filter filter, boolean forUpdate);
+	List<T> findByFilter(@NotNull Filter filter, boolean forUpdate);
 	
 	/**
 	 * 查询列表
@@ -75,7 +68,7 @@ public interface BaseRepository<T> {
 	 * @param filters 过滤
 	 * @return 列表
 	 */
-	List<T> findByFilters(List<Filter> filters);
+	List<T> findByFilters(@Nullable List<Filter> filters);
 	
 	/**
 	 * 查询列表
@@ -84,25 +77,22 @@ public interface BaseRepository<T> {
 	 * @param forUpdate 是否加锁
 	 * @return 列表
 	 */
-	List<T> findByFilters(List<Filter> filters, boolean forUpdate);
+	List<T> findByFilters(@Nullable List<Filter> filters, boolean forUpdate);
 	
-	T findFirstByFilters(List<Filter> filters);
+	T findFirstByFilters(@Nullable List<Filter> filters);
 	
-	T findFirstByFilter(Filter filter);
+	T findFirstByFilter(@NotNull Filter filter);
 	
 	/**
 	 * 查询一个，多个抛出异常
-	 *
-	 * @param filters
-	 * @return 对象
 	 */
-	T findOneByFilters(List<Filter> filters);
+	T findOneByFilters(@Nullable List<Filter> filters);
 	
-	T findOneByFilters(List<Filter> filters, boolean forUpdate);
+	T findOneByFilters(@Nullable List<Filter> filters, boolean forUpdate);
 	
-	T findOneByFilter(Filter filter);
+	T findOneByFilter(@NotNull Filter filter);
 	
-	T findOneByFilter(Filter filter, boolean forUpdate);
+	T findOneByFilter(@NotNull Filter filter, boolean forUpdate);
 	
 	/**
 	 * 查询列表
@@ -111,7 +101,7 @@ public interface BaseRepository<T> {
 	 * @param value  值
 	 * @return 列表
 	 */
-	List<T> findList(String column, Object value);
+	List<T> findList(@NotNull String column, @NotNull Object value);
 	
 	/**
 	 * 保存,null值会被保存，不会使用数据库默认值
@@ -119,7 +109,7 @@ public interface BaseRepository<T> {
 	 * @param record 对象
 	 * @return 影响条数
 	 */
-	int save(T record);
+	int save(@NotNull T record);
 	
 	/**
 	 * 保存,null值不会被保存，会使用数据库默认值
@@ -127,7 +117,7 @@ public interface BaseRepository<T> {
 	 * @param record 对象
 	 * @return 影响条数
 	 */
-	int saveSelective(T record);
+	int saveSelective(@NotNull T record);
 	
 	/**
 	 * 通过主键更新，传入record对象中为null的会被更新
@@ -135,7 +125,7 @@ public interface BaseRepository<T> {
 	 * @param record
 	 * @return 影响条数
 	 */
-	int updateById(T record);
+	int updateById(@NotNull T record);
 	
 	/**
 	 * 通过主键更新，传入record对象中为null的不会被更新
@@ -143,24 +133,22 @@ public interface BaseRepository<T> {
 	 * @param record
 	 * @return 影响条数
 	 */
-	int updateByIdSelective(T record);
+	int updateByIdSelective(@NotNull T record);
 	
-	int updateByFilters(T record, List<Filter> filters);
+	int updateByFilters(@NotNull T record, @Nullable List<Filter> filters);
 	
-	int updateByFilter(T record, Filter filter);
+	int updateByFilter(@NotNull T record, @NotNull Filter filter);
 	
-	int updateByFiltersSelective(T record, List<Filter> filters);
+	int updateByFiltersSelective(@NotNull T record, @Nullable List<Filter> filters);
 	
-	int updateByFilterSelective(T record, Filter filter);
+	int updateByFilterSelective(@NotNull T record, @NotNull Filter filter);
 	
 	/**
 	 * 通过主键删除
 	 *
 	 * @return 影响条数
 	 */
-	int deleteById(Object record);
-	
-	int deleteByIds(Object[] records);
+	int deleteById(@NotNull Object record);
 	
 	/**
 	 * 删除
@@ -168,16 +156,16 @@ public interface BaseRepository<T> {
 	 * @param filters
 	 * @return
 	 */
-	int deleteByFilters(List<Filter> filters);
+	int deleteByFilters(@Nullable List<Filter> filters);
 	
-	int deleteByFilter(Filter filter);
+	int deleteByFilter(@NotNull Filter filter);
 	
 	/**
 	 * 是否存在主键
 	 *
 	 * @return
 	 */
-	boolean existsId(Object record);
+	boolean existsId(@NotNull Object record);
 	
 	@SuppressWarnings("unchecked")
 	Class<T> getEntityClass();
@@ -189,19 +177,19 @@ public interface BaseRepository<T> {
 	 * @param value
 	 * @return
 	 */
-	boolean exists(String columnName, Object value);
+	boolean exists(@NotNull String columnName, @NotNull Object value);
 	
-	boolean existsByFilters(List<Filter> filters);
+	boolean existsByFilters(@Nullable List<Filter> filters);
 	
-	boolean existsByFilter(Filter filter);
+	boolean existsByFilter(@NotNull Filter filter);
 	
-	boolean notExistsId(Object record);
+	boolean notExistsId(@NotNull Object record);
 	
-	boolean notExists(String columnName, Object value);
+	boolean notExists(@NotNull String columnName, @NotNull Object value);
 	
-	boolean notExistsByFilters(List<Filter> filters);
+	boolean notExistsByFilters(@Nullable List<Filter> filters);
 	
-	boolean notExistsByFilter(Filter filter);
+	boolean notExistsByFilter(@NotNull Filter filter);
 	
 	/**
 	 * 分批消费

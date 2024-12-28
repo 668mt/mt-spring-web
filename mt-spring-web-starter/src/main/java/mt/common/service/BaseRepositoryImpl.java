@@ -6,8 +6,9 @@ import com.github.pagehelper.PageInfo;
 import lombok.SneakyThrows;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
-import mt.common.entity.BaseCondition;
 import mt.common.entity.PageCondition;
+import mt.common.entity.Pageable;
+import mt.common.mybatis.advanced.AdvancedQuery;
 import mt.common.mybatis.entity.GroupCount;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.MyBatisUtils;
@@ -47,7 +48,7 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	private ApplicationContext applicationContext;
 	
 	@Override
-	public boolean notExists(String columnName, Object value) {
+	public boolean notExists(@NotNull String columnName, @NotNull Object value) {
 		return !exists(columnName, value);
 	}
 	
@@ -82,23 +83,13 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition) {
-		if (condition == null) {
-			condition = new BaseCondition();
+	public PageInfo<T> findPage(@Nullable Pageable pageable) {
+		if (pageable == null) {
+			pageable = new PageCondition();
 		}
 		Class<T> entityClass = getEntityClass();
-		List<mt.common.tkmapper.Filter> filters = parseCondition(condition);
-		return doPage(pageNum, pageSize, orderBy, () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), true);
-	}
-	
-	@Override
-	public PageInfo<T> findPage(@Nullable PageCondition pageCondition) {
-		if (pageCondition == null) {
-			pageCondition = new PageCondition();
-		}
-		Class<T> entityClass = getEntityClass();
-		List<mt.common.tkmapper.Filter> filters = parseCondition(pageCondition);
-		return doPage(pageCondition.getPageNum(), pageCondition.getPageSize(), pageCondition.getOrderBy(), () -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), pageCondition.isAllowSelectAll());
+		List<mt.common.tkmapper.Filter> filters = parseCondition(pageable);
+		return doPage(() -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), pageable);
 	}
 	
 	@SneakyThrows
@@ -183,13 +174,15 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList) {
-		return doPage(pageNum, pageSize, orderBy, getList, true);
-	}
-	
-	@Override
-	public <T2> PageInfo<T2> doPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, GetList<T2> getList, boolean allowSelectAll) {
+	public <T2> PageInfo<T2> doPage(@NotNull QueryHandler<T2> queryHandler, @Nullable Pageable pageable) {
+		if (pageable == null) {
+			pageable = new PageCondition();
+		}
 		Class<T> entityClass = getEntityClass();
+		Integer pageNum = pageable.getPageNum();
+		Integer pageSize = pageable.getPageSize();
+		boolean allowSelectAll = pageable.isAllowSelectAll();
+		String orderBy = pageable.getOrderBy();
 		//分页
 		Page<T2> page = null;
 		try {
@@ -232,7 +225,7 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 				}
 				page.setUnsafeOrderBy(realOrderBy);
 			}
-			return new PageInfo<>(getList.getList());
+			return new PageInfo<>(queryHandler.doQuery());
 		} finally {
 			PageHelper.clearPage();
 		}
@@ -244,8 +237,7 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public int count(List<mt.common.tkmapper.Filter> filters) {
-		Assert.notNull(filters, "filters不能为空");
+	public int count(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		return getBaseMapper().selectCountByExample(MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
@@ -261,68 +253,67 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public boolean exists(String columnName, Object value) {
+	public boolean exists(@NotNull String columnName, @NotNull Object value) {
 		List<T> list = findList(columnName, value);
 		return CollectionUtils.isNotEmpty(list);
 	}
 	
 	@Override
-	public boolean existsId(Object record) {
+	public boolean existsId(@NotNull Object record) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return existsByFilters(idFilters);
 	}
 	
 	@Override
-	public List<T> findByFilter(mt.common.tkmapper.Filter filter) {
+	public List<T> findByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return findByFilter(filter, false);
 	}
 	
 	@Override
-	public List<T> findByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
+	public List<T> findByFilter(@NotNull mt.common.tkmapper.Filter filter, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(filter);
 		return findByFilters(filters, forUpdate);
 	}
 	
 	@Override
-	public T findById(Object record) {
+	public T findById(@NotNull Object record) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return findOneByFilters(idFilters);
 	}
 	
 	@Override
-	public T findById(Object record, boolean forUpdate) {
+	public T findById(@NotNull Object record, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return findOneByFilters(idFilters, forUpdate);
 	}
 	
 	@Override
-	public T findOne(String column, Object value) {
+	public T findOne(@NotNull String column, @NotNull Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(column, Operator.eq, value));
 		return findOneByFilters(filters);
 	}
 	
 	@Override
-	public List<T> findList(String column, Object value) {
+	public List<T> findList(@NotNull String column, @NotNull Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(column, Operator.eq, value));
 		return findByFilters(filters);
 	}
 	
 	@Override
-	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public List<T> findByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		return findByFilters(filters, false);
 	}
 	
 	@Override
-	public List<T> findByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
+	public List<T> findByFilters(@Nullable List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
 		return getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), filters, forUpdate));
 	}
 	
-	
 	@Override
-	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
+	public T findOneByFilters(@Nullable List<mt.common.tkmapper.Filter> filters, boolean forUpdate) {
 		List<T> findByFilters = findByFilters(filters, forUpdate);
 		if (CollectionUtils.isEmpty(findByFilters)) {
 			return null;
@@ -334,7 +325,7 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public T findFirstByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public T findFirstByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		List<T> list = findByFilters(filters);
 		if (CollectionUtils.isNotEmpty(list)) {
 			return list.get(0);
@@ -343,124 +334,115 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	}
 	
 	@Override
-	public T findFirstByFilter(mt.common.tkmapper.Filter filter) {
+	public T findFirstByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return findFirstByFilters(Collections.singletonList(filter));
 	}
 	
 	@Override
-	public T findOneByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public T findOneByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		return findOneByFilters(filters, false);
 	}
 	
 	@Override
-	public T findOneByFilter(mt.common.tkmapper.Filter filter, boolean forUpdate) {
+	public T findOneByFilter(@NotNull mt.common.tkmapper.Filter filter, boolean forUpdate) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(filter);
 		return findOneByFilters(filters, forUpdate);
 	}
 	
 	@Override
-	public T findOneByFilter(mt.common.tkmapper.Filter filter) {
+	public T findOneByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return findOneByFilter(filter, false);
 	}
 	
 	@Override
-	public int save(T record) {
+	public int save(@NotNull T record) {
 		return getBaseMapper().insert(record);
 	}
 	
 	@Override
-	public int saveSelective(T record) {
+	public int saveSelective(@NotNull T record) {
 		return getBaseMapper().insert(record);
 	}
 	
 	@Override
-	public int updateById(T record) {
+	public int updateById(@NotNull T record) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return getBaseMapper().updateByExample(record, MyBatisUtils.createExample(getEntityClass(), idFilters));
 	}
 	
 	@Override
-	public int updateByIdSelective(T record) {
+	public int updateByIdSelective(@NotNull T record) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return getBaseMapper().updateByExampleSelective(record, MyBatisUtils.createExample(getEntityClass(), idFilters));
 	}
 	
 	@Override
-	public int updateByFilter(T record, mt.common.tkmapper.Filter filter) {
+	public int updateByFilter(@NotNull T record, @NotNull mt.common.tkmapper.Filter filter) {
 		return updateByFilters(record, Collections.singletonList(filter));
 	}
 	
 	@Override
-	public int updateByFilterSelective(T record, mt.common.tkmapper.Filter filter) {
+	public int updateByFilterSelective(@NotNull T record, @NotNull mt.common.tkmapper.Filter filter) {
 		return updateByFiltersSelective(record, Collections.singletonList(filter));
 	}
 	
 	@Override
-	public int updateByFilters(T record, List<mt.common.tkmapper.Filter> filters) {
+	public int updateByFilters(@NotNull T record, @Nullable List<mt.common.tkmapper.Filter> filters) {
 		return getBaseMapper().updateByExample(record, MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
 	@Override
-	public int updateByFiltersSelective(T record, List<mt.common.tkmapper.Filter> filters) {
+	public int updateByFiltersSelective(@NotNull T record, @Nullable List<mt.common.tkmapper.Filter> filters) {
 		return getBaseMapper().updateByExampleSelective(record, MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
 	@Override
-	public int deleteById(Object record) {
+	public int deleteById(@NotNull Object record) {
 		List<mt.common.tkmapper.Filter> idFilters = getIdFilters(getEntityClass(), record);
 		return deleteByFilters(idFilters);
 	}
 	
 	@Override
-	public int deleteByIds(Object[] records) {
-		int update = 0;
-		for (Object id : records) {
-			update += deleteById(id);
-		}
-		return update;
-	}
-	
-	@Override
-	public int deleteByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public int deleteByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		return getBaseMapper().deleteByExample(MyBatisUtils.createExample(getEntityClass(), filters));
 	}
 	
 	@Override
-	public int deleteByFilter(mt.common.tkmapper.Filter filter) {
+	public int deleteByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return deleteByFilters(Collections.singletonList(filter));
 	}
 	
 	@Override
-	public int delete(String columnName, Object value) {
+	public int delete(@NotNull String columnName, @NotNull Object value) {
 		List<mt.common.tkmapper.Filter> filters = new ArrayList<>();
 		filters.add(new mt.common.tkmapper.Filter(columnName, Operator.eq, value));
 		return deleteByFilters(filters);
 	}
 	
 	@Override
-	public boolean existsByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public boolean existsByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		List<T> byFilters = findByFilters(filters);
 		return CollectionUtils.isNotEmpty(byFilters);
 	}
 	
 	@Override
-	public boolean existsByFilter(mt.common.tkmapper.Filter filter) {
+	public boolean existsByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return CollectionUtils.isNotEmpty(findByFilter(filter));
 	}
 	
 	@Override
-	public boolean notExistsId(Object record) {
+	public boolean notExistsId(@NotNull Object record) {
 		return !existsId(record);
 	}
 	
 	@Override
-	public boolean notExistsByFilters(List<mt.common.tkmapper.Filter> filters) {
+	public boolean notExistsByFilters(@Nullable List<mt.common.tkmapper.Filter> filters) {
 		return !existsByFilters(filters);
 	}
 	
 	@Override
-	public boolean notExistsByFilter(mt.common.tkmapper.Filter filter) {
+	public boolean notExistsByFilter(@NotNull mt.common.tkmapper.Filter filter) {
 		return !existsByFilter(filter);
 	}
 	
@@ -468,7 +450,15 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	public void batchConsume(@NotNull List<mt.common.tkmapper.Filter> filters, int batchSize, @Nullable String orderBy, @NotNull Consumer<List<T>> consumer) {
 		int pageNum = 1;
 		while (true) {
-			PageInfo<T> pageInfo = doPage(pageNum++, batchSize, orderBy, () -> findByFilters(filters));
+			PageCondition pageCondition = new PageCondition() {
+				@Override
+				public String getOrderBy() {
+					return orderBy;
+				}
+			};
+			pageCondition.setPageNum(pageNum++);
+			pageCondition.setPageSize(batchSize);
+			PageInfo<T> pageInfo = doPage(() -> findByFilters(filters), pageCondition);
 			List<T> list = pageInfo.getList();
 			if (CollectionUtils.isEmpty(list)) {
 				break;
@@ -528,5 +518,22 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	
 	public int add(@NotNull String column, int value, @NotNull mt.common.tkmapper.Filter filter) {
 		return add(column, value, Collections.singletonList(filter));
+	}
+	
+	@Override
+	public <Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable List<mt.common.tkmapper.Filter> filters) {
+		AdvancedQuery advancedQuery = AdvancedQuery.create(resultClass, filters);
+		List<Map<String, Object>> list = getBaseMapper().findAdvancedList(advancedQuery);
+		return advancedQuery.convert(list);
+	}
+	
+	@Override
+	public <Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable mt.common.tkmapper.Filter filter) {
+		return findAdvancedList(resultClass, Arrays.asList(filter));
+	}
+	
+	@Override
+	public <Result> PageInfo<Result> findAdvancedPage(@NotNull Class<Result> resultClass, @Nullable Pageable pageable) {
+		return doPage(() -> findAdvancedList(resultClass, parseCondition(pageable)), pageable);
 	}
 }

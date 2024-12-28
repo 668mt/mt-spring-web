@@ -14,7 +14,7 @@ import tk.mybatis.mapper.entity.Example;
 public interface BaseUpdateMapper<T> extends Mapper<T> {
 	
 	/**
-	 * 新增字段
+	 * 在某个字段上新增：update xx set xx = xx + #{value} where #{example}
 	 *
 	 * @param field 字段名
 	 * @param value 值

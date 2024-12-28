@@ -1,5 +1,6 @@
 package mt.common.mybatis.sqlProvider;
 
+import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.mybatis.utils.SqlProviderUtils;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.ResultMap;
@@ -28,66 +29,66 @@ public class BaseSelectProvider extends MapperTemplate {
 	public BaseSelectProvider(Class<?> mapperClass, MapperHelper mapperHelper) {
 		super(mapperClass, mapperHelper);
 	}
-	
-	/**
-	 * 是否存在
-	 *
-	 * @param ms
-	 * @return
-	 */
-	public String existsKeyValue(MappedStatement ms) {
-		Class<?> entityClass = getEntityClass(ms);
-		StringBuilder sql = new StringBuilder();
-		sql.append(SqlHelper.selectCountExists(entityClass));
-		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
-		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
-		sql.append(entityClass.getName());
-		sql.append("')} = #{value}");
-		
-		return sql.toString();
-	}
-	
-	/**
-	 * 查找
-	 *
-	 * @param ms
-	 * @return
-	 */
-	public String findOne(MappedStatement ms) {
-		Class<?> entityClass = getEntityClass(ms);
-		//修改返回值类型为实体类型
-		setResultType(ms, entityClass);
-		
-		StringBuilder sql = new StringBuilder();
-		sql.append(SqlHelper.selectAllColumns(entityClass));
-		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
-		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
-		sql.append(entityClass.getName());
-		sql.append("')} = #{value}");
-		sql.append(SqlHelper.orderByDefault(entityClass));
-		return sql.toString();
-	}
-	
-	/**
-	 * 查找
-	 *
-	 * @param ms
-	 * @return
-	 */
-	public String findList(MappedStatement ms) {
-		Class<?> entityClass = getEntityClass(ms);
-		//修改返回值类型为实体类型
-		setResultType(ms, entityClass);
-		
-		StringBuilder sql = new StringBuilder();
-		sql.append(SqlHelper.selectAllColumns(entityClass));
-		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
-		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
-		sql.append(entityClass.getName());
-		sql.append("')} = #{value}");
-		sql.append(SqlHelper.orderByDefault(entityClass));
-		return sql.toString();
-	}
+
+//	/**
+//	 * 是否存在
+//	 *
+//	 * @param ms
+//	 * @return
+//	 */
+//	public String existsKeyValue(MappedStatement ms) {
+//		Class<?> entityClass = getEntityClass(ms);
+//		StringBuilder sql = new StringBuilder();
+//		sql.append(SqlHelper.selectCountExists(entityClass));
+//		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
+//		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
+//		sql.append(entityClass.getName());
+//		sql.append("')} = #{value}");
+//
+//		return sql.toString();
+//	}
+
+//	/**
+//	 * 查找
+//	 *
+//	 * @param ms
+//	 * @return
+//	 */
+//	public String findOne(MappedStatement ms) {
+//		Class<?> entityClass = getEntityClass(ms);
+//		//修改返回值类型为实体类型
+//		setResultType(ms, entityClass);
+//
+//		StringBuilder sql = new StringBuilder();
+//		sql.append(SqlHelper.selectAllColumns(entityClass));
+//		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
+//		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
+//		sql.append(entityClass.getName());
+//		sql.append("')} = #{value}");
+//		sql.append(SqlHelper.orderByDefault(entityClass));
+//		return sql.toString();
+//	}
+
+//	/**
+//	 * 查找
+//	 *
+//	 * @param ms
+//	 * @return
+//	 */
+//	public String findList(MappedStatement ms) {
+//		Class<?> entityClass = getEntityClass(ms);
+//		//修改返回值类型为实体类型
+//		setResultType(ms, entityClass);
+//
+//		StringBuilder sql = new StringBuilder();
+//		sql.append(SqlHelper.selectAllColumns(entityClass));
+//		sql.append(SqlHelper.fromTable(entityClass, tableName(entityClass)));
+//		sql.append("where ${@mt.common.mybatis.utils.MapperColumnUtils@parseColumn(columnName,'");
+//		sql.append(entityClass.getName());
+//		sql.append("')} = #{value}");
+//		sql.append(SqlHelper.orderByDefault(entityClass));
+//		return sql.toString();
+//	}
 	
 	public String findGroupCounts(MappedStatement ms) {
 		Class<?> entityClass = getEntityClass(ms);
@@ -114,12 +115,14 @@ public class BaseSelectProvider extends MapperTemplate {
 			SqlProviderUtils.exampleWhereClause("example");
 	}
 	
-	public String addField(MappedStatement ms) {
-		Class<?> entityClass = getEntityClass(ms);
-		
-		String tableName = getDynamicTableName(entityClass, tableName(entityClass));
-		return "update " + tableName + " set ${field} = ${field} + #{value}" +
-			SqlProviderUtils.exampleWhereClause("example");
+	public String findAdvancedList(MappedStatement ms) {
+		return """
+			select ${fieldsSql} from (
+				${fromSql}
+			) tmp
+			<where>
+			    ${conditionSql}
+			</where>
+			""";
 	}
-	
 }

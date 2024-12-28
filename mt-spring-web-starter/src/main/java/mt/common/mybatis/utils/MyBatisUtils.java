@@ -7,6 +7,8 @@ import mt.common.tkmapper.Operator;
 import mt.common.tkmapper.OrFilter;
 import mt.utils.ReflectUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.util.Assert;
 import tk.mybatis.mapper.entity.Example;
 import tk.mybatis.mapper.entity.Example.Criteria;
@@ -93,11 +95,11 @@ public class MyBatisUtils {
 	 * @param filters
 	 * @return
 	 */
-	public static Example createExample(Class<?> entityClass, List<Filter> filters) {
+	public static Example createExample(@NotNull Class<?> entityClass, @Nullable List<Filter> filters) {
 		return createExample(entityClass, filters, false);
 	}
 	
-	public static Example createExample(Class<?> entityClass, List<Filter> filters, boolean forUpdate) {
+	public static Example createExample(@NotNull Class<?> entityClass, @Nullable List<Filter> filters, boolean forUpdate) {
 		if (filters == null) {
 			filters = new ArrayList<>();
 		}

@@ -7,7 +7,7 @@ import lombok.Data;
  * @Date 2024/4/20
  */
 @Data
-public class PageCondition {
+public class PageCondition implements Pageable {
 	private Integer pageNum;
 	private Integer pageSize;
 	
