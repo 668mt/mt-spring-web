@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import mt.common.annotation.Filter;
 import mt.common.converter.Converter;
 import mt.common.entity.PageCondition;
+import mt.common.entity.PageDTO;
 import mt.common.entity.Pageable;
 import mt.common.mybatis.advanced.AdvancedQuery;
 import mt.common.mybatis.entity.GroupCount;
@@ -90,6 +91,16 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 		Class<T> entityClass = getEntityClass();
 		List<mt.common.tkmapper.Filter> filters = parseCondition(pageable);
 		return doPage(() -> getBaseMapper().selectByExample(MyBatisUtils.createExample(entityClass, filters)), pageable);
+	}
+	
+	@Override
+	public PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition) {
+		return doPage(() -> getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), parseCondition(condition))), new PageDTO(pageNum, pageSize, orderBy));
+	}
+	
+	@Override
+	public PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition, boolean isAllowSelectAll) {
+		return doPage(() -> getBaseMapper().selectByExample(MyBatisUtils.createExample(getEntityClass(), parseCondition(condition))), new PageDTO(pageNum, pageSize, orderBy, isAllowSelectAll));
 	}
 	
 	@SneakyThrows
@@ -518,6 +529,11 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	
 	public int add(@NotNull String column, int value, @NotNull mt.common.tkmapper.Filter filter) {
 		return add(column, value, Collections.singletonList(filter));
+	}
+	
+	@Override
+	public List<T> findList(@Nullable Object condition) {
+		return findByFilters(parseCondition(condition));
 	}
 	
 	@Override

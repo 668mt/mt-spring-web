@@ -34,6 +34,12 @@ public interface BaseRepository<T> {
 	
 	PageInfo<T> findPage(@Nullable Pageable pageable);
 	
+	PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition);
+	
+	PageInfo<T> findPage(@Nullable Integer pageNum, @Nullable Integer pageSize, @Nullable String orderBy, @Nullable Object condition, boolean isAllowSelectAll);
+	
+	List<T> findList(@Nullable Object condition);
+	
 	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable List<Filter> filters);
 	
 	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable Filter filter);
