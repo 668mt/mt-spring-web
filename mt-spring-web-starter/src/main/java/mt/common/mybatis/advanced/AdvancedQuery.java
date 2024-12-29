@@ -2,13 +2,14 @@ package mt.common.mybatis.advanced;
 
 import com.github.pagehelper.Page;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import mt.common.mybatis.annotation.From;
 import mt.common.mybatis.utils.MapperColumnUtils;
 import mt.common.tkmapper.Filter;
 import mt.utils.ReflectUtils;
 import mt.utils.common.Assert;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,7 @@ import javax.persistence.Column;
 import java.beans.Transient;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import java.util.Map;
  * @Date 2024/12/28
  */
 @Getter
+@Slf4j
 public class AdvancedQuery {
 	
 	private AdvancedQuery() {
@@ -42,6 +45,8 @@ public class AdvancedQuery {
 	private String fieldsSql;
 	private Map<String, Field> columnFieldMappings;
 	private Class<?> resultClass;
+	@Setter
+	private ValueConverter valueConverter = new DefaultValueConverter();
 	
 	public static AdvancedQuery create(@NotNull Class<?> resultClass, @Nullable List<Filter> filters) {
 		if (filters == null) {
@@ -58,6 +63,10 @@ public class AdvancedQuery {
 		Map<String, Field> columnFieldMappings = new HashMap<>();
 		List<String> columnNames = new ArrayList<>();
 		for (Field field : fields) {
+			int modifiers = field.getModifiers();
+			if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
+				continue;
+			}
 			String columnName;
 			Column column = field.getAnnotation(Column.class);
 			if (column != null && StringUtils.isNotBlank(column.name())) {
@@ -112,26 +121,30 @@ public class AdvancedQuery {
 			if (field == null) {
 				continue;
 			}
-			ColumnType columnType = field.getAnnotation(ColumnType.class);
-			if (columnType != null) {
-				Class<?> typeHandler = columnType.typeHandler();
-				Method method = typeHandler.getMethod("getResult", ResultSet.class, String.class);
-				Object typeHandlerInstance = typeHandlerCache.computeIfAbsent(typeHandler.getName(), s -> {
-					try {
-						return typeHandler.getConstructor().newInstance();
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				});
-				value = method.invoke(typeHandlerInstance, new AdvancedResultSet(value), column);
-			} else {
-				value = ConvertUtils.convert(value, field.getType());
-			}
 			try {
-				resultClass.getMethod("set" + StringUtils.capitalize(field.getName()), field.getType()).invoke(instance, value);
-			} catch (NoSuchMethodException noSuchMethodException) {
-				field.setAccessible(true);
-				field.set(instance, value);
+				ColumnType columnType = field.getAnnotation(ColumnType.class);
+				if (columnType != null) {
+					Class<?> typeHandler = columnType.typeHandler();
+					Method method = typeHandler.getMethod("getResult", ResultSet.class, String.class);
+					Object typeHandlerInstance = typeHandlerCache.computeIfAbsent(typeHandler.getName(), s -> {
+						try {
+							return typeHandler.getConstructor().newInstance();
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+					});
+					value = method.invoke(typeHandlerInstance, new AdvancedResultSet(value), column);
+				} else {
+					value = valueConverter.convert(value, field.getType());
+				}
+				try {
+					resultClass.getMethod("set" + StringUtils.capitalize(field.getName()), field.getType()).invoke(instance, value);
+				} catch (NoSuchMethodException noSuchMethodException) {
+					field.setAccessible(true);
+					field.set(instance, value);
+				}
+			} catch (Exception e) {
+				log.error("字段{}设置失败，转换路径：[{} ->> {}], 错误信息：{}", field.getName(), value, field.getType(), e.getMessage(), e);
 			}
 		}
 		return instance;

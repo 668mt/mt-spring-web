@@ -545,7 +545,13 @@ public abstract class BaseRepositoryImpl<T> implements BaseRepository<T>, Applic
 	
 	@Override
 	public <Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable mt.common.tkmapper.Filter filter) {
-		return findAdvancedList(resultClass, Arrays.asList(filter));
+		return findAdvancedList(resultClass, Collections.singletonList(filter));
+	}
+	
+	@Override
+	public <Result> List<Result> findAdvancedList(@NotNull AdvancedQuery advancedQuery) {
+		List<Map<String, Object>> list = getBaseMapper().findAdvancedList(advancedQuery);
+		return advancedQuery.convert(list);
 	}
 	
 	@Override

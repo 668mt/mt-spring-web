@@ -3,6 +3,7 @@ package mt.common.service;
 
 import com.github.pagehelper.PageInfo;
 import mt.common.entity.Pageable;
+import mt.common.mybatis.advanced.AdvancedQuery;
 import mt.common.mybatis.entity.GroupCount;
 import mt.common.tkmapper.Filter;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +44,8 @@ public interface BaseRepository<T> {
 	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable List<Filter> filters);
 	
 	<Result> List<Result> findAdvancedList(@NotNull Class<Result> resultClass, @Nullable Filter filter);
+	
+	<Result> List<Result> findAdvancedList(@NotNull AdvancedQuery advancedQuery);
 	
 	<Result> PageInfo<Result> findAdvancedPage(@NotNull Class<Result> resultClass, @Nullable Pageable pageable);
 	
