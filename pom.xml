@@ -6,7 +6,7 @@
 
     <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-starter-parent</artifactId>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -37,7 +37,7 @@
         <lombok.version>1.18.24</lombok.version>
         <mt.version.web-starter>3.1.2</mt.version.web-starter>
         <mt.version.jwt>3.1.2</mt.version.jwt>
-        <mt.version.generator>3.1.1</mt.version.generator>
+        <mt.version.generator>3.1.2</mt.version.generator>
         <mt.version.base-tools>3.1.1</mt.version.base-tools>
         <utils.version>3.1.1</utils.version>
     </properties>

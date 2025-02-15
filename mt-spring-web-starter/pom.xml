@@ -9,8 +9,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-<!--    <version>${mt.version.web-starter}</version>-->
-    <version>3.1.2</version>
+    <version>${mt.version.web-starter}</version>
     <artifactId>mt-spring-web-starter</artifactId>
 
     <dependencies>
