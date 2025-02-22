@@ -11,7 +11,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -51,8 +50,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class ServiceClient {
-	private CloseableHttpClient httpClient;
-	private HttpClientConnectionManager connectionManager;
+	private volatile CloseableHttpClient httpClient;
+	private volatile HttpClientConnectionManager connectionManager;
 	@Setter
 	@Getter
 	private ResponseErrorHandler responseErrorHandler;
@@ -223,7 +222,7 @@ public class ServiceClient {
 		try {
 			return execute(requestBuilder.build());
 		} finally {
-			IOUtils.closeQuietly(inputStream);
+			IOUtils.close(inputStream);
 		}
 	}
 	
@@ -257,14 +256,8 @@ public class ServiceClient {
 	}
 	
 	public String getAsString(String url, Header... headers) throws IOException {
-		try(CloseableHttpResponse response = get(url, headers)){
+		try (CloseableHttpResponse response = get(url, headers)) {
 			return EntityUtils.toString(response.getEntity());
-		}
-	}
-	
-	public InputStream getAsStream(String url, Header... headers) throws IOException {
-		try(CloseableHttpResponse response = get(url, headers)){
-			return response.getEntity().getContent();
 		}
 	}
 	
