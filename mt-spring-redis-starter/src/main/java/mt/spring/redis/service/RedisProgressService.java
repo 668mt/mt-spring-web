@@ -23,11 +23,6 @@ public class RedisProgressService implements ProgressService {
 	}
 	
 	@Override
-	public void init(@NotNull String key) {
-		update(getKey(key), 0);
-	}
-	
-	@Override
 	public void update(@NotNull String key, double percent) {
 		redisService.set(getKey(key), percent, 1, TimeUnit.DAYS);
 	}
