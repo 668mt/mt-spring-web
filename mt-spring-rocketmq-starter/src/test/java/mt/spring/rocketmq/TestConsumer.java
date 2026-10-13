@@ -24,8 +24,8 @@ import java.util.*;
 public class TestConsumer {
 	public static void main(String[] args) throws Exception {
 		ClientConfiguration configuration = ClientConfiguration.newBuilder()
-			.setEndpoints("192.168.0.104:8081").enableSsl(false).build();
-		String topic = "video-logs";
+			.setEndpoints("192.168.3.70:8081").enableSsl(false).build();
+		String topic = "test-topic2";
 		String consumerGroup = "flink";
 		FilterExpression filterExpression = new FilterExpression("*", FilterExpressionType.TAG);
 		Map<String, FilterExpression> filterExpressionMap = new HashMap<>();
