@@ -1,0 +1,251 @@
+package mt.generator.mybatis.core.dialect;
+
+import mt.generator.mybatis.core.model.ColumnDefinition;
+import mt.generator.mybatis.core.model.ColumnType;
+import mt.generator.mybatis.core.model.IndexDefinition;
+import org.apache.commons.lang3.StringUtils;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.StringJoiner;
+
+/**
+ * PostgreSQL 方言。
+ * <p>
+ * 与 MySQL 有几个关键差异：
+ * <ul>
+ *     <li>标识符不加引号时数据库会折叠成小写，而 MyBatis 生成的 SQL 同样会被折叠成小写，
+ *     两边才能对上；所以默认只给保留字加引号，避免保留原始大小写导致查不到字段</li>
+ *     <li>索引必须用 CREATE INDEX 单独创建，不能写在建表语句里</li>
+ *     <li>标识符最长 63 个字符</li>
+ * </ul>
+ *
+ * @author Martin
+ */
+public class PostgreSqlDialect extends AbstractDialect {
+
+	/**
+	 * PostgreSQL 保留字，只给这些标识符加引号
+	 */
+	private static final Set<String> RESERVED_WORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+			"all", "analyse", "analyze", "and", "any", "array", "as", "asc", "asymmetric", "authorization",
+			"between", "binary", "both", "case", "cast", "check", "collate", "column", "constraint", "create",
+			"cross", "current_catalog", "current_date", "current_role", "current_schema", "current_time",
+			"current_timestamp", "current_user", "default", "deferrable", "desc", "distinct", "do", "else",
+			"end", "except", "false", "fetch", "for", "foreign", "freeze", "from", "full", "grant", "group",
+			"having", "ilike", "in", "initially", "inner", "intersect", "into", "is", "isnull", "join",
+			"lateral", "leading", "left", "like", "limit", "localtime", "localtimestamp", "natural", "not",
+			"notnull", "null", "offset", "on", "only", "or", "order", "outer", "overlaps", "placing", "primary",
+			"references", "returning", "right", "select", "session_user", "similar", "some", "symmetric",
+			"table", "tablesample", "then", "to", "trailing", "true", "union", "unique", "user", "using",
+			"values", "verbose", "when", "where", "window", "with"
+	)));
+
+	public PostgreSqlDialect() {
+		super("PostgreSQL", 63, "\"", "\"");
+	}
+
+	@Override
+	public boolean supports(String driverClassName) {
+		if (StringUtils.isBlank(driverClassName)) {
+			return false;
+		}
+		return "org.postgresql.Driver".equalsIgnoreCase(driverClassName.trim());
+	}
+
+	/**
+	 * PostgreSQL 不能总是加引号，见 {@link Dialect#isQuoteAlways()}
+	 *
+	 * @return false
+	 */
+	@Override
+	public boolean isQuoteAlways() {
+		return false;
+	}
+
+	@Override
+	public String getSchemaPattern() {
+		return "public";
+	}
+
+	/**
+	 * PostgreSQL 的 JDBC 驱动 {@code getCatalogs()} 只返回当前连接的库，
+	 * 必须直接查 pg_database 才能判断目标库是否存在。
+	 *
+	 * @param connection   连接
+	 * @param databaseName 数据库名
+	 * @return 是否存在
+	 */
+	@Override
+	public boolean databaseExists(Connection connection, String databaseName) {
+		if (StringUtils.isBlank(databaseName)) {
+			return true;
+		}
+		try (PreparedStatement ps = connection.prepareStatement("SELECT 1 FROM pg_database WHERE datname = ?")) {
+			ps.setString(1, databaseName);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next();
+			}
+		} catch (SQLException e) {
+			throw new IllegalStateException("检查数据库是否存在失败：" + databaseName, e);
+		}
+	}
+
+	@Override
+	public String getDatabaseName(String jdbcUrl) {
+		return JdbcUrl.parse(jdbcUrl).getDatabase();
+	}
+
+	@Override
+	public String getMaintenanceJdbcUrl(String jdbcUrl) {
+		JdbcUrl url = JdbcUrl.parse(jdbcUrl);
+		return JdbcUrl.build(url.getScheme(), url.getHosts(), "postgres", url.getParams());
+	}
+
+	@Override
+	protected boolean requiresQuoting(String identifier) {
+		if (!isReservedWord(identifier)) {
+			return false;
+		}
+		if (!identifier.equals(identifier.toLowerCase(Locale.ROOT))) {
+			log.warn("标识符 [{}] 是 PostgreSQL 保留字且包含大写字母，加引号后与 MyBatis 生成的 SQL 大小写不一致，"
+					+ "建议用 @Column(name = \"...\") 指定全小写的列名", identifier);
+		}
+		return true;
+	}
+
+	/**
+	 * 是否为 PostgreSQL 保留字
+	 *
+	 * @param identifier 标识符
+	 * @return 是否为保留字
+	 */
+	protected boolean isReservedWord(String identifier) {
+		return RESERVED_WORDS.contains(identifier.toLowerCase(Locale.ROOT));
+	}
+
+	@Override
+	protected String getSimpleType(ColumnType type) {
+		switch (type) {
+			case INTEGER:
+				return "integer";
+			case LONG:
+				return "bigint";
+			case SHORT:
+				return "smallint";
+			case BYTE:
+				return "smallint";
+			case BOOLEAN:
+				return "boolean";
+			case DOUBLE:
+				return "double precision";
+			case FLOAT:
+				return "real";
+			case BINARY:
+				return "bytea";
+			case DATE:
+				return "date";
+			case TIME:
+				return "time";
+			case TIMESTAMP:
+				return "timestamp";
+			case JSON:
+				return "jsonb";
+			case TEXT:
+				return "text";
+			default:
+				return "varchar(" + DEFAULT_STRING_LENGTH + ")";
+		}
+	}
+
+	@Override
+	protected String getIdentityClause(ColumnDefinition column) {
+		ColumnType type = column.getColumnType();
+		if (type == ColumnType.INTEGER || type == ColumnType.LONG || type == ColumnType.SHORT) {
+			return "GENERATED BY DEFAULT AS IDENTITY";
+		}
+		return null;
+	}
+
+	@Override
+	protected String getUuidType() {
+		return "uuid";
+	}
+
+	@Override
+	protected String getEnumType() {
+		return "varchar(" + DEFAULT_STRING_LENGTH + ")";
+	}
+
+	@Override
+	protected boolean isIndexNameIncludeTable() {
+		return true;
+	}
+
+	@Override
+	protected String normalizeColumnDefinition(String columnDefinition) {
+		String definition = columnDefinition.trim();
+		if ("text".equalsIgnoreCase(definition) || "longtext".equalsIgnoreCase(definition)
+				|| "varchar(max)".equalsIgnoreCase(definition) || "nvarchar(max)".equalsIgnoreCase(definition)) {
+			return "text";
+		}
+		if ("blob".equalsIgnoreCase(definition) || "image".equalsIgnoreCase(definition)
+				|| "varbinary(max)".equalsIgnoreCase(definition) || "binary".equalsIgnoreCase(definition)) {
+			return "bytea";
+		}
+		if ("datetime".equalsIgnoreCase(definition) || "datetime2".equalsIgnoreCase(definition)) {
+			return "timestamp";
+		}
+		if ("int".equalsIgnoreCase(definition)) {
+			return "integer";
+		}
+		if ("bit".equalsIgnoreCase(definition)) {
+			return "boolean";
+		}
+		if ("uniqueidentifier".equalsIgnoreCase(definition)) {
+			return "uuid";
+		}
+		if ("float".equalsIgnoreCase(definition)) {
+			return "double precision";
+		}
+		if ("real".equalsIgnoreCase(definition)) {
+			return "real";
+		}
+		if ("double".equalsIgnoreCase(definition)) {
+			return "double precision";
+		}
+		return definition;
+	}
+
+	@Override
+	public String renderIndex(String tableName, IndexDefinition index) {
+		String indexName = quoteIdentifier(resolveIndexName(tableName, index));
+		String table = quoteIdentifier(tableName);
+		String columns = joinColumns(index.getColumns());
+		switch (index.getType()) {
+			case unique:
+				return "CREATE UNIQUE INDEX " + indexName + " ON " + table + " (" + columns + ")";
+			case hash:
+				return "CREATE INDEX " + indexName + " ON " + table + " USING HASH (" + columns + ")";
+			case fulltext: {
+				StringJoiner joiner = new StringJoiner(", ");
+				if (index.getColumns() != null) {
+					for (String column : index.getColumns()) {
+						joiner.add("to_tsvector('simple', coalesce(" + quoteIdentifier(column) + ", ''))");
+					}
+				}
+				return "CREATE INDEX " + indexName + " ON " + table + " USING GIN (" + joiner + ")";
+			}
+			case normal:
+			default:
+				return "CREATE INDEX " + indexName + " ON " + table + " (" + columns + ")";
+		}
+	}
+}

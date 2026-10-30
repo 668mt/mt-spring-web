@@ -43,6 +43,10 @@ public class CommonProperties {
 	public static class GeneratorConfig {
 		private Boolean enabled;
 		private List<String> packages;
+		/**
+		 * 表已存在时，是否自动补齐缺失的字段
+		 */
+		private Boolean addMissingColumn = false;
 	}
 	
 	@Data

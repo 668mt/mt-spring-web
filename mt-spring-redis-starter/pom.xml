@@ -6,9 +6,32 @@
     <parent>
         <groupId>io.github.668mt</groupId>
         <artifactId>mt-spring-starter-parent</artifactId>
-        <version>3.1.1</version>
+        <version>3.2.0</version>
     </parent>
     <artifactId>mt-spring-redis-starter</artifactId>
+    <version>3.2.0</version>
+    <url>https://github.com/668mt/mt-spring-web</url>
+    <name>mt-spring-redis-starter</name>
+    <description>mt-spring redis / redisson 封装 starter</description>
+    <scm>
+        <connection>scm:git:https://github.com/668mt/mt-spring-web.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/668mt/mt-spring-web.git</developerConnection>
+        <url>https://github.com/668mt/mt-spring-web.git</url>
+    </scm>
+    <developers>
+        <developer>
+            <name>martin</name>
+            <email>765936728@qq.com</email>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

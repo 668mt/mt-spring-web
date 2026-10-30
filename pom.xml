@@ -6,7 +6,7 @@
 
     <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-starter-parent</artifactId>
-    <version>3.1.2</version>
+    <version>3.2.0</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -34,12 +34,20 @@
         <nacos-spring-cloud.version>2022.0.0.0-RC2</nacos-spring-cloud.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
-        <lombok.version>1.18.24</lombok.version>
-        <mt.version.web-starter>3.1.2</mt.version.web-starter>
-        <mt.version.jwt>3.1.2</mt.version.jwt>
-        <mt.version.generator>3.1.2</mt.version.generator>
-        <mt.version.base-tools>3.1.1</mt.version.base-tools>
-        <utils.version>3.1.1</utils.version>
+        <lombok.version>1.18.48</lombok.version>
+        <!-- 必须和上面的 spring-boot-starter-parent 版本保持一致 -->
+        <spring-boot.version>3.0.2</spring-boot.version>
+        <!-- 本次发布的统一版本号，子模块和依赖全部引用它，改版本只改这一处 -->
+        <mt.version>3.2.0</mt.version>
+        <mt.version.web-starter>${mt.version}</mt.version.web-starter>
+        <mt.version.jwt>${mt.version}</mt.version.jwt>
+        <mt.version.generator>${mt.version}</mt.version.generator>
+        <mt.version.base-tools>${mt.version}</mt.version.base-tools>
+        <mt.version.video-tools>${mt.version}</mt.version.video-tools>
+        <mt.version.core>${mt.version}</mt.version.core>
+        <mt.version.redis>${mt.version}</mt.version.redis>
+        <mt.version.rocketmq>${mt.version}</mt.version.rocketmq>
+        <utils.version>${mt.version}</utils.version>
     </properties>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-web</name>
@@ -65,6 +73,53 @@
     </licenses>
     <dependencyManagement>
         <dependencies>
+            <!-- 本项目自己的模块，必须在这里管住版本，
+                 否则下游引用本项目时必须显式写版本号，去掉就会构建失败 -->
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-web-starter</artifactId>
+                <version>${mt.version.web-starter}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-generator-starter</artifactId>
+                <version>${mt.version.generator}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-jwt-starter</artifactId>
+                <version>${mt.version.jwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-redis-starter</artifactId>
+                <version>${mt.version.redis}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-rocketmq-starter</artifactId>
+                <version>${mt.version.rocketmq}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>mt-spring-core</artifactId>
+                <version>${mt.version.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>utils</artifactId>
+                <version>${utils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>base-tools</artifactId>
+                <version>${mt.version.base-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.668mt</groupId>
+                <artifactId>video-tools</artifactId>
+                <version>${mt.version.video-tools}</version>
+            </dependency>
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
@@ -217,6 +272,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -271,16 +327,33 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <release>${java.version}</release>
+                    <!-- JDK 23+ 默认关闭隐式注解处理，必须显式声明处理器路径，否则 Lombok 不生效 -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <!-- 不能用 ${project.parent.version}：那是当前项目的父版本，
+                                 下游引用本项目做父 POM 时会解析成下游自己的版本，导致构件找不到 -->
+                            <version>${spring-boot.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
                 <configuration>
                     <attach>true</attach>
                 </configuration>
@@ -319,7 +392,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.1</version>
+                <version>3.1.1</version>
                 <configuration>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <useReleaseProfile>false</useReleaseProfile>
@@ -369,18 +442,6 @@
             <layout>default</layout>
         </pluginRepository>
     </pluginRepositories>
-    <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
     <repositories>
         <repository>
             <id>ali-central</id>
@@ -394,9 +455,9 @@
             <layout>default</layout>
         </repository>
         <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>central-portal-snapshots</id>
+            <name>Central Portal Snapshots</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -411,28 +472,14 @@
             <id>sonatype-oss-release</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>2.1.2</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+                    <!-- sources jar 由 build 段的 maven-source-plugin 在 verify 阶段产出，这里不再重复 attach -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.2</version>
+                        <version>3.11.3</version>
                         <configuration>
-                            <aggregate>true</aggregate>
-                            <additionalJOptions>
-                                <additionalJOption>-Xdoclint:none</additionalJOption>
-                            </additionalJOptions>
+                            <doclint>none</doclint>
+                            <quiet>true</quiet>
                         </configuration>
                         <executions>
                             <execution>
@@ -446,7 +493,11 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.1</version>
+                        <version>3.2.8</version>
+                        <configuration>
+                            <!-- 口令从 settings.xml 中 id=gpg-passphrase 的 server 取，避免交互式输入 -->
+                            <passphraseServerId>gpg-passphrase</passphraseServerId>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -460,12 +511,15 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.4.0</version>
+                        <version>0.12.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <!-- 这里的serverId是之前在settings.xml中配置的 -->
-                            <publishingServerId>rdc-releases</publishingServerId>
-                            <tokenAuth>true</tokenAuth>
+                            <!-- 必须与 settings.xml 中 <server><id> 的值完全一致 -->
+                            <publishingServerId>releases</publishingServerId>
+                            <deploymentName>mt-spring-web</deploymentName>
+                            <centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/</centralSnapshotsUrl>
+                            <!-- false：上传后需到 Central Portal 页面人工点 Publish -->
+                            <autoPublish>false</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>

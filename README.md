@@ -48,9 +48,26 @@ RocketMQ的封装
 - 配置开启
 
 ```properties
-project.generatorEnable=true
-project.generateEntityPackages=mt.spring.biz.entity.po
+mt.config.generator.enabled=true
+# 实体所在的包，不配置时取 mybatis 的 type-aliases-package
+mt.config.generator.packages=mt.spring.biz.entity.po
+# 表已存在时，是否自动补齐缺失的字段，默认 false
+mt.config.generator.add-missing-column=false
 ```
+
+支持的数据库：
+
+| 数据库 | 驱动类 | 说明 |
+| --- | --- | --- |
+| MySQL | `com.mysql.cj.jdbc.Driver` | |
+| PostgreSQL | `org.postgresql.Driver` | 10+ ，索引用 `CREATE INDEX` 单独创建 |
+| SQL Server | `com.microsoft.sqlserver.jdbc.SQLServerDriver` | |
+
+> PostgreSQL 说明：PostgreSQL 会把不加引号的标识符折叠成小写，而 MyBatis 生成的 SQL 同样会被折叠成小写，
+> 所以生成器只给 PostgreSQL 保留字加引号，驼峰列名保持不加引号，两边才能对上。
+
+扩展新的数据库：实现 `mt.generator.mybatis.core.dialect.Dialect` 接口（可继承 `AbstractDialect`），
+再把它注册成 Bean 即可。
 
 使用示例：
 

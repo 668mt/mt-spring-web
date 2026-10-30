@@ -3,3 +3,7 @@
 target
 *.log
 logs
+
+# 发布到 Maven 中央仓库的本地文档与密钥（仅本机使用，不入库）
+deploy.md
+mt-spring-web-signing-key.asc

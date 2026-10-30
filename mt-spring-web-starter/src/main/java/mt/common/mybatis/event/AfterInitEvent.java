@@ -34,6 +34,14 @@ public class AfterInitEvent extends ApplicationEvent{
 	 */
 	private List<String> newTables = new ArrayList<String>();
 	private List<String> newForeightKeys = new ArrayList<String>();
+	/**
+	 * 创建的新索引
+	 */
+	private List<String> newIndexes = new ArrayList<String>();
+	/**
+	 * 新增的字段
+	 */
+	private List<String> newColumns = new ArrayList<String>();
 	
 	public List<String> getNewForeightKeys() {
 		return newForeightKeys;
@@ -41,6 +49,22 @@ public class AfterInitEvent extends ApplicationEvent{
 
 	public void setNewForeightKeys(List<String> newForeightKeys) {
 		this.newForeightKeys = newForeightKeys;
+	}
+
+	public List<String> getNewIndexes() {
+		return newIndexes;
+	}
+
+	public void setNewIndexes(List<String> newIndexes) {
+		this.newIndexes = newIndexes;
+	}
+
+	public List<String> getNewColumns() {
+		return newColumns;
+	}
+
+	public void setNewColumns(List<String> newColumns) {
+		this.newColumns = newColumns;
 	}
 
 	public boolean isCreateDatabase() {

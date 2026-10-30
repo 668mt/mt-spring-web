@@ -9,11 +9,18 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 /**
- * @Author Martin
+ * 数据库解析器。
+ *
+ * @author Martin
  * @Date 2021/1/6
+ * @deprecated 该接口是旧的 SPI，只保留字符串片段级别的 SQL 生成能力，
+ * 无法表达 PostgreSQL、SQL Server 那种必须单独创建的索引。
+ * 请改用 {@link mt.generator.mybatis.core.dialect.Dialect}，
+ * 由它把表结构模型整体渲染成可执行的 DDL。
  */
+@Deprecated
 public interface IParser {
-	
+
 	/**
 	 * 是否支持
 	 *
@@ -21,11 +28,23 @@ public interface IParser {
 	 * @return 是否支持
 	 */
 	boolean support(String driverClassName);
-	
+
+	/**
+	 * 解析数据库名
+	 *
+	 * @param jdbcUrl 连接串
+	 * @return 数据库名
+	 */
 	String parseDatabaseName(String jdbcUrl);
-	
+
+	/**
+	 * 获取管理库的连接串
+	 *
+	 * @param jdbcUrl 连接串
+	 * @return 管理库连接串
+	 */
 	String getMasterJdbcUrl(String jdbcUrl);
-	
+
 	/**
 	 * 是否存在数据库
 	 *
@@ -33,7 +52,7 @@ public interface IParser {
 	 * @return 是否存在
 	 */
 	boolean isExistDatabase(@NotNull String databaseName, Jdbc masterJdbc);
-	
+
 	/**
 	 * 是否存在表
 	 *
@@ -41,7 +60,7 @@ public interface IParser {
 	 * @return 是否存在
 	 */
 	boolean isExistTable(@NotNull String tableName, @NotNull String databaseName, Jdbc jdbc);
-	
+
 	/**
 	 * 获取默认列定义
 	 *
@@ -50,7 +69,7 @@ public interface IParser {
 	 * @return jdbc类型
 	 */
 	String getColumnDefinition(@Nullable Column column, @NotNull Class<?> type);
-	
+
 	/**
 	 * 获取自增Sql
 	 *
@@ -59,7 +78,7 @@ public interface IParser {
 	 */
 	@Nullable
 	String getIdentitySql(@NotNull Field idField);
-	
+
 	/**
 	 * 获取主键sql
 	 *
@@ -67,7 +86,7 @@ public interface IParser {
 	 * @return sql
 	 */
 	String getPrimaryKeySql(@Nullable List<String> columns);
-	
+
 	/**
 	 * 获取外键sql
 	 *
@@ -75,13 +94,42 @@ public interface IParser {
 	 * @param foreignKey 外键注解
 	 * @return sql
 	 */
-	String getForeignKeySql(@NotNull String tableName, @NotNull String referenceTableName, @NotNull String columnName, @NotNull ForeignKey foreignKey);
-	
+	String getForeignKeySql(@NotNull String tableName, @NotNull String referenceTableName, @NotNull String columnName,
+							@NotNull ForeignKey foreignKey);
+
+	/**
+	 * 获取普通索引sql
+	 *
+	 * @param name    索引名
+	 * @param columns 索引列
+	 * @return sql
+	 */
 	String getIndexSql(@Nullable String name, @NotNull List<String> columns);
-	
+
+	/**
+	 * 获取唯一索引sql
+	 *
+	 * @param name    索引名
+	 * @param columns 索引列
+	 * @return sql
+	 */
 	String getUniqueIndexSql(@Nullable String name, @NotNull List<String> columns);
-	
+
+	/**
+	 * 获取全文索引sql
+	 *
+	 * @param name    索引名
+	 * @param columns 索引列
+	 * @return sql
+	 */
 	String getFullTextIndexSql(@Nullable String name, @NotNull List<String> columns);
-	
+
+	/**
+	 * 获取hash索引sql
+	 *
+	 * @param name    索引名
+	 * @param columns 索引列
+	 * @return sql
+	 */
 	String getHashIndexSql(@Nullable String name, @NotNull List<String> columns);
 }
