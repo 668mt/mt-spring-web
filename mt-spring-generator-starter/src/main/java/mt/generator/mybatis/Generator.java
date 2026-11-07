@@ -12,14 +12,10 @@ import mt.generator.mybatis.utils.MysqlParser;
 import mt.generator.mybatis.utils.PostgresqlParser;
 import mt.generator.mybatis.utils.SqlServerParser;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.util.CollectionUtils;
 import tk.mybatis.mapper.autoconfigure.MybatisProperties;
 
@@ -37,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2017-10-23 下午10:10:04
  */
 @Slf4j
-public class Generator {
+public class Generator implements SmartInitializingSingleton {
 
 	@Autowired
 	private ApplicationEventPublisher applicationEventPublisher;
@@ -50,9 +46,6 @@ public class Generator {
 
 	@Autowired
 	private DataSourceProperties dataSourceProperties;
-
-	@Autowired
-	private ApplicationContext applicationContext;
 
 	/**
 	 * 数据库方言
@@ -71,20 +64,13 @@ public class Generator {
 	/**
 	 * 建表
 	 * <p>
-	 * 这里必须用最高优先级：{@code ScheduledAnnotationBeanPostProcessor} 是在
-	 * {@code prepareRefresh()} 阶段就注册成事件监听器的，而 {@code @EventListener} 方法
-	 * 要等到所有单例创建完才注册，两者默认都是 {@code LOWEST_PRECEDENCE}，
-	 * 排序后定时任务会先启动，导致定时任务查还没建出来的表。
-	 *
-	 * @param contextRefreshedEvent 上下文刷新事件
+	 * 用 {@link SmartInitializingSingleton} 而不是监听 {@code ContextRefreshedEvent}：
+	 * 它由 {@code finishBeanFactoryInitialization} 在所有单例创建完之后、上下文刷新事件发布之前回调，
+	 * 此时数据源配置、方言、{@code @EventListener} 监听器都已就绪，但定时任务还没启动，
+	 * 既比刷新事件更早，又不会出现"定时任务或刷新事件监听器先跑、查到还没建出来的表"的问题。
 	 */
-	@EventListener
-	@Order(Ordered.HIGHEST_PRECEDENCE)
-	public void listener(ContextRefreshedEvent contextRefreshedEvent) {
-		//只处理自己的上下文，Spring Cloud 下 bootstrap 上下文刷新时不会重复执行
-		if (contextRefreshedEvent.getApplicationContext() != applicationContext) {
-			return;
-		}
+	@Override
+	public void afterSingletonsInstantiated() {
 		if (!Boolean.TRUE.equals(commonProperties.getGenerator().getEnabled())) {
 			return;
 		}

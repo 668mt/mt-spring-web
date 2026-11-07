@@ -28,7 +28,7 @@ public class GeneratorConfig {
 	 * <p>
 	 * 这里不用 {@code @ConditionalOnProperty} 判断开关，
 	 * 因为配置有可能在上下文刷新之后才加载（比如 Nacos），
-	 * 真正的开关判断放在 {@link Generator} 监听上下文刷新的时候做。
+	 * 真正的开关判断放在 {@link Generator} 初始化时做。
 	 *
 	 * @return 生成器
 	 */

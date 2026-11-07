@@ -25,10 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 建表和定时任务的竞态测试。
  * <p>
- * {@code ScheduledAnnotationBeanPostProcessor} 在 prepareRefresh 阶段就注册成事件监听器，
- * 而 {@code @EventListener} 方法要等所有单例创建完才注册，两者默认都是 LOWEST_PRECEDENCE，
- * 排序后定时任务会先启动，导致定时任务查还没建出来的表。
- * 这里用真实定时任务验证建表一定发生在定时任务启动之前。
+ * 建表在 {@code SmartInitializingSingleton#afterSingletonsInstantiated} 里执行，
+ * 定时任务要等 {@code ContextRefreshedEvent} 才真正开始调度，所以建表一定在定时任务启动之前。
+ * 这里用真实定时任务验证这个顺序不会被破坏。
  *
  * @author Martin
  */
