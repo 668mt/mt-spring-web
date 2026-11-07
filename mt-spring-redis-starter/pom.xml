@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.668mt</groupId>
         <artifactId>mt-spring-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.1</version>
     </parent>
     <artifactId>mt-spring-redis-starter</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-redis-starter</name>
     <description>mt-spring redis / redisson 封装 starter</description>

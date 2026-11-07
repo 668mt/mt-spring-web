@@ -6,7 +6,7 @@
 
     <groupId>io.github.668mt</groupId>
     <artifactId>mt-spring-starter-parent</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -38,7 +38,7 @@
         <!-- 必须和上面的 spring-boot-starter-parent 版本保持一致 -->
         <spring-boot.version>3.0.2</spring-boot.version>
         <!-- 本次发布的统一版本号，子模块和依赖全部引用它，改版本只改这一处 -->
-        <mt.version>3.2.0</mt.version>
+        <mt.version>3.2.1</mt.version>
         <mt.version.web-starter>${mt.version}</mt.version.web-starter>
         <mt.version.jwt>${mt.version}</mt.version.jwt>
         <mt.version.generator>${mt.version}</mt.version.generator>

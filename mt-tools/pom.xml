@@ -6,7 +6,7 @@
     <groupId>io.github.668mt</groupId>
     <artifactId>mtools</artifactId>
     <packaging>pom</packaging>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <modules>
         <module>base-tools</module>
         <module>video-tools</module>
@@ -14,7 +14,7 @@
     <properties>
         <java.version>17</java.version>
         <!-- 本次发布的统一版本号，和根 pom 保持一致 -->
-        <mt.version>3.2.0</mt.version>
+        <mt.version>3.2.1</mt.version>
         <mt.version.base-tools>${mt.version}</mt.version.base-tools>
         <utils.version>${mt.version}</utils.version>
         <slf4j.version>1.7.25</slf4j.version>

@@ -5,12 +5,12 @@
     <parent>
         <groupId>io.github.668mt</groupId>
         <artifactId>mtools</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>base-tools</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>base-tools</name>
     <description>基础工具集</description>

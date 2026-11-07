@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.668mt</groupId>
         <artifactId>mt-spring-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.1</version>
     </parent>
     <artifactId>mt-spring-jwt-starter</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
     <url>https://github.com/668mt/mt-spring-web</url>
     <name>mt-spring-jwt-starter</name>
     <description>mt-spring jwt 鉴权 starter</description>
