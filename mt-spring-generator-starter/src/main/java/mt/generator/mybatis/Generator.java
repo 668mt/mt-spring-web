@@ -5,6 +5,7 @@ import mt.common.config.CommonProperties;
 import mt.common.mybatis.event.AfterInitEvent;
 import mt.common.mybatis.event.BeforeInitEvent;
 import mt.generator.mybatis.core.dialect.Dialect;
+import mt.generator.mybatis.status.TableInitResult;
 import mt.generator.mybatis.utils.GenerateHelper;
 import mt.generator.mybatis.utils.IParser;
 import mt.generator.mybatis.utils.IParserDialectAdapter;
@@ -60,6 +61,22 @@ public class Generator implements SmartInitializingSingleton {
 	private List<IParser> parsers = Collections.emptyList();
 
 	private final AtomicBoolean loaded = new AtomicBoolean(false);
+
+	/**
+	 * 建表结果
+	 */
+	private static volatile TableInitResult initResult = TableInitResult.empty();
+
+	/**
+	 * 建表结果
+	 * <p>
+	 * 建表流程没有执行过（比如自动建表开关关闭）时，返回的是空结果
+	 *
+	 * @return 建表结果
+	 */
+	public static TableInitResult getInitResult() {
+		return initResult;
+	}
 
 	/**
 	 * 建表
@@ -121,8 +138,21 @@ public class Generator implements SmartInitializingSingleton {
 		AfterInitEvent afterInitEvent = new AfterInitEvent(this);
 		GenerateHelper generateHelper = new GenerateHelper(jdbcUrl, driverClass, user, password, dialect, commonProperties);
 		generateHelper.init(entityPackages, afterInitEvent);
+		//记录建表结果，方便业务代码查询有没有建表、是不是第一次初始化
+		record(afterInitEvent, generateHelper.getExistingTables());
 		//注册初始化完成事件
 		applicationEventPublisher.publishEvent(afterInitEvent);
+	}
+
+	/**
+	 * 记录建表结果
+	 *
+	 * @param event          建表完成事件
+	 * @param existedTables  建表之前就已经存在的表
+	 */
+	static void record(AfterInitEvent event, List<String> existedTables) {
+		initResult = new TableInitResult(event.isCreateDatabase(), event.isCreateTable(), event.getNewTables(),
+				existedTables, event.getNewColumns(), event.getNewIndexes(), event.getNewForeightKeys());
 	}
 
 	/**

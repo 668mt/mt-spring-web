@@ -37,6 +37,11 @@ public class GenerateHelper {
 	 */
 	public final List<String> foreightKeys = new ArrayList<>();
 
+	/**
+	 * 建表之前就已经存在的表
+	 */
+	private final List<String> existingTables = new ArrayList<>();
+
 	private final String jdbcUrl;
 
 	private final String driverClass;
@@ -159,6 +164,7 @@ public class GenerateHelper {
 				}
 				pendingForeignKeys.addAll(table.getForeignKeys());
 			} else {
+				existingTables.add(table.getName());
 				newColumns.addAll(addMissingColumns(existingTable, table));
 			}
 		}
@@ -196,6 +202,15 @@ public class GenerateHelper {
 		for (String sql : foreightSuccess) {
 			log.info(">>>>>>>>>{}", sql);
 		}
+	}
+
+	/**
+	 * 建表之前就已经存在的表
+	 *
+	 * @return 表名列表
+	 */
+	public List<String> getExistingTables() {
+		return existingTables;
 	}
 
 	/**

@@ -115,6 +115,30 @@ public void afterCreateTable(AfterInitEvent event) {
 }
 ```
 
+## 查询建表结果
+
+不需要注入，`Generator` 上有一个静态方法拿到建表结果：
+
+```java
+TableInitResult result = Generator.getInitResult();
+
+result.isInitialized();      // 建表流程是否执行过
+result.isTableCreated();     // 本次是否新建了表
+result.isDatabaseCreated();  // 本次是否新建了数据库
+result.isFirstInit();        // 是否第一次初始化
+result.getNewTables();       // 本次新建的表
+result.getExistingTables();  // 本次之前就存在的表
+```
+
+`isFirstInit()` 的判断依据是：新建了数据库，或者本次之前一张表都没有（所有表都是本次新建的）。
+可以用来决定要不要插入初始数据：
+
+```java
+if (Generator.getInitResult().isFirstInit()) {
+	// 插入初始数据
+}
+```
+
 ## 测试
 
 单元测试不需要数据库：
